@@ -5,7 +5,9 @@ import {
   type Rates,
   type PnlStructure,
   type Budgets,
+  type UserProfile,
   DEFAULT_PNL,
+  DEFAULT_PROFILE,
 } from '../domain/types';
 
 const KEYS = {
@@ -14,6 +16,7 @@ const KEYS = {
   PNL: '@sencillo/pnl',
   BUDGETS: '@sencillo/budgets',
   RATES_TIMESTAMP: '@sencillo/rates_timestamp',
+  PROFILE: '@sencillo/profile',
 };
 
 export async function loadTransactions(): Promise<Transaction[]> {
@@ -112,4 +115,28 @@ export async function loadBudgets(): Promise<Budgets> {
 
 export async function saveBudgets(budgets: Budgets): Promise<void> {
   await AsyncStorage.setItem(KEYS.BUDGETS, JSON.stringify(budgets));
+}
+
+export async function loadProfile(): Promise<UserProfile> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.PROFILE);
+    return data ? JSON.parse(data) : DEFAULT_PROFILE;
+  } catch {
+    return DEFAULT_PROFILE;
+  }
+}
+
+export async function saveProfile(profile: UserProfile): Promise<void> {
+  await AsyncStorage.setItem(KEYS.PROFILE, JSON.stringify(profile));
+}
+
+export async function clearAllData(): Promise<void> {
+  await AsyncStorage.multiRemove([
+    KEYS.TRANSACTIONS,
+    KEYS.RATES,
+    KEYS.PNL,
+    KEYS.BUDGETS,
+    KEYS.RATES_TIMESTAMP,
+    KEYS.PROFILE,
+  ]);
 }

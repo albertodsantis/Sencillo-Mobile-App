@@ -198,13 +198,18 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Sencillo</Text>
-        <Pressable onPress={refreshRates} style={styles.refreshBtn}>
-          <Feather
-            name="refresh-cw"
-            size={18}
-            color={Colors.brand.DEFAULT}
-          />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable onPress={refreshRates} style={styles.refreshBtn}>
+            <Feather
+              name="refresh-cw"
+              size={18}
+              color={Colors.brand.DEFAULT}
+            />
+          </Pressable>
+          <Pressable onPress={() => router.push("/profile")} style={styles.profileBtn}>
+            <Ionicons name="person" size={20} color={Colors.text.secondary} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.monthNav}>
@@ -386,6 +391,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     letterSpacing: -0.5,
   },
+  headerActions: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
   refreshBtn: {
     width: 40,
     height: 40,
@@ -393,6 +403,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
+  },
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.dark.card,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   monthNav: {
     flexDirection: "row" as const,

@@ -97,6 +97,23 @@ export default function SettingsScreen() {
     >
       <Text style={styles.title}>Ajustes</Text>
 
+      <Text style={styles.sectionLabel}>PERFIL</Text>
+
+      <View style={styles.section}>
+        <SettingsRow
+          icon={
+            <Ionicons
+              name="person-circle"
+              size={22}
+              color={Colors.brand.DEFAULT}
+            />
+          }
+          label="Mi Perfil"
+          sublabel="Nombre, contacto, contrasena"
+          onPress={() => router.push("/profile")}
+        />
+      </View>
+
       <Text style={styles.sectionLabel}>CONFIGURACION</Text>
 
       <View style={styles.section}>

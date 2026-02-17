@@ -79,6 +79,24 @@ export const DEFAULT_PNL: PnlStructure = {
   ahorro: ['Ahorro General'],
 };
 
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  phonePrefix: string;
+  phoneNumber: string;
+  email: string;
+  password: string;
+}
+
+export const DEFAULT_PROFILE: UserProfile = {
+  firstName: '',
+  lastName: '',
+  phonePrefix: '+58',
+  phoneNumber: '',
+  email: '',
+  password: '',
+};
+
 export const RECURRENCE_OPTIONS: { id: RecurrenceType; label: string }[] = [
   { id: 'none', label: 'No repetir' },
   { id: 'weekly', label: 'Semanalmente' },
