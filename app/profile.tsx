@@ -263,10 +263,6 @@ export default function ProfileScreen() {
     }
   }, [clearAccount, router]);
 
-  const initials =
-    (firstName?.[0] || "").toUpperCase() +
-    (lastName?.[0] || "").toUpperCase() || "?";
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -294,20 +290,6 @@ export default function ProfileScreen() {
           ) : (
             <View style={{ width: 40 }} />
           )}
-        </View>
-
-        <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <Text style={styles.avatarName}>
-            {firstName || lastName
-              ? `${firstName} ${lastName}`.trim()
-              : "Tu Nombre"}
-          </Text>
-          {email ? (
-            <Text style={styles.avatarEmail}>{email}</Text>
-          ) : null}
         </View>
 
         <Text style={styles.sectionLabel}>INFORMACION PERSONAL</Text>
@@ -537,38 +519,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.DEFAULT,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-  avatarSection: {
-    alignItems: "center" as const,
-    marginBottom: 28,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.brand.dark,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    borderWidth: 3,
-    borderColor: Colors.brand.DEFAULT,
-    marginBottom: 12,
-  },
-  avatarText: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 28,
-    color: Colors.brand.light,
-  },
-  avatarName: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 20,
-    color: Colors.text.primary,
-    letterSpacing: -0.3,
-  },
-  avatarEmail: {
-    fontFamily: "Outfit_400Regular",
-    fontSize: 13,
-    color: Colors.text.muted,
-    marginTop: 2,
   },
   sectionLabel: {
     fontFamily: "Outfit_700Bold",
