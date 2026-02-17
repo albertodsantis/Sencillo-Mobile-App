@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Platform,
   RefreshControl,
+  Modal,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -127,6 +129,8 @@ export default function HomeScreen() {
     profile,
   } = useApp();
 
+  const [showGuide, setShowGuide] = useState(false);
+
   const displayName =
     (profile.firstName || profile.lastName)
       ? `${profile.firstName} ${profile.lastName}`.trim()
@@ -205,12 +209,8 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{displayName}</Text>
         <View style={styles.headerActions}>
-          <Pressable onPress={refreshRates} style={styles.refreshBtn}>
-            <Feather
-              name="refresh-cw"
-              size={18}
-              color={Colors.brand.DEFAULT}
-            />
+          <Pressable onPress={() => setShowGuide(true)} style={styles.helpBtn}>
+            <Ionicons name="help-circle-outline" size={24} color={Colors.text.muted} />
           </Pressable>
           <Pressable onPress={() => router.push("/profile")} style={styles.profileBtn}>
             <Ionicons name="person" size={20} color={Colors.text.secondary} />
@@ -369,9 +369,138 @@ export default function HomeScreen() {
           onPress={() => navigateToHistory("gastos")}
         />
       </View>
+      <Modal
+        visible={showGuide}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGuide(false)}
+      >
+        <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
+          <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
+            <View style={guideStyles.step}>
+              <View style={guideStyles.iconCircle}>
+                <Ionicons name="color-palette" size={22} color={Colors.text.secondary} />
+              </View>
+              <View style={guideStyles.stepContent}>
+                <Text style={guideStyles.stepTitle}>1. Personalizacion</Text>
+                <Text style={guideStyles.stepDesc}>
+                  Configura tus categorias de ingresos, gastos fijos y variables para adaptar la app a ti.
+                </Text>
+              </View>
+            </View>
+
+            <View style={guideStyles.step}>
+              <View style={[guideStyles.iconCircle, { backgroundColor: "rgba(16,185,129,0.15)" }]}>
+                <Ionicons name="add" size={22} color={Colors.brand.DEFAULT} />
+              </View>
+              <View style={guideStyles.stepContent}>
+                <Text style={guideStyles.stepTitle}>2. Agregar Movimientos</Text>
+                <Text style={guideStyles.stepDesc}>
+                  Registra ingresos o gastos usando el boton central. Puedes usar Bs, USD o EUR.
+                </Text>
+              </View>
+            </View>
+
+            <View style={guideStyles.step}>
+              <View style={guideStyles.iconCircle}>
+                <MaterialCommunityIcons name="chart-donut" size={22} color={Colors.text.secondary} />
+              </View>
+              <View style={guideStyles.stepContent}>
+                <Text style={guideStyles.stepTitle}>3. Presupuestos</Text>
+                <Text style={guideStyles.stepDesc}>
+                  Define limites para tus Gastos Variables y manten siempre positivo tu Disponible Flexible.
+                </Text>
+              </View>
+            </View>
+
+            <View style={[guideStyles.step, { borderBottomWidth: 0 }]}>
+              <View style={guideStyles.iconCircle}>
+                <Ionicons name="time" size={22} color={Colors.text.secondary} />
+              </View>
+              <View style={guideStyles.stepContent}>
+                <Text style={guideStyles.stepTitle}>4. Historial</Text>
+                <Text style={guideStyles.stepDesc}>
+                  Revisa todos tus movimientos, filtra por tipo y edita o elimina lo que necesites.
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => setShowGuide(false)}
+              style={guideStyles.dismissBtn}
+            >
+              <Text style={guideStyles.dismissText}>Entendido</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
+
+const guideStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    padding: 28,
+  },
+  card: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 380,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  step: {
+    flexDirection: "row" as const,
+    gap: 14,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    marginTop: 2,
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 15,
+    color: Colors.text.primary,
+    marginBottom: 4,
+  },
+  stepDesc: {
+    fontFamily: "Outfit_400Regular",
+    fontSize: 13,
+    color: Colors.text.muted,
+    lineHeight: 19,
+  },
+  dismissBtn: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    marginTop: 20,
+  },
+  dismissText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 15,
+    color: Colors.text.primary,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -402,7 +531,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     gap: 8,
   },
-  refreshBtn: {
+  helpBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
