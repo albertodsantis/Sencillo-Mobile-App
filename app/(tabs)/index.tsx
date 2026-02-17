@@ -288,14 +288,14 @@ export default function HomeScreen() {
           <View style={styles.rateDivider} />
           <View style={styles.rateItem}>
             <Text style={styles.rateLabel}>USDC</Text>
-            <Text style={[styles.rateValue, { color: Colors.brand.light }]}>
+            <Text style={styles.rateValue}>
               {rates.parallel?.toFixed(2) || "---"}
             </Text>
           </View>
           <View style={styles.rateDivider} />
           <View style={styles.rateItem}>
             <Text style={styles.rateLabel}>BRECHA</Text>
-            <Text style={[styles.rateValue, { color: "#f59e0b" }]}>
+            <Text style={styles.rateValue}>
               {rates.bcv && rates.parallel
                 ? `${(((rates.parallel - rates.bcv) / rates.bcv) * 100).toFixed(1)}%`
                 : "---"}
@@ -305,7 +305,7 @@ export default function HomeScreen() {
           <View style={styles.rateItem}>
             <Text style={styles.rateLabel}>BCV EUR</Text>
             <View style={styles.eurRow}>
-              <Text style={[styles.rateValue, { color: "#60a5fa" }]}>
+              <Text style={styles.rateValue}>
                 {rates.eur?.toFixed(2) || "---"}
               </Text>
               <Text style={styles.eurCrossText}>
