@@ -9,6 +9,8 @@ import {
   Platform,
   Alert,
   KeyboardAvoidingView,
+  Switch,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -16,6 +18,11 @@ import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
+import {
+  scheduleDailyReminder,
+  cancelDailyReminder,
+  isReminderEnabled,
+} from "@/lib/notifications";
 
 const PHONE_PREFIXES = [
   "+58",
@@ -140,6 +147,8 @@ export default function ProfileScreen() {
   const [showPrefixPicker, setShowPrefixPicker] = useState(false);
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState(true);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -153,6 +162,41 @@ export default function ProfileScreen() {
       email !== profile.email;
     setHasChanges(changed);
   }, [firstName, lastName, phonePrefix, phoneNumber, email, profile]);
+
+  useEffect(() => {
+    isReminderEnabled().then((val) => {
+      setReminderEnabled(val);
+      setReminderLoading(false);
+    });
+  }, []);
+
+  const handleToggleReminder = useCallback(async (value: boolean) => {
+    setReminderLoading(true);
+    try {
+      if (value) {
+        const success = await scheduleDailyReminder();
+        if (!success) {
+          const msg = "No se pudieron activar las notificaciones. Verifica los permisos en Ajustes.";
+          if (Platform.OS === "web") alert(msg);
+          else Alert.alert("Permiso denegado", msg);
+          setReminderLoading(false);
+          return;
+        }
+        setReminderEnabled(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        await cancelDailyReminder();
+        setReminderEnabled(false);
+        Haptics.selectionAsync();
+      }
+    } catch {
+      const msg = "Ocurrio un error con las notificaciones";
+      if (Platform.OS === "web") alert(msg);
+      else Alert.alert("Error", msg);
+    } finally {
+      setReminderLoading(false);
+    }
+  }, []);
 
   const handleSaveProfile = useCallback(async () => {
     await updateProfile({
@@ -447,6 +491,32 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        <Text style={styles.sectionLabel}>NOTIFICACIONES</Text>
+
+        <View style={styles.section}>
+          <View style={styles.reminderRow}>
+            <View style={styles.actionRowLeft}>
+              <Ionicons name="notifications" size={20} color="#a78bfa" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.actionLabel}>Recordatorio diario</Text>
+                <Text style={styles.actionSublabel}>
+                  {reminderEnabled ? "Activo - 8:00 PM" : "Recibe un aviso para registrar tus movimientos"}
+                </Text>
+              </View>
+            </View>
+            {reminderLoading ? (
+              <ActivityIndicator size="small" color={Colors.brand.DEFAULT} />
+            ) : (
+              <Switch
+                value={reminderEnabled}
+                onValueChange={handleToggleReminder}
+                trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
+                thumbColor={reminderEnabled ? Colors.brand.DEFAULT : "#555"}
+              />
+            )}
+          </View>
+        </View>
+
         <Text style={styles.sectionLabel}>CUENTA</Text>
 
         <View style={styles.section}>
@@ -662,6 +732,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text.muted,
     marginTop: 1,
+  },
+  reminderRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    padding: 16,
+    gap: 12,
   },
   passwordSection: {
     padding: 0,
