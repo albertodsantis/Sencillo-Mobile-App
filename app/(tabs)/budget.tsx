@@ -95,45 +95,6 @@ export default function BudgetScreen() {
       <Text style={styles.title}>Presupuesto</Text>
       <Text style={styles.subtitle}>Control de gastos variables del mes</Text>
 
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Ingresos</Text>
-            <Text style={[styles.summaryValue, { color: Colors.brand.light }]}>
-              ${formatCurrency(budgetSummary.income)}
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Ahorro</Text>
-            <Text style={[styles.summaryValue, { color: "#60a5fa" }]}>
-              ${formatCurrency(budgetSummary.savings)}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Fijos</Text>
-            <Text style={[styles.summaryValue, { color: "#fb923c" }]}>
-              ${formatCurrency(budgetSummary.fixed)}
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Flexible</Text>
-            <Text
-              style={[
-                styles.summaryValue,
-                {
-                  color:
-                    budgetSummary.realAvailable < 0 ? "#ef4444" : Colors.brand.light,
-                },
-              ]}
-            >
-              ${formatCurrency(budgetSummary.realAvailable)}
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {budgetSummary.totalBudget > 0 && (
         <View style={styles.overallCard}>
           <View style={styles.overallHeader}>
@@ -153,8 +114,6 @@ export default function BudgetScreen() {
           </View>
         </View>
       )}
-
-      <Text style={styles.sectionTitle}>Categorias Variables</Text>
 
       {variableCategories.map((cat) => {
         const budget = budgets[cat] || 0;
@@ -265,40 +224,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 4,
   },
-  summaryCard: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginBottom: 16,
-    gap: 12,
-  },
-  summaryRow: {
-    flexDirection: "row" as const,
-    gap: 12,
-  },
-  summaryItem: {
-    flex: 1,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.dark.borderSubtle,
-  },
-  summaryLabel: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 10,
-    color: Colors.text.muted,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  summaryValue: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 18,
-    letterSpacing: -0.5,
-  },
   overallCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 20,
@@ -336,12 +261,6 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_500Medium",
     fontSize: 11,
     color: Colors.text.muted,
-  },
-  sectionTitle: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 16,
-    color: Colors.text.primary,
-    marginBottom: 12,
   },
   categoryCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
