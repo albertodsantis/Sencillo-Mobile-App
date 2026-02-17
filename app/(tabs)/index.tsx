@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,9 +15,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { PieChart, BarChart } from "react-native-gifted-charts";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
-import { type ViewMode } from "@/lib/domain/types";
+import { type ViewMode, type Segment } from "@/lib/domain/types";
 import { formatCurrency, formatCompact } from "@/lib/domain/finance";
 
 const VIEW_MODES: { id: ViewMode; label: string }[] = [
@@ -26,86 +27,39 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: "year", label: "Anual" },
 ];
 
-function KpiCard({
+const CHART_CATEGORY_COLORS = [
+  "#fb7185", "#fb923c", "#f59e0b", "#a78bfa",
+  "#38bdf8", "#e879f9", "#f472b6", "#facc15",
+];
+
+function MiniKpi({
   label,
   total,
-  vesAmount,
-  hardAmount,
   color,
-  bgColor,
   icon,
   onPress,
-  devalPercent,
 }: {
   label: string;
   total: number;
-  vesAmount: number;
-  hardAmount: number;
   color: string;
-  bgColor: string;
   icon: React.ReactNode;
   onPress?: () => void;
-  devalPercent?: number;
 }) {
-  const hasDeval = devalPercent !== undefined && Math.abs(devalPercent) > 0.1;
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.kpiCard,
-        pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
+        styles.miniKpi,
+        pressed && { opacity: 0.8 },
       ]}
     >
-      <View style={[styles.kpiIconContainer, { backgroundColor: bgColor }]}>
+      <View style={[styles.miniKpiIcon, { backgroundColor: color + "18" }]}>
         {icon}
       </View>
-      <Text style={styles.kpiLabel}>{label}</Text>
-      <Text style={[styles.kpiValue, { color }]}>
-        ${formatCurrency(total)}
+      <Text style={styles.miniKpiLabel} numberOfLines={1}>{label}</Text>
+      <Text style={[styles.miniKpiValue, { color }]} numberOfLines={1}>
+        ${formatCompact(total)}
       </Text>
-      <View style={styles.kpiBreakdown}>
-        <View style={styles.kpiTag}>
-          <Text style={styles.kpiTagPrefix}>$</Text>
-          <Text style={styles.kpiTagValue}>
-            {formatCompact(hardAmount)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.kpiTag,
-            hasDeval &&
-              devalPercent! < 0 && {
-                backgroundColor: "rgba(239,68,68,0.1)",
-              },
-            hasDeval &&
-              devalPercent! >= 0 && {
-                backgroundColor: "rgba(52,211,153,0.1)",
-              },
-          ]}
-        >
-          <Text
-            style={[
-              styles.kpiTagPrefix,
-              hasDeval && devalPercent! < 0 && { color: "#f87171" },
-              hasDeval && devalPercent! >= 0 && { color: "#34d399" },
-            ]}
-          >
-            Bs
-          </Text>
-          <Text
-            style={[
-              styles.kpiTagValue,
-              hasDeval && devalPercent! < 0 && { color: "#f87171" },
-              hasDeval && devalPercent! >= 0 && { color: "#34d399" },
-            ]}
-          >
-            {formatCompact(vesAmount)}
-            {hasDeval
-              ? ` (${devalPercent! > 0 ? "+" : ""}${devalPercent!.toFixed(0)}%)`
-              : ""}
-          </Text>
-        </View>
-      </View>
     </Pressable>
   );
 }
@@ -116,6 +70,7 @@ export default function HomeScreen() {
   const {
     rates,
     dashboardData,
+    transactions,
     viewMode,
     setViewMode,
     currentMonth,
@@ -130,6 +85,57 @@ export default function HomeScreen() {
   } = useApp();
 
   const [showGuide, setShowGuide] = useState(false);
+
+  const expensesByCategory = useMemo(() => {
+    const filtered = transactions.filter((t) => {
+      const d = new Date(t.date);
+      if (viewMode === "month") {
+        return t.type === "expense" && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      } else if (viewMode === "ytd") {
+        return t.type === "expense" && d.getFullYear() === currentYear && d.getMonth() <= currentMonth;
+      }
+      return t.type === "expense" && d.getFullYear() === currentYear;
+    });
+    const map: Record<string, number> = {};
+    filtered.forEach((t) => {
+      if (t.segment === "ahorro") return;
+      map[t.category] = (map[t.category] || 0) + t.amountUSD;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, val], i) => ({
+        value: val,
+        color: CHART_CATEGORY_COLORS[i % CHART_CATEGORY_COLORS.length],
+        text: cat,
+      }));
+  }, [transactions, viewMode, currentMonth, currentYear]);
+
+  const totalExpenses = dashboardData.gastosFijos + dashboardData.gastosVariables;
+  const barData = useMemo(() => {
+    const maxVal = Math.max(dashboardData.ingresos, totalExpenses, 1);
+    return [
+      {
+        value: dashboardData.ingresos,
+        label: "Ingresos",
+        frontColor: Colors.segments.ingresos.color,
+        topLabelComponent: () => (
+          <Text style={{ fontFamily: "Outfit_700Bold", fontSize: 10, color: Colors.segments.ingresos.color, marginBottom: 4 }}>
+            ${formatCompact(dashboardData.ingresos)}
+          </Text>
+        ),
+      },
+      {
+        value: totalExpenses,
+        label: "Gastos",
+        frontColor: "#fb7185",
+        topLabelComponent: () => (
+          <Text style={{ fontFamily: "Outfit_700Bold", fontSize: 10, color: "#fb7185", marginBottom: 4 }}>
+            ${formatCompact(totalExpenses)}
+          </Text>
+        ),
+      },
+    ];
+  }, [dashboardData.ingresos, totalExpenses]);
 
   const displayName =
     (profile.firstName || profile.lastName)
@@ -312,71 +318,101 @@ export default function HomeScreen() {
         </LinearGradient>
       </Pressable>
 
-      <View style={styles.kpiGrid}>
-        <KpiCard
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.kpiScroll}
+        contentContainerStyle={styles.kpiRow}
+      >
+        <MiniKpi
           label="Ingresos"
           total={dashboardData.ingresos}
-          vesAmount={dashboardData.ingresosVES}
-          hardAmount={dashboardData.ingresosHard}
           color={Colors.segments.ingresos.color}
-          bgColor={Colors.segments.ingresos.bg}
-          icon={
-            <Ionicons
-              name="trending-up"
-              size={14}
-              color={Colors.segments.ingresos.color}
-            />
-          }
+          icon={<Ionicons name="trending-up" size={12} color={Colors.segments.ingresos.color} />}
           onPress={() => navigateToHistory("ingresos")}
         />
-        <KpiCard
-          label="Gastos Fijos"
+        <MiniKpi
+          label="G. Fijos"
           total={dashboardData.gastosFijos}
-          vesAmount={dashboardData.gastosFijosVES}
-          hardAmount={dashboardData.gastosFijosHard}
           color={Colors.segments.gastos_fijos.color}
-          bgColor={Colors.segments.gastos_fijos.bg}
-          icon={
-            <MaterialCommunityIcons
-              name="credit-card"
-              size={14}
-              color={Colors.segments.gastos_fijos.color}
-            />
-          }
+          icon={<MaterialCommunityIcons name="credit-card" size={12} color={Colors.segments.gastos_fijos.color} />}
           onPress={() => navigateToHistory("gastos")}
         />
-        <KpiCard
+        <MiniKpi
+          label="G. Var."
+          total={dashboardData.gastosVariables}
+          color={Colors.segments.gastos_variables.color}
+          icon={<Ionicons name="trending-down" size={12} color={Colors.segments.gastos_variables.color} />}
+          onPress={() => navigateToHistory("gastos")}
+        />
+        <MiniKpi
           label="Ahorro"
           total={dashboardData.ahorro}
-          vesAmount={dashboardData.ahorroVES}
-          hardAmount={dashboardData.ahorroHard}
           color={Colors.segments.ahorro.color}
-          bgColor={Colors.segments.ahorro.bg}
-          icon={
-            <MaterialCommunityIcons
-              name="piggy-bank"
-              size={14}
-              color={Colors.segments.ahorro.color}
-            />
-          }
+          icon={<MaterialCommunityIcons name="piggy-bank" size={12} color={Colors.segments.ahorro.color} />}
           onPress={() => navigateToHistory("ahorro")}
         />
-        <KpiCard
-          label="Gastos Var."
-          total={dashboardData.gastosVariables}
-          vesAmount={dashboardData.gastosVariablesVES}
-          hardAmount={dashboardData.gastosVariablesHard}
-          color={Colors.segments.gastos_variables.color}
-          bgColor={Colors.segments.gastos_variables.bg}
-          icon={
-            <Ionicons
-              name="trending-down"
-              size={14}
-              color={Colors.segments.gastos_variables.color}
-            />
-          }
-          onPress={() => navigateToHistory("gastos")}
-        />
+      </ScrollView>
+
+      <View style={styles.chartsContainer}>
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Ingresos vs Gastos</Text>
+          {dashboardData.ingresos > 0 || totalExpenses > 0 ? (
+            <View style={styles.barChartWrap}>
+              <BarChart
+                data={barData}
+                width={Dimensions.get("window").width - 120}
+                height={120}
+                barWidth={40}
+                spacing={50}
+                noOfSections={4}
+                barBorderRadius={6}
+                yAxisThickness={0}
+                xAxisThickness={0}
+                xAxisLabelTextStyle={{ fontFamily: "Outfit_600SemiBold", fontSize: 10, color: Colors.text.muted }}
+                yAxisTextStyle={{ fontFamily: "Outfit_600SemiBold", fontSize: 9, color: Colors.text.disabled }}
+                hideRules
+                backgroundColor="transparent"
+                isAnimated
+              />
+            </View>
+          ) : (
+            <Text style={styles.chartEmpty}>Sin datos para este periodo</Text>
+          )}
+        </View>
+
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Gastos por Categoria</Text>
+          {expensesByCategory.length > 0 ? (
+            <View style={styles.donutWrap}>
+              <PieChart
+                data={expensesByCategory}
+                donut
+                radius={70}
+                innerRadius={45}
+                innerCircleColor={Colors.dark.surface}
+                centerLabelComponent={() => (
+                  <View style={styles.donutCenter}>
+                    <Text style={styles.donutCenterValue}>${formatCompact(totalExpenses)}</Text>
+                    <Text style={styles.donutCenterLabel}>total</Text>
+                  </View>
+                )}
+                isAnimated
+              />
+              <View style={styles.legendList}>
+                {expensesByCategory.slice(0, 6).map((item, i) => (
+                  <View key={item.text} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                    <Text style={styles.legendText} numberOfLines={1}>{item.text}</Text>
+                    <Text style={styles.legendValue}>${formatCompact(item.value)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.chartEmpty}>Sin gastos registrados</Text>
+          )}
+        </View>
       </View>
       <Modal
         visible={showGuide}
@@ -687,61 +723,114 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase" as const,
   },
-  kpiGrid: {
-    flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 12,
+  kpiScroll: {
+    marginBottom: 16,
+    marginHorizontal: -24,
   },
-  kpiCard: {
-    width: "47%" as any,
+  kpiRow: {
+    flexDirection: "row" as const,
+    gap: 10,
+    paddingHorizontal: 24,
+  },
+  miniKpi: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    alignItems: "center" as const,
+    minWidth: 80,
+  },
+  miniKpiIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    marginBottom: 6,
+  },
+  miniKpiLabel: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 10,
+    color: Colors.text.muted,
+    marginBottom: 2,
+  },
+  miniKpiValue: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 15,
+    letterSpacing: -0.3,
+  },
+  chartsContainer: {
+    gap: 16,
+  },
+  chartCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  kpiIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+  chartTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: Colors.text.primary,
+    marginBottom: 16,
+  },
+  chartEmpty: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 12,
+    color: Colors.text.disabled,
+    textAlign: "center" as const,
+    paddingVertical: 24,
+  },
+  barChartWrap: {
+    alignItems: "center" as const,
+  },
+  donutWrap: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 20,
+  },
+  donutCenter: {
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginBottom: 10,
   },
-  kpiLabel: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 11,
-    color: Colors.text.muted,
-    marginBottom: 4,
-  },
-  kpiValue: {
+  donutCenterValue: {
     fontFamily: "Outfit_800ExtraBold",
-    fontSize: 18,
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    fontSize: 14,
+    color: Colors.text.primary,
   },
-  kpiBreakdown: {
-    flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 4,
+  donutCenterLabel: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 9,
+    color: Colors.text.muted,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
   },
-  kpiTag: {
+  legendList: {
+    flex: 1,
+    gap: 6,
+  },
+  legendItem: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 3,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    gap: 6,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
     borderRadius: 4,
   },
-  kpiTagPrefix: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 9,
-    color: "rgba(148,163,184,0.8)",
-  },
-  kpiTagValue: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 9,
+  legendText: {
+    flex: 1,
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 11,
     color: Colors.text.secondary,
+  },
+  legendValue: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: Colors.text.primary,
   },
 });
