@@ -4,6 +4,7 @@ import {
   type Rates,
   type PnlStructure,
   type Budgets,
+  type SavingsGoals,
   type ViewMode,
   type DashboardData,
   type BudgetSummary,
@@ -20,6 +21,8 @@ import {
   savePnlStructure,
   loadBudgets,
   saveBudgets,
+  loadSavingsGoals,
+  saveSavingsGoals,
   getRatesAge,
   loadProfile,
   saveProfile,
@@ -53,9 +56,11 @@ interface AppContextValue {
   deleteAllTx: () => Promise<void>;
 
   profile: UserProfile;
+  savingsGoals: SavingsGoals;
   refreshRates: () => Promise<void>;
   updatePnlStructure: (pnl: PnlStructure) => Promise<void>;
   updateBudgets: (budgets: Budgets) => Promise<void>;
+  updateSavingsGoals: (goals: SavingsGoals) => Promise<void>;
   updateProfile: (profile: UserProfile) => Promise<void>;
   clearAccount: () => Promise<void>;
 }
@@ -67,6 +72,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rates, setRates] = useState<Rates>({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
   const [pnlStructure, setPnlStructure] = useState<PnlStructure>(DEFAULT_PNL);
   const [budgets, setBudgets] = useState<Budgets>({});
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoals>({});
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingRates, setIsRefreshingRates] = useState(false);
@@ -80,17 +86,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const [txs, savedRates, pnl, bdg, prof] = await Promise.all([
+        const [txs, savedRates, pnl, bdg, sg, prof] = await Promise.all([
           loadTransactions(),
           loadRates(),
           loadPnlStructure(),
           loadBudgets(),
+          loadSavingsGoals(),
           loadProfile(),
         ]);
         setTransactions(txs);
         if (savedRates) setRates(savedRates);
         setPnlStructure(pnl);
         setBudgets(bdg);
+        setSavingsGoals(sg);
         setProfile(prof);
 
         const age = await getRatesAge();
@@ -167,6 +175,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await saveBudgets(b);
   }, []);
 
+  const updateSavingsGoals = useCallback(async (g: SavingsGoals) => {
+    setSavingsGoals(g);
+    await saveSavingsGoals(g);
+  }, []);
+
   const updateProfile = useCallback(async (p: UserProfile) => {
     setProfile(p);
     await saveProfile(p);
@@ -178,6 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
     setPnlStructure(DEFAULT_PNL);
     setBudgets({});
+    setSavingsGoals({});
     setProfile(DEFAULT_PROFILE);
   }, []);
 
@@ -206,6 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isRefreshingRates,
       historyFilter,
       profile,
+      savingsGoals,
       setViewMode,
       setCurrentMonth,
       setCurrentYear,
@@ -218,15 +233,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshRates,
       updatePnlStructure,
       updateBudgets,
+      updateSavingsGoals,
       updateProfile,
       clearAccount,
     }),
     [
-      transactions, rates, pnlStructure, budgets, viewMode,
+      transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
       currentMonth, currentYear, dashboardData, budgetSummary,
       isLoading, isRefreshingRates, historyFilter, profile,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
-      refreshRates, updatePnlStructure, updateBudgets,
+      refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
       updateProfile, clearAccount,
     ],
   );
