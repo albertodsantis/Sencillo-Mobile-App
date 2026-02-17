@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -22,6 +22,117 @@ const SEGMENTS: Segment[] = [
   "gastos_variables",
   "ahorro",
 ];
+
+function CategoryRow({
+  cat,
+  segment,
+  segColor,
+  pnlStructure,
+  updatePnlStructure,
+}: {
+  cat: string;
+  segment: Segment;
+  segColor: string;
+  pnlStructure: Record<string, string[]>;
+  updatePnlStructure: (s: Record<string, string[]>) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(cat);
+  const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (editing) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [editing]);
+
+  const handleSaveEdit = async () => {
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === cat) {
+      setEditing(false);
+      setEditText(cat);
+      return;
+    }
+    if (pnlStructure[segment].includes(trimmed)) {
+      if (Platform.OS === "web") {
+        alert("Esta categoria ya existe");
+      } else {
+        Alert.alert("Error", "Esta categoria ya existe");
+      }
+      setEditText(cat);
+      setEditing(false);
+      return;
+    }
+    const updated = {
+      ...pnlStructure,
+      [segment]: pnlStructure[segment].map((c) => (c === cat ? trimmed : c)),
+    };
+    await updatePnlStructure(updated);
+    setEditing(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleDelete = async () => {
+    const doDelete = async () => {
+      const updated = {
+        ...pnlStructure,
+        [segment]: pnlStructure[segment].filter((c) => c !== cat),
+      };
+      await updatePnlStructure(updated);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    };
+    if (Platform.OS === "web") {
+      if (confirm(`Eliminar la categoria "${cat}"?`)) doDelete();
+    } else {
+      Alert.alert("Eliminar", `Eliminar la categoria "${cat}"?`, [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Eliminar", style: "destructive", onPress: doDelete },
+      ]);
+    }
+  };
+
+  if (editing) {
+    return (
+      <View style={[styles.categoryRow, { borderColor: segColor }]}>
+        <TextInput
+          ref={inputRef}
+          style={styles.editInput}
+          value={editText}
+          onChangeText={setEditText}
+          onSubmitEditing={handleSaveEdit}
+          onBlur={handleSaveEdit}
+          returnKeyType="done"
+          selectTextOnFocus
+        />
+        <Pressable onPress={handleSaveEdit}>
+          <Ionicons name="checkmark" size={18} color={segColor} />
+        </Pressable>
+        <Pressable onPress={() => { setEditing(false); setEditText(cat); }}>
+          <Ionicons name="close" size={18} color={Colors.text.muted} />
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.categoryRow}>
+      <Pressable
+        style={styles.categoryNameArea}
+        onPress={() => setEditing(true)}
+      >
+        <Text style={styles.categoryName}>{cat}</Text>
+      </Pressable>
+      <View style={styles.categoryActions}>
+        <Pressable onPress={() => setEditing(true)} hitSlop={8}>
+          <Ionicons name="pencil-outline" size={15} color={Colors.text.disabled} />
+        </Pressable>
+        <Pressable onPress={handleDelete} hitSlop={8}>
+          <Ionicons name="trash-outline" size={15} color={Colors.text.disabled} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -55,29 +166,6 @@ export default function SettingsScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     },
     [newCategoryText, pnlStructure, updatePnlStructure]
-  );
-
-  const handleDeleteCategory = useCallback(
-    async (segment: Segment, category: string) => {
-      const doDelete = async () => {
-        const updated = {
-          ...pnlStructure,
-          [segment]: pnlStructure[segment].filter((c) => c !== category),
-        };
-        await updatePnlStructure(updated);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      };
-
-      if (Platform.OS === "web") {
-        if (confirm(`Eliminar la categoria "${category}"?`)) doDelete();
-      } else {
-        Alert.alert("Eliminar", `Eliminar la categoria "${category}"?`, [
-          { text: "Cancelar", style: "cancel" },
-          { text: "Eliminar", style: "destructive", onPress: doDelete },
-        ]);
-      }
-    },
-    [pnlStructure, updatePnlStructure]
   );
 
   return (
@@ -128,18 +216,14 @@ export default function SettingsScreen() {
             {isExpanded && (
               <View style={styles.categoryList}>
                 {cats.map((cat) => (
-                  <View key={cat} style={styles.categoryRow}>
-                    <Text style={styles.categoryName}>{cat}</Text>
-                    <Pressable
-                      onPress={() => handleDeleteCategory(seg, cat)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={16}
-                        color={Colors.text.disabled}
-                      />
-                    </Pressable>
-                  </View>
+                  <CategoryRow
+                    key={cat}
+                    cat={cat}
+                    segment={seg}
+                    segColor={config.color}
+                    pnlStructure={pnlStructure}
+                    updatePnlStructure={updatePnlStructure}
+                  />
                 ))}
 
                 {addingToSegment === seg ? (
@@ -151,6 +235,8 @@ export default function SettingsScreen() {
                       placeholder="Nombre de la categoria"
                       placeholderTextColor={Colors.text.disabled}
                       autoFocus
+                      onSubmitEditing={() => handleAddCategory(seg)}
+                      returnKeyType="done"
                     />
                     <Pressable
                       onPress={() => handleAddCategory(seg)}
@@ -273,11 +359,27 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: Colors.dark.borderSubtle,
+    gap: 8,
+  },
+  categoryNameArea: {
+    flex: 1,
   },
   categoryName: {
     fontFamily: "Outfit_500Medium",
     fontSize: 14,
     color: Colors.text.primary,
+  },
+  categoryActions: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+  },
+  editInput: {
+    flex: 1,
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.primary,
+    paddingVertical: 0,
   },
   addRow: {
     flexDirection: "row" as const,
