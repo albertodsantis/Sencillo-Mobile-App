@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   eurCrossText: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 9,
-    color: "rgba(129,140,248,0.6)",
+    color: Colors.text.muted,
   },
   rateDivider: {
     width: 1,
@@ -709,9 +709,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
   },
   balanceCard: {
-    borderRadius: 32,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    borderRadius: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     alignItems: "center" as const,
     marginBottom: 16,
     shadowColor: Colors.brand.DEFAULT,
@@ -730,9 +730,9 @@ const styles = StyleSheet.create({
   },
   balanceValue: {
     fontFamily: "Outfit_900Black",
-    fontSize: 42,
+    fontSize: 34,
     color: Colors.text.primary,
-    letterSpacing: -2,
+    letterSpacing: -1.5,
   },
   reportLink: {
     flexDirection: "row" as const,
@@ -791,16 +791,16 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   miniKpiBreakdown: {
-    flexDirection: "row" as const,
-    gap: 6,
+    gap: 3,
+    alignSelf: "stretch" as const,
   },
   miniKpiTag: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 2,
+    justifyContent: "space-between" as const,
     backgroundColor: "rgba(255,255,255,0.05)",
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 4,
   },
   miniKpiTagPrefix: {
