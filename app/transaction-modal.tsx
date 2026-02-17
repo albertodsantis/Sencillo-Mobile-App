@@ -347,26 +347,42 @@ export default function TransactionModal() {
             <Text style={styles.inlineLabel}>CATEGORIA</Text>
             <Pressable
               onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-              style={styles.inlineValueBox}
+              style={[
+                styles.inlineValueBox,
+                category ? {
+                  borderColor: SEGMENT_CONFIG[segment].color,
+                  backgroundColor: `${SEGMENT_CONFIG[segment].color}15`,
+                } : undefined,
+              ]}
             >
-              <Text
-                style={[
-                  styles.inlineValueText,
-                  !category && { color: Colors.text.disabled },
-                ]}
-                numberOfLines={1}
-              >
-                {category || "Seleccionar"}
-              </Text>
+              <View style={styles.categoryDropdownInner}>
+                <Text
+                  style={[
+                    styles.inlineValueText,
+                    !category && { color: Colors.text.disabled },
+                    category ? { color: SEGMENT_CONFIG[segment].color } : undefined,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {category || "Seleccionar"}
+                </Text>
+                <Ionicons
+                  name={showCategoryPicker ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={category ? SEGMENT_CONFIG[segment].color : Colors.text.muted}
+                />
+              </View>
             </Pressable>
           </View>
         </View>
 
         {showCategoryPicker && (
-          <View style={styles.categoryPicker}>
+          <View style={styles.categoryDropdown}>
             {categories.length > 0 ? (
-              <View style={styles.categoryGrid}>
-                {categories.map((cat) => (
+              categories.map((cat) => {
+                const isActive = category === cat;
+                const segColor = SEGMENT_CONFIG[segment].color;
+                return (
                   <Pressable
                     key={cat}
                     onPress={() => {
@@ -375,29 +391,37 @@ export default function TransactionModal() {
                       Haptics.selectionAsync();
                     }}
                     style={[
-                      styles.categoryOption,
-                      category === cat && {
-                        backgroundColor: SEGMENT_CONFIG[segment].color,
-                        borderColor: SEGMENT_CONFIG[segment].color,
-                      },
+                      styles.categoryDropdownOption,
+                      isActive && { backgroundColor: `${segColor}18` },
                     ]}
                   >
+                    <View
+                      style={[
+                        styles.categoryDot,
+                        { backgroundColor: isActive ? segColor : Colors.dark.highlight },
+                      ]}
+                    />
                     <Text
                       style={[
-                        styles.categoryOptionText,
-                        category === cat && { color: "#fff" },
+                        styles.categoryDropdownText,
+                        isActive && { color: segColor, fontFamily: "Outfit_700Bold" },
                       ]}
                       numberOfLines={1}
                     >
                       {cat}
                     </Text>
+                    {isActive && (
+                      <Ionicons name="checkmark" size={16} color={segColor} />
+                    )}
                   </Pressable>
-                ))}
-              </View>
+                );
+              })
             ) : (
-              <Text style={styles.noCategoriesText}>
-                No hay categorias configuradas
-              </Text>
+              <View style={styles.categoryDropdownOption}>
+                <Text style={styles.noCategoriesText}>
+                  No hay categorias configuradas
+                </Text>
+              </View>
             )}
           </View>
         )}
@@ -716,26 +740,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text.primary,
   },
-  categoryPicker: {
+  categoryDropdownInner: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+  },
+  categoryDropdown: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    overflow: "hidden" as const,
     marginBottom: 16,
   },
-  categoryGrid: {
+  categoryDropdownOption: {
     flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 8,
+    alignItems: "center" as const,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
+    gap: 10,
   },
-  categoryOption: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.dark.highlight,
-    backgroundColor: "rgba(255,255,255,0.03)",
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  categoryOptionText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 13,
+  categoryDropdownText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
     color: Colors.text.secondary,
+    flex: 1,
   },
   noCategoriesText: {
     fontFamily: "Outfit_500Medium",
