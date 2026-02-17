@@ -309,11 +309,6 @@ export default function ProfileScreen() {
             placeholder="Tu apellido"
             autoCapitalize="words"
           />
-        </View>
-
-        <Text style={styles.sectionLabel}>CONTACTO</Text>
-
-        <View style={styles.section}>
           <View style={styles.fieldContainer}>
             <Text style={styles.fieldLabel}>Telefono Movil</Text>
             <View style={styles.phoneRow}>
