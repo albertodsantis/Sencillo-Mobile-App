@@ -282,19 +282,16 @@ export default function HomeScreen() {
           <View style={styles.rateDivider} />
           <View style={styles.rateItem}>
             <Text style={styles.rateLabel}>BCV EUR</Text>
-            <Text style={[styles.rateValue, { color: "#60a5fa" }]}>
-              {rates.eur?.toFixed(2) || "---"}
-            </Text>
-          </View>
-          <View style={styles.rateDivider} />
-          <View style={styles.rateItem}>
-            <Text style={styles.rateLabel}>$/EUR</Text>
-            <Text style={[styles.rateValue, { color: "#818cf8" }]}>
-              {rates.eurCross?.toFixed(4) || "---"}
-            </Text>
+            <View style={styles.eurRow}>
+              <Text style={[styles.rateValue, { color: "#60a5fa" }]}>
+                {rates.eur?.toFixed(2) || "---"}
+              </Text>
+              <Text style={styles.eurCrossText}>
+                {rates.eurCross ? `$/€ ${rates.eurCross.toFixed(2)}` : ""}
+              </Text>
+            </View>
           </View>
         </View>
-        <Feather name="refresh-cw" size={14} color={Colors.brand.DEFAULT} />
       </Pressable>
 
       <Pressable onPress={() => router.push("/report")}>
@@ -609,39 +606,46 @@ const styles = StyleSheet.create({
   ratesBar: {
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 16,
-    padding: 12,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: Colors.dark.border,
     marginBottom: 16,
   },
   ratesRow: {
-    flex: 1,
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    marginRight: 10,
   },
   rateItem: {
     alignItems: "center" as const,
   },
   rateLabel: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 8,
+    fontSize: 9,
     color: "rgba(167,243,208,0.5)",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textTransform: "uppercase" as const,
+    marginBottom: 2,
   },
   rateValue: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.text.primary,
+  },
+  eurRow: {
+    flexDirection: "row" as const,
+    alignItems: "baseline" as const,
+    gap: 4,
+  },
+  eurCrossText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 9,
+    color: "rgba(129,140,248,0.6)",
   },
   rateDivider: {
     width: 1,
-    height: 20,
+    height: 24,
     backgroundColor: "rgba(255,255,255,0.08)",
   },
   balanceCard: {
