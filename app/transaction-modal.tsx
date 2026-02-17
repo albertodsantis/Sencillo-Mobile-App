@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -29,63 +29,30 @@ import {
   getFinalRate,
   generateRecurrences,
   getLocalDateString,
+  formatCurrency,
 } from "@/lib/domain/finance";
 
-const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
-  { id: "VES", label: "Bolivares", symbol: "Bs" },
-  { id: "USD", label: "Dolares", symbol: "$" },
-  { id: "EUR", label: "Euros", symbol: "EUR" },
+const CURRENCIES: { id: Currency; label: string; symbol: string; fullLabel: string }[] = [
+  { id: "VES", label: "Bs", symbol: "Bs", fullLabel: "BOLIVARES (VES)" },
+  { id: "USD", label: "USD", symbol: "$", fullLabel: "DOLARES (USD)" },
+  { id: "EUR", label: "EUR", symbol: "EUR", fullLabel: "EUROS (EUR)" },
 ];
 
-const RATE_TYPES: { id: RateType; label: string }[] = [
-  { id: "bcv", label: "BCV" },
-  { id: "parallel", label: "Paralelo" },
-  { id: "manual", label: "Manual" },
+const MONTHS_ES = [
+  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
-function ChipSelector<T extends string>({
-  options,
-  selected,
-  onSelect,
-  getLabel,
-  getColor,
-}: {
-  options: T[];
-  selected: T;
-  onSelect: (v: T) => void;
-  getLabel: (v: T) => string;
-  getColor?: (v: T) => string;
-}) {
-  return (
-    <View style={styles.chipRow}>
-      {options.map((opt) => {
-        const isSelected = selected === opt;
-        const color = getColor?.(opt) || Colors.brand.DEFAULT;
-        return (
-          <Pressable
-            key={opt}
-            onPress={() => {
-              Haptics.selectionAsync();
-              onSelect(opt);
-            }}
-            style={[
-              styles.chip,
-              isSelected && { backgroundColor: color, borderColor: color },
-            ]}
-          >
-            <Text
-              style={[
-                styles.chipText,
-                isSelected && { color: "#fff" },
-              ]}
-            >
-              {getLabel(opt)}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+function formatDisplayDate(dateStr: string): string {
+  try {
+    const parts = dateStr.split("-");
+    const day = parseInt(parts[2], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[0], 10);
+    return `${day} ${MONTHS_ES[month]} ${year}`;
+  } catch {
+    return dateStr;
+  }
 }
 
 export default function TransactionModal() {
@@ -101,6 +68,7 @@ export default function TransactionModal() {
     updateTx,
     deleteTx,
   } = useApp();
+  const amountInputRef = useRef<TextInput>(null);
 
   const editingTx = useMemo(
     () =>
@@ -115,7 +83,7 @@ export default function TransactionModal() {
   );
   const [amount, setAmount] = useState(editingTx?.amount.toString() || "");
   const [currency, setCurrency] = useState<Currency>(
-    editingTx?.currency || "USD"
+    editingTx?.currency || "VES"
   );
   const [rateType, setRateType] = useState<RateType>(
     editingTx?.currency === "VES"
@@ -135,12 +103,16 @@ export default function TransactionModal() {
       : getLocalDateString()
   );
   const [recurrence, setRecurrence] = useState<RecurrenceType>("none");
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showDateEdit, setShowDateEdit] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
 
   const segmentType = SEGMENT_CONFIG[segment].type;
   const categories = pnlStructure[segment] || [];
+  const currencyInfo = CURRENCIES.find((c) => c.id === currency) || CURRENCIES[0];
 
   const currentRate = useMemo(() => {
     return getFinalRate(
@@ -165,10 +137,13 @@ export default function TransactionModal() {
   const handleSave = useCallback(async () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0 || !category) {
+      const msg = !category
+        ? "Selecciona una categoria"
+        : "Ingresa un monto valido";
       if (Platform.OS === "web") {
-        alert("Ingresa un monto y selecciona una categoria");
+        alert(msg);
       } else {
-        Alert.alert("Error", "Ingresa un monto y selecciona una categoria");
+        Alert.alert("Error", msg);
       }
       return;
     }
@@ -190,10 +165,7 @@ export default function TransactionModal() {
       await updateTx({ ...editingTx, ...txData });
     } else {
       if (recurrence !== "none") {
-        const recDates = generateRecurrences(
-          txData.date,
-          recurrence
-        );
+        const recDates = generateRecurrences(txData.date, recurrence);
         const allTxs = [txData, ...recDates.map((d) => ({ ...txData, date: d }))];
         await addMultipleTx(allTxs);
       } else {
@@ -204,41 +176,29 @@ export default function TransactionModal() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
   }, [
-    amount,
-    category,
-    segmentType,
-    segment,
-    currency,
-    currentRate,
-    amountUSD,
-    description,
-    date,
-    recurrence,
-    editingTx,
-    addTx,
-    addMultipleTx,
-    updateTx,
-    router,
+    amount, category, segmentType, segment, currency,
+    currentRate, amountUSD, description, date, recurrence,
+    editingTx, addTx, addMultipleTx, updateTx, router,
   ]);
 
   const handleDelete = useCallback(async () => {
     if (!editingTx) return;
-
     const doDelete = async () => {
       await deleteTx(editingTx.id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       router.back();
     };
-
     if (Platform.OS === "web") {
-      if (confirm("Eliminar esta transaccion?")) doDelete();
+      if (confirm("Eliminar este movimiento?")) doDelete();
     } else {
-      Alert.alert("Eliminar", "Eliminar esta transaccion?", [
+      Alert.alert("Eliminar", "Eliminar este movimiento?", [
         { text: "Cancelar", style: "cancel" },
         { text: "Eliminar", style: "destructive", onPress: doDelete },
       ]);
     }
   }, [editingTx, deleteTx, router]);
+
+  const recurrenceLabel = RECURRENCE_OPTIONS.find((r) => r.id === recurrence)?.label || "No repetir";
 
   return (
     <KeyboardAvoidingView
@@ -257,190 +217,348 @@ export default function TransactionModal() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>
-            {editingTx ? "Editar" : "Nueva Transaccion"}
+            {editingTx ? "Editar Movimiento" : "Nuevo Movimiento"}
           </Text>
           <Pressable onPress={() => router.back()} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color={Colors.text.secondary} />
+            <Ionicons name="close" size={22} color={Colors.text.secondary} />
           </Pressable>
         </View>
 
-        <Text style={styles.label}>Segmento</Text>
-        <ChipSelector
-          options={
-            Object.keys(SEGMENT_CONFIG) as Segment[]
-          }
-          selected={segment}
-          onSelect={(s) => {
-            setSegment(s);
-            setCategory("");
-          }}
-          getLabel={(s) => SEGMENT_CONFIG[s].label}
-          getColor={(s) => SEGMENT_CONFIG[s].color}
-        />
-
-        <Text style={styles.label}>Monto</Text>
-        <View style={styles.amountRow}>
-          <TextInput
-            style={styles.amountInput}
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="numeric"
-            placeholder="0.00"
-            placeholderTextColor={Colors.text.disabled}
-          />
-        </View>
-
-        <Text style={styles.label}>Moneda</Text>
-        <ChipSelector
-          options={CURRENCIES.map((c) => c.id)}
-          selected={currency}
-          onSelect={setCurrency}
-          getLabel={(c) =>
-            CURRENCIES.find((x) => x.id === c)?.label || c
-          }
-        />
-
-        {currency === "VES" && (
-          <>
-            <Text style={styles.label}>Tipo de Tasa</Text>
-            <ChipSelector
-              options={RATE_TYPES.map((r) => r.id)}
-              selected={rateType}
-              onSelect={setRateType}
-              getLabel={(r) =>
-                RATE_TYPES.find((x) => x.id === r)?.label || r
-              }
-            />
-            {rateType === "manual" && (
-              <TextInput
-                style={styles.manualRateInput}
-                value={customRate}
-                onChangeText={setCustomRate}
-                keyboardType="numeric"
-                placeholder="Tasa manual (Bs/$)"
-                placeholderTextColor={Colors.text.disabled}
-              />
-            )}
-          </>
-        )}
-
-        {currency === "EUR" && rateType === "manual" && (
-          <TextInput
-            style={styles.manualRateInput}
-            value={customRate}
-            onChangeText={setCustomRate}
-            keyboardType="numeric"
-            placeholder="Tasa manual EUR (Bs/EUR)"
-            placeholderTextColor={Colors.text.disabled}
-          />
-        )}
-
-        {(currency === "VES" || currency === "EUR") && (
-          <View style={styles.conversionPreview}>
-            <Text style={styles.conversionLabel}>
-              Tasa: {currentRate.toFixed(2)} Bs/$ | Equivale a:
-            </Text>
-            <Text style={styles.conversionValue}>
-              ${amountUSD.toFixed(2)} USD
-            </Text>
-          </View>
-        )}
-
-        <Text style={styles.label}>Categoria</Text>
-        {categories.length > 0 ? (
-          <View style={styles.chipRow}>
-            {categories.map((cat) => (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.segmentScroll}
+          contentContainerStyle={styles.segmentScrollContent}
+        >
+          {(Object.keys(SEGMENT_CONFIG) as Segment[]).map((seg) => {
+            const config = SEGMENT_CONFIG[seg];
+            const isActive = segment === seg;
+            return (
               <Pressable
-                key={cat}
+                key={seg}
                 onPress={() => {
-                  setCategory(cat);
+                  setSegment(seg);
+                  setCategory("");
                   Haptics.selectionAsync();
                 }}
                 style={[
-                  styles.chip,
-                  category === cat && {
-                    backgroundColor: SEGMENT_CONFIG[segment].color,
-                    borderColor: SEGMENT_CONFIG[segment].color,
+                  styles.segmentChip,
+                  isActive && {
+                    backgroundColor: config.color,
+                    borderColor: config.color,
                   },
                 ]}
               >
                 <Text
                   style={[
-                    styles.chipText,
-                    category === cat && { color: "#fff" },
+                    styles.segmentChipText,
+                    isActive && { color: "#fff" },
                   ]}
+                  numberOfLines={1}
                 >
-                  {cat}
+                  {config.label}
                 </Text>
               </Pressable>
-            ))}
+            );
+          })}
+        </ScrollView>
+
+        <Pressable
+          style={styles.amountSection}
+          onPress={() => amountInputRef.current?.focus()}
+        >
+          <TextInput
+            ref={amountInputRef}
+            style={[
+              styles.amountDisplay,
+              segment === "ingresos" && { color: Colors.brand.light },
+              (segment === "gastos_fijos" || segment === "gastos_variables") && { color: "#fb7185" },
+              segment === "ahorro" && { color: "#60a5fa" },
+            ]}
+            value={amount || "0.00"}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9.]/g, "");
+              setAmount(cleaned === "0.00" ? "" : cleaned);
+            }}
+            onFocus={() => {
+              if (amount === "" || amount === "0.00") setAmount("");
+            }}
+            keyboardType="numeric"
+            placeholder="0.00"
+            placeholderTextColor={Colors.text.disabled}
+            selectionColor={Colors.brand.DEFAULT}
+          />
+          <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
+        </Pressable>
+
+        <View style={styles.currencyPillRow}>
+          {CURRENCIES.map((c) => {
+            const isActive = currency === c.id;
+            return (
+              <Pressable
+                key={c.id}
+                onPress={() => {
+                  setCurrency(c.id);
+                  Haptics.selectionAsync();
+                }}
+                style={[
+                  styles.currencyPill,
+                  isActive && styles.currencyPillActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.currencyPillText,
+                    isActive && styles.currencyPillTextActive,
+                  ]}
+                >
+                  {c.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.inlineRow}>
+          <View style={styles.inlineField}>
+            <Text style={styles.inlineLabel}>FECHA</Text>
+            {showDateEdit ? (
+              <TextInput
+                style={styles.dateEditInput}
+                value={date}
+                onChangeText={setDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={Colors.text.disabled}
+                autoFocus
+                onBlur={() => setShowDateEdit(false)}
+              />
+            ) : (
+              <Pressable
+                onPress={() => setShowDateEdit(true)}
+                style={styles.inlineValueBox}
+              >
+                <Text style={styles.inlineValueText}>
+                  {formatDisplayDate(date)}
+                </Text>
+              </Pressable>
+            )}
           </View>
-        ) : (
-          <Text style={styles.noCategoriesText}>
-            No hay categorias. Agrega en Ajustes.
-          </Text>
+          <View style={styles.inlineField}>
+            <Text style={styles.inlineLabel}>CATEGORIA</Text>
+            <Pressable
+              onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+              style={styles.inlineValueBox}
+            >
+              <Text
+                style={[
+                  styles.inlineValueText,
+                  !category && { color: Colors.text.disabled },
+                ]}
+                numberOfLines={1}
+              >
+                {category || "Seleccionar"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {showCategoryPicker && (
+          <View style={styles.categoryPicker}>
+            {categories.length > 0 ? (
+              <View style={styles.categoryGrid}>
+                {categories.map((cat) => (
+                  <Pressable
+                    key={cat}
+                    onPress={() => {
+                      setCategory(cat);
+                      setShowCategoryPicker(false);
+                      Haptics.selectionAsync();
+                    }}
+                    style={[
+                      styles.categoryOption,
+                      category === cat && {
+                        backgroundColor: SEGMENT_CONFIG[segment].color,
+                        borderColor: SEGMENT_CONFIG[segment].color,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryOptionText,
+                        category === cat && { color: "#fff" },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {cat}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noCategoriesText}>
+                No hay categorias configuradas
+              </Text>
+            )}
+          </View>
         )}
-
-        <Text style={styles.label}>Descripcion (opcional)</Text>
-        <TextInput
-          style={styles.descInput}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Nota breve..."
-          placeholderTextColor={Colors.text.disabled}
-        />
-
-        <Text style={styles.label}>Fecha</Text>
-        <TextInput
-          style={styles.dateInput}
-          value={date}
-          onChangeText={setDate}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor={Colors.text.disabled}
-        />
 
         {!editingTx && (
           <>
-            <Text style={styles.label}>Recurrencia</Text>
-            <View style={styles.chipRow}>
-              {RECURRENCE_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.id}
-                  onPress={() => {
-                    setRecurrence(opt.id);
-                    Haptics.selectionAsync();
-                  }}
-                  style={[
-                    styles.chip,
-                    recurrence === opt.id && {
-                      backgroundColor: Colors.brand.DEFAULT,
-                      borderColor: Colors.brand.DEFAULT,
-                    },
-                  ]}
-                >
-                  <Text
+            <Text style={styles.fieldLabel}>REPETIR</Text>
+            <Pressable
+              onPress={() => setShowRecurrencePicker(!showRecurrencePicker)}
+              style={styles.dropdownBtn}
+            >
+              <Text style={styles.dropdownBtnText}>{recurrenceLabel}</Text>
+              <Ionicons
+                name={showRecurrencePicker ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={Colors.text.muted}
+              />
+            </Pressable>
+            {showRecurrencePicker && (
+              <View style={styles.recurrencePicker}>
+                {RECURRENCE_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.id}
+                    onPress={() => {
+                      setRecurrence(opt.id);
+                      setShowRecurrencePicker(false);
+                      Haptics.selectionAsync();
+                    }}
                     style={[
-                      styles.chipText,
-                      recurrence === opt.id && { color: "#fff" },
+                      styles.recurrenceOption,
+                      recurrence === opt.id && styles.recurrenceOptionActive,
                     ]}
                   >
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.recurrenceOptionText,
+                        recurrence === opt.id && styles.recurrenceOptionTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </>
         )}
+
+        {(currency === "VES" || currency === "EUR") && (
+          <View style={styles.rateButtonsRow}>
+            <Pressable
+              onPress={() => {
+                setRateType("bcv");
+                Haptics.selectionAsync();
+              }}
+              style={[
+                styles.rateButton,
+                rateType === "bcv" && styles.rateButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.rateButtonLabel,
+                  rateType === "bcv" && styles.rateButtonLabelActive,
+                ]}
+              >
+                BCV
+              </Text>
+              <Text
+                style={[
+                  styles.rateButtonValue,
+                  rateType === "bcv" && styles.rateButtonValueActive,
+                ]}
+              >
+                {rates.bcv > 0 ? rates.bcv.toFixed(2) : "--"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setRateType("parallel");
+                Haptics.selectionAsync();
+              }}
+              style={[
+                styles.rateButton,
+                rateType === "parallel" && styles.rateButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.rateButtonLabel,
+                  rateType === "parallel" && styles.rateButtonLabelActive,
+                ]}
+              >
+                USDC
+              </Text>
+              <Text
+                style={[
+                  styles.rateButtonValue,
+                  rateType === "parallel" && styles.rateButtonValueActive,
+                ]}
+              >
+                {rates.parallel > 0 ? rates.parallel.toFixed(2) : "--"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setRateType("manual");
+                Haptics.selectionAsync();
+              }}
+              style={[
+                styles.rateButton,
+                rateType === "manual" && styles.rateButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.rateButtonLabel,
+                  rateType === "manual" && styles.rateButtonLabelActive,
+                ]}
+              >
+                Manual
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {rateType === "manual" && (currency === "VES" || currency === "EUR") && (
+          <TextInput
+            style={styles.manualRateInput}
+            value={customRate}
+            onChangeText={setCustomRate}
+            keyboardType="numeric"
+            placeholder={currency === "EUR" ? "Tasa Bs/EUR" : "Tasa Bs/$"}
+            placeholderTextColor={Colors.text.disabled}
+          />
+        )}
+
+        <TextInput
+          style={styles.noteInput}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Nota opcional"
+          placeholderTextColor={Colors.text.disabled}
+        />
+
+        <View style={styles.usdRefRow}>
+          <Text style={styles.usdRefLabel}>Ref. USD Reporte:</Text>
+          <Text style={styles.usdRefValue}>
+            ${formatCurrency(amountUSD)}
+          </Text>
+        </View>
 
         <Pressable
           onPress={handleSave}
           style={({ pressed }) => [
             styles.saveButton,
-            pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+            pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
           ]}
         >
           <Text style={styles.saveButtonText}>
-            {editingTx ? "Guardar Cambios" : "Registrar"}
+            {editingTx ? "Guardar Cambios" : "Guardar"}
           </Text>
         </Pressable>
 
@@ -453,9 +571,7 @@ export default function TransactionModal() {
             ]}
           >
             <Ionicons name="trash" size={18} color="#ef4444" />
-            <Text style={styles.deleteButtonText}>
-              Eliminar Transaccion
-            </Text>
+            <Text style={styles.deleteButtonText}>Eliminar Movimiento</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -473,7 +589,7 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
     fontFamily: "Outfit_900Black",
@@ -482,131 +598,295 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.07)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
-  label: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 12,
-    color: Colors.text.muted,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    marginTop: 16,
+  segmentScroll: {
+    marginBottom: 24,
+    flexGrow: 0,
   },
-  chipRow: {
+  segmentScrollContent: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  segmentChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.highlight,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  segmentChipText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 13,
+    color: Colors.text.secondary,
+  },
+  amountSection: {
+    alignItems: "center" as const,
+    marginBottom: 16,
+  },
+  amountDisplay: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 48,
+    color: Colors.text.primary,
+    textAlign: "center" as const,
+    letterSpacing: -2,
+    minWidth: 120,
+  },
+  currencyFullLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: Colors.text.muted,
+    letterSpacing: 1.5,
+    marginTop: 4,
+    textTransform: "uppercase" as const,
+  },
+  currencyPillRow: {
+    flexDirection: "row" as const,
+    justifyContent: "center" as const,
+    gap: 0,
+    marginBottom: 24,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 24,
+    padding: 3,
+    alignSelf: "center" as const,
+  },
+  currencyPill: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  currencyPillActive: {
+    backgroundColor: Colors.dark.card,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  currencyPillText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: Colors.text.muted,
+  },
+  currencyPillTextActive: {
+    color: Colors.text.primary,
+  },
+  inlineRow: {
+    flexDirection: "row" as const,
+    gap: 12,
+    marginBottom: 16,
+  },
+  inlineField: {
+    flex: 1,
+  },
+  inlineLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 10,
+    color: Colors.text.muted,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  inlineValueBox: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  inlineValueText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  dateEditInput: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.brand.DEFAULT,
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  categoryPicker: {
+    marginBottom: 16,
+  },
+  categoryGrid: {
     flexDirection: "row" as const,
     flexWrap: "wrap" as const,
     gap: 8,
   },
-  chip: {
+  categoryOption: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.dark.highlight,
     backgroundColor: "rgba(255,255,255,0.03)",
   },
-  chipText: {
+  categoryOptionText: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.text.secondary,
-  },
-  amountRow: {
-    flexDirection: "row" as const,
-    gap: 12,
-  },
-  amountInput: {
-    flex: 1,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    fontFamily: "Outfit_700Bold",
-    fontSize: 24,
-    color: Colors.text.primary,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  manualRateInput: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
-    color: Colors.text.primary,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginTop: 8,
-  },
-  conversionPreview: {
-    backgroundColor: "rgba(16,185,129,0.08)",
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: "rgba(16,185,129,0.2)",
-  },
-  conversionLabel: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 11,
-    color: Colors.text.muted,
-    marginBottom: 2,
-  },
-  conversionValue: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 18,
-    color: Colors.brand.light,
   },
   noCategoriesText: {
     fontFamily: "Outfit_500Medium",
     fontSize: 13,
     color: Colors.text.disabled,
     fontStyle: "italic" as const,
+    paddingVertical: 8,
   },
-  descInput: {
+  fieldLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 10,
+    color: Colors.text.muted,
+    letterSpacing: 1,
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  dropdownBtn: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: "Outfit_500Medium",
-    fontSize: 14,
-    color: Colors.text.primary,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: Colors.dark.border,
+    marginBottom: 8,
   },
-  dateInput: {
+  dropdownBtnText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  recurrencePicker: {
     backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    overflow: "hidden" as const,
+    marginBottom: 16,
+  },
+  recurrenceOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
+  },
+  recurrenceOptionActive: {
+    backgroundColor: "rgba(16,185,129,0.1)",
+  },
+  recurrenceOptionText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  recurrenceOptionTextActive: {
+    color: Colors.brand.light,
+    fontFamily: "Outfit_700Bold",
+  },
+  rateButtonsRow: {
+    flexDirection: "row" as const,
+    gap: 10,
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  rateButton: {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.highlight,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    minHeight: 56,
+  },
+  rateButtonActive: {
+    backgroundColor: Colors.brand.dark,
+    borderColor: Colors.brand.DEFAULT,
+  },
+  rateButtonLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 13,
+    color: Colors.text.secondary,
+  },
+  rateButtonLabelActive: {
+    color: Colors.brand.light,
+  },
+  rateButtonValue: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 12,
+    color: Colors.text.muted,
+    marginTop: 2,
+  },
+  rateButtonValueActive: {
+    color: Colors.brand.light,
+  },
+  manualRateInput: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontFamily: "Outfit_600SemiBold",
     fontSize: 14,
     color: Colors.text.primary,
     borderWidth: 1,
+    borderColor: Colors.brand.DEFAULT,
+    marginBottom: 16,
+  },
+  noteInput: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.primary,
+    borderWidth: 1,
     borderColor: Colors.dark.border,
+    marginBottom: 20,
+  },
+  usdRefRow: {
+    flexDirection: "row" as const,
+    alignItems: "baseline" as const,
+    justifyContent: "center" as const,
+    gap: 8,
+    marginBottom: 16,
+  },
+  usdRefLabel: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.muted,
+  },
+  usdRefValue: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 22,
+    color: Colors.brand.light,
+    letterSpacing: -0.5,
   },
   saveButton: {
-    backgroundColor: Colors.brand.DEFAULT,
-    borderRadius: 16,
-    paddingVertical: 16,
+    backgroundColor: Colors.brand.dark,
+    borderRadius: 18,
+    paddingVertical: 18,
     alignItems: "center" as const,
-    marginTop: 28,
-    shadowColor: Colors.brand.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    borderWidth: 1,
+    borderColor: Colors.brand.DEFAULT,
   },
   saveButtonText: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 16,
-    color: "#fff",
+    fontSize: 17,
+    color: Colors.brand.light,
   },
   deleteButton: {
     flexDirection: "row" as const,
