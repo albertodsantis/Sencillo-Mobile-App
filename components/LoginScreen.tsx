@@ -5,7 +5,6 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
-  Dimensions,
   Platform,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,21 +13,15 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/lib/context/AuthContext";
 
-WebBrowser.maybeCompleteAuthSession();
-
-const { width } = Dimensions.get("window");
-
 type Mode = "login" | "signup";
 
-export default function LoginScreen() {
+function LoginContent() {
   const insets = useSafeAreaInsets();
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,38 +31,6 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
-
-  const [, googleResponse, promptGoogle] = Google.useAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-  });
-
-  React.useEffect(() => {
-    if (googleResponse?.type === "success") {
-      handleGoogleSuccess(googleResponse.authentication?.accessToken);
-    }
-  }, [googleResponse]);
-
-  const handleGoogleSuccess = async (accessToken?: string | null) => {
-    if (!accessToken) return;
-    try {
-      setLoading(true);
-      const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const data = await res.json();
-      await signInWithGoogle({
-        name: data.name || "Usuario",
-        email: data.email,
-        avatar: data.picture,
-      });
-    } catch {
-      setError("Error al iniciar con Google");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async () => {
     setError("");
@@ -93,11 +54,7 @@ export default function LoginScreen() {
   const handleGooglePress = async () => {
     setError("");
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await promptGoogle();
-    } catch {
-      setError("Error al iniciar con Google");
-    }
+    setError("Google Sign-In requiere configuracion adicional. Usa email y contrasena por ahora.");
   };
 
   const toggleMode = () => {
@@ -277,6 +234,14 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
+  );
+}
+
+export default function LoginScreen() {
+  return (
+    <SafeAreaProvider>
+      <LoginContent />
+    </SafeAreaProvider>
   );
 }
 

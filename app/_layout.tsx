@@ -11,6 +11,7 @@ import { queryClient } from "@/lib/query-client";
 import { AppProvider } from "@/lib/context/AppContext";
 import { AuthProvider, useAuth } from "@/lib/context/AuthContext";
 import "@/lib/notifications";
+import LoginScreen from "@/components/LoginScreen";
 import Colors from "@/constants/colors";
 import {
   useFonts,
@@ -127,7 +128,6 @@ function AuthGate() {
   if (showSplash) return <BrandedSplash />;
 
   if (!user) {
-    const LoginScreen = require("@/components/LoginScreen").default;
     return <LoginScreen />;
   }
 
