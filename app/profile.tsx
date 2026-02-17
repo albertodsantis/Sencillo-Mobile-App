@@ -18,6 +18,7 @@ import { useRouter } from "expo-router";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { useAuth } from "@/lib/context/AuthContext";
 import { useApp } from "@/lib/context/AppContext";
 import {
   scheduleDailyReminder,
@@ -141,9 +142,11 @@ export default function ProfileScreen() {
     else Alert.alert("Listo", successMsg);
   }, [currentPassword, newPassword, confirmPassword, profile, updateProfile]);
 
+  const { signOut } = useAuth();
+
   const handleLogout = useCallback(() => {
-    const doLogout = () => {
-      router.replace("/");
+    const doLogout = async () => {
+      await signOut();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     };
     if (Platform.OS === "web") {
@@ -154,7 +157,7 @@ export default function ProfileScreen() {
         { text: "Cerrar Sesion", onPress: doLogout },
       ]);
     }
-  }, [router]);
+  }, [signOut]);
 
   const handleResetTransactions = useCallback(() => {
     const doReset = async () => {
