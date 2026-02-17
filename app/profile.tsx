@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Switch,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -254,14 +255,14 @@ export default function ProfileScreen() {
 
         <View style={styles.phoneRow}>
           <Pressable
-            onPress={() => setShowPrefixPicker(!showPrefixPicker)}
+            onPress={() => setShowPrefixPicker(true)}
             style={styles.prefixBtn}
           >
             <Text style={styles.prefixText}>{phonePrefix}</Text>
             <Ionicons name="chevron-down" size={14} color={Colors.text.muted} />
           </Pressable>
           <TextInput
-            style={[styles.fieldInput, { flex: 1 }]}
+            style={[styles.fieldInput, { flex: 1, marginBottom: 0 }]}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             placeholder="Tu numero de telefono"
@@ -269,33 +270,6 @@ export default function ProfileScreen() {
             keyboardType="phone-pad"
           />
         </View>
-        {showPrefixPicker && (
-          <View style={styles.prefixPicker}>
-            {PHONE_PREFIXES.map((p) => (
-              <Pressable
-                key={p}
-                onPress={() => {
-                  setPhonePrefix(p);
-                  setShowPrefixPicker(false);
-                  Haptics.selectionAsync();
-                }}
-                style={[
-                  styles.prefixOption,
-                  phonePrefix === p && styles.prefixOptionActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.prefixOptionText,
-                    phonePrefix === p && styles.prefixOptionTextActive,
-                  ]}
-                >
-                  {p}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
 
         <TextInput
           style={styles.fieldInput}
@@ -464,6 +438,45 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showPrefixPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPrefixPicker(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowPrefixPicker(false)}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Prefijo telefono</Text>
+            {PHONE_PREFIXES.map((p) => (
+              <Pressable
+                key={p}
+                onPress={() => {
+                  setPhonePrefix(p);
+                  setShowPrefixPicker(false);
+                  Haptics.selectionAsync();
+                }}
+                style={[
+                  styles.modalOption,
+                  phonePrefix === p && styles.modalOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    phonePrefix === p && styles.modalOptionTextActive,
+                  ]}
+                >
+                  {p}
+                </Text>
+                {phonePrefix === p && (
+                  <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -536,31 +549,45 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text.primary,
   },
-  prefixPicker: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end" as const,
+  },
+  modalSheet: {
+    backgroundColor: Colors.dark.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 16,
+    color: Colors.text.primary,
+    marginBottom: 12,
+  },
+  modalOption: {
     flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 6,
-    marginBottom: 10,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
   },
-  prefixOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
+  modalOptionActive: {
+    borderBottomColor: Colors.dark.borderSubtle,
   },
-  prefixOptionActive: {
-    backgroundColor: Colors.brand.DEFAULT,
-    borderColor: Colors.brand.DEFAULT,
-  },
-  prefixOptionText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 13,
+  modalOptionText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 16,
     color: Colors.text.secondary,
   },
-  prefixOptionTextActive: {
-    color: "#fff",
+  modalOptionTextActive: {
+    fontFamily: "Outfit_700Bold",
+    color: Colors.text.primary,
   },
   saveButton: {
     backgroundColor: Colors.brand.DEFAULT,
