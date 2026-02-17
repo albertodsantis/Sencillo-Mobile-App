@@ -1,180 +1,200 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   Pressable,
-  Alert,
+  TextInput,
   Platform,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
+import { type Segment, SEGMENT_CONFIG } from "@/lib/domain/types";
 
-function SettingsRow({
-  icon,
-  label,
-  sublabel,
-  onPress,
-  danger,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  sublabel?: string;
-  onPress: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.settingsRow,
-        pressed && { opacity: 0.7 },
-      ]}
-    >
-      <View style={styles.settingsRowLeft}>
-        {icon}
-        <View>
-          <Text
-            style={[
-              styles.settingsLabel,
-              danger && { color: "#ef4444" },
-            ]}
-          >
-            {label}
-          </Text>
-          {sublabel && (
-            <Text style={styles.settingsSublabel}>{sublabel}</Text>
-          )}
-        </View>
-      </View>
-      <Ionicons
-        name="chevron-forward"
-        size={18}
-        color={Colors.text.disabled}
-      />
-    </Pressable>
-  );
-}
+const SEGMENTS: Segment[] = [
+  "ingresos",
+  "gastos_fijos",
+  "gastos_variables",
+  "ahorro",
+];
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const { deleteAllTx, refreshRates } = useApp();
+  const { pnlStructure, updatePnlStructure } = useApp();
+  const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
+  const [newCategoryText, setNewCategoryText] = useState("");
+  const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
 
-  const handleDeleteAll = () => {
-    if (Platform.OS === "web") {
-      if (confirm("Esto eliminara TODAS tus transacciones. Esta seguro?")) {
-        deleteAllTx();
+  const handleAddCategory = useCallback(
+    async (segment: Segment) => {
+      const trimmed = newCategoryText.trim();
+      if (!trimmed) return;
+      if (pnlStructure[segment].includes(trimmed)) {
+        if (Platform.OS === "web") {
+          alert("Esta categoria ya existe");
+        } else {
+          Alert.alert("Error", "Esta categoria ya existe");
+        }
+        return;
       }
-    } else {
-      Alert.alert(
-        "Eliminar datos",
-        "Esto eliminara TODAS tus transacciones. Esta seguro?",
-        [
+      const updated = {
+        ...pnlStructure,
+        [segment]: [...pnlStructure[segment], trimmed],
+      };
+      await updatePnlStructure(updated);
+      setNewCategoryText("");
+      setAddingToSegment(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    [newCategoryText, pnlStructure, updatePnlStructure]
+  );
+
+  const handleDeleteCategory = useCallback(
+    async (segment: Segment, category: string) => {
+      const doDelete = async () => {
+        const updated = {
+          ...pnlStructure,
+          [segment]: pnlStructure[segment].filter((c) => c !== category),
+        };
+        await updatePnlStructure(updated);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      };
+
+      if (Platform.OS === "web") {
+        if (confirm(`Eliminar la categoria "${category}"?`)) doDelete();
+      } else {
+        Alert.alert("Eliminar", `Eliminar la categoria "${category}"?`, [
           { text: "Cancelar", style: "cancel" },
-          {
-            text: "Eliminar",
-            style: "destructive",
-            onPress: () => deleteAllTx(),
-          },
-        ]
-      );
-    }
-  };
+          { text: "Eliminar", style: "destructive", onPress: doDelete },
+        ]);
+      }
+    },
+    [pnlStructure, updatePnlStructure]
+  );
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
+      contentContainerStyle={{
+        paddingTop: topPadding,
+        paddingBottom: 120,
+      }}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Ajustes</Text>
+      <Text style={styles.title}>Personalizacion</Text>
+      <Text style={styles.subtitle}>Gestionar categorias por segmento</Text>
 
-      <Text style={styles.sectionLabel}>PERFIL</Text>
+      {SEGMENTS.map((seg) => {
+        const config = SEGMENT_CONFIG[seg];
+        const cats = pnlStructure[seg];
+        const isExpanded = expandedSegment === seg;
 
-      <View style={styles.section}>
-        <SettingsRow
-          icon={
-            <Ionicons
-              name="person-circle"
-              size={22}
-              color={Colors.brand.DEFAULT}
-            />
-          }
-          label="Mi Perfil"
-          sublabel="Nombre, contacto, contrasena"
-          onPress={() => router.push("/profile")}
-        />
-      </View>
+        return (
+          <View key={seg} style={styles.segmentCard}>
+            <Pressable
+              onPress={() =>
+                setExpandedSegment(isExpanded ? null : seg)
+              }
+              style={styles.segmentHeader}
+            >
+              <View style={styles.segmentHeaderLeft}>
+                <View
+                  style={[
+                    styles.segmentDot,
+                    { backgroundColor: config.color },
+                  ]}
+                />
+                <Text style={styles.segmentName}>{config.label}</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>{cats.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={Colors.text.muted}
+              />
+            </Pressable>
 
-      <Text style={styles.sectionLabel}>CONFIGURACION</Text>
+            {isExpanded && (
+              <View style={styles.categoryList}>
+                {cats.map((cat) => (
+                  <View key={cat} style={styles.categoryRow}>
+                    <Text style={styles.categoryName}>{cat}</Text>
+                    <Pressable
+                      onPress={() => handleDeleteCategory(seg, cat)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={Colors.text.disabled}
+                      />
+                    </Pressable>
+                  </View>
+                ))}
 
-      <View style={styles.section}>
-        <SettingsRow
-          icon={
-            <MaterialCommunityIcons
-              name="format-list-bulleted"
-              size={20}
-              color={Colors.brand.DEFAULT}
-            />
-          }
-          label="Categorias"
-          sublabel="Gestionar categorias por segmento"
-          onPress={() => router.push("/categories")}
-        />
-        <SettingsRow
-          icon={
-            <Ionicons
-              name="document-text"
-              size={20}
-              color="#60a5fa"
-            />
-          }
-          label="Reporte P&L"
-          sublabel="Ver reporte financiero detallado"
-          onPress={() => router.push("/report")}
-        />
-        <SettingsRow
-          icon={
-            <Feather
-              name="refresh-cw"
-              size={18}
-              color={Colors.brand.light}
-            />
-          }
-          label="Actualizar tasas"
-          sublabel="Obtener tasas de cambio actualizadas"
-          onPress={refreshRates}
-        />
-      </View>
-
-      <Text style={styles.sectionLabel}>DATOS</Text>
-
-      <View style={styles.section}>
-        <SettingsRow
-          icon={
-            <Ionicons name="trash" size={20} color="#ef4444" />
-          }
-          label="Eliminar todas las transacciones"
-          sublabel="Esta accion no se puede deshacer"
-          onPress={handleDeleteAll}
-          danger
-        />
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Sencillo v1.0</Text>
-        <Text style={styles.footerSubtext}>
-          Finanzas personales para Venezuela
-        </Text>
-      </View>
+                {addingToSegment === seg ? (
+                  <View style={styles.addRow}>
+                    <TextInput
+                      style={styles.addInput}
+                      value={newCategoryText}
+                      onChangeText={setNewCategoryText}
+                      placeholder="Nombre de la categoria"
+                      placeholderTextColor={Colors.text.disabled}
+                      autoFocus
+                    />
+                    <Pressable
+                      onPress={() => handleAddCategory(seg)}
+                      style={styles.addConfirmBtn}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={18}
+                        color="#fff"
+                      />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        setAddingToSegment(null);
+                        setNewCategoryText("");
+                      }}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={18}
+                        color={Colors.text.muted}
+                      />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={() => setAddingToSegment(seg)}
+                    style={styles.addBtn}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={16}
+                      color={config.color}
+                    />
+                    <Text style={[styles.addBtnText, { color: config.color }]}>
+                      Agregar categoria
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -190,61 +210,110 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: Colors.text.primary,
     letterSpacing: -0.5,
-    marginBottom: 24,
   },
-  sectionLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 11,
+  subtitle: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
     color: Colors.text.muted,
-    letterSpacing: 1,
-    marginBottom: 8,
-    marginLeft: 4,
+    marginBottom: 20,
+    marginTop: 4,
   },
-  section: {
+  segmentCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    marginBottom: 24,
+    marginBottom: 12,
     overflow: "hidden" as const,
   },
-  settingsRow: {
+  segmentHeader: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderSubtle,
   },
-  settingsRowLeft: {
+  segmentHeaderLeft: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 14,
+    gap: 10,
   },
-  settingsLabel: {
-    fontFamily: "Outfit_600SemiBold",
+  segmentDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  segmentName: {
+    fontFamily: "Outfit_700Bold",
     fontSize: 15,
     color: Colors.text.primary,
   },
-  settingsSublabel: {
-    fontFamily: "Outfit_400Regular",
-    fontSize: 12,
-    color: Colors.text.muted,
-    marginTop: 1,
+  countBadge: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  footer: {
-    alignItems: "center" as const,
-    paddingVertical: 24,
-    gap: 4,
-  },
-  footerText: {
+  countText: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 14,
+    fontSize: 11,
     color: Colors.text.muted,
   },
-  footerSubtext: {
-    fontFamily: "Outfit_400Regular",
+  categoryList: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 6,
+  },
+  categoryRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.dark.borderSubtle,
+  },
+  categoryName: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  addRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    marginTop: 4,
+  },
+  addInput: {
+    flex: 1,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.primary,
+    borderWidth: 1,
+    borderColor: Colors.brand.DEFAULT,
+  },
+  addConfirmBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: Colors.brand.DEFAULT,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  addBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    marginTop: 4,
+    padding: 8,
+  },
+  addBtnText: {
+    fontFamily: "Outfit_600SemiBold",
     fontSize: 12,
-    color: Colors.text.disabled,
   },
 });

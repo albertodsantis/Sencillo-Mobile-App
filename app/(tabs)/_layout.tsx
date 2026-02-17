@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from "expo-router";
 import { Platform, StyleSheet, View, Pressable } from "react-native";
 import React from "react";
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import Colors from "@/constants/colors";
 
@@ -90,9 +90,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Ajustes",
+          title: "Personalizar",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="settings" size={20} color={color} />
+            <Ionicons name="color-palette" size={22} color={color} />
           ),
         }}
       />
