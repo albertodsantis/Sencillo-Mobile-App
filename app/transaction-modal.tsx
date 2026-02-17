@@ -9,6 +9,8 @@ import {
   Platform,
   Alert,
   KeyboardAvoidingView,
+  Modal,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -43,6 +45,11 @@ const MONTHS_ES = [
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
+const MONTHS_FULL = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
 function formatDisplayDate(dateStr: string): string {
   try {
     const parts = dateStr.split("-");
@@ -54,6 +61,248 @@ function formatDisplayDate(dateStr: string): string {
     return dateStr;
   }
 }
+
+function parseDateString(dateStr: string): { day: number; month: number; year: number } {
+  try {
+    const parts = dateStr.split("-");
+    return {
+      year: parseInt(parts[0], 10),
+      month: parseInt(parts[1], 10),
+      day: parseInt(parts[2], 10),
+    };
+  } catch {
+    const now = new Date();
+    return { day: now.getDate(), month: now.getMonth() + 1, year: now.getFullYear() };
+  }
+}
+
+function daysInMonth(month: number, year: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function BottomSheetPicker({
+  visible,
+  onClose,
+  title,
+  children,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <Pressable style={sheetStyles.overlay} onPress={onClose}>
+        <Pressable style={sheetStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={sheetStyles.handle} />
+          <View style={sheetStyles.header}>
+            <Text style={sheetStyles.title}>{title}</Text>
+            <Pressable onPress={onClose} style={sheetStyles.closeBtn}>
+              <Ionicons name="close" size={20} color={Colors.text.secondary} />
+            </Pressable>
+          </View>
+          {children}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const sheetStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end" as const,
+  },
+  sheet: {
+    backgroundColor: Colors.dark.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+    maxHeight: Dimensions.get("window").height * 0.6,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.dark.highlight,
+    alignSelf: "center" as const,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  header: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
+  },
+  title: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 16,
+    color: Colors.text.primary,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+});
+
+function DatePickerSheet({
+  visible,
+  onClose,
+  dateStr,
+  onConfirm,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  dateStr: string;
+  onConfirm: (dateStr: string) => void;
+}) {
+  const parsed = parseDateString(dateStr);
+  const [day, setDay] = useState(parsed.day);
+  const [month, setMonth] = useState(parsed.month);
+  const [year, setYear] = useState(parsed.year);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+  const maxDay = daysInMonth(month, year);
+  const effectiveDay = Math.min(day, maxDay);
+
+  const handleConfirm = () => {
+    const d = String(effectiveDay).padStart(2, "0");
+    const m = String(month).padStart(2, "0");
+    onConfirm(`${year}-${m}-${d}`);
+    onClose();
+  };
+
+  return (
+    <BottomSheetPicker visible={visible} onClose={onClose} title="Seleccionar Fecha">
+      <View style={dateStyles.container}>
+        <View style={dateStyles.columnsRow}>
+          <View style={dateStyles.column}>
+            <Text style={dateStyles.columnLabel}>DIA</Text>
+            <ScrollView style={dateStyles.scroll} showsVerticalScrollIndicator={false}>
+              {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
+                <Pressable
+                  key={d}
+                  onPress={() => { setDay(d); Haptics.selectionAsync(); }}
+                  style={[dateStyles.option, effectiveDay === d && dateStyles.optionActive]}
+                >
+                  <Text style={[dateStyles.optionText, effectiveDay === d && dateStyles.optionTextActive]}>
+                    {d}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={dateStyles.column}>
+            <Text style={dateStyles.columnLabel}>MES</Text>
+            <ScrollView style={dateStyles.scroll} showsVerticalScrollIndicator={false}>
+              {MONTHS_FULL.map((m, i) => (
+                <Pressable
+                  key={i}
+                  onPress={() => { setMonth(i + 1); Haptics.selectionAsync(); }}
+                  style={[dateStyles.option, month === i + 1 && dateStyles.optionActive]}
+                >
+                  <Text style={[dateStyles.optionText, month === i + 1 && dateStyles.optionTextActive]}>
+                    {m}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={dateStyles.column}>
+            <Text style={dateStyles.columnLabel}>ANO</Text>
+            <ScrollView style={dateStyles.scroll} showsVerticalScrollIndicator={false}>
+              {years.map((y) => (
+                <Pressable
+                  key={y}
+                  onPress={() => { setYear(y); Haptics.selectionAsync(); }}
+                  style={[dateStyles.option, year === y && dateStyles.optionActive]}
+                >
+                  <Text style={[dateStyles.optionText, year === y && dateStyles.optionTextActive]}>
+                    {y}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+        <Pressable onPress={handleConfirm} style={dateStyles.confirmBtn}>
+          <Text style={dateStyles.confirmText}>Confirmar</Text>
+        </Pressable>
+      </View>
+    </BottomSheetPicker>
+  );
+}
+
+const dateStyles = StyleSheet.create({
+  container: {
+    padding: 20,
+  },
+  columnsRow: {
+    flexDirection: "row" as const,
+    gap: 8,
+    marginBottom: 20,
+  },
+  column: {
+    flex: 1,
+  },
+  columnLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 10,
+    color: Colors.text.muted,
+    letterSpacing: 1,
+    textAlign: "center" as const,
+    marginBottom: 8,
+  },
+  scroll: {
+    maxHeight: 200,
+  },
+  option: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    alignItems: "center" as const,
+    marginBottom: 2,
+  },
+  optionActive: {
+    backgroundColor: Colors.brand.dark,
+  },
+  optionText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 15,
+    color: Colors.text.secondary,
+  },
+  optionTextActive: {
+    color: Colors.brand.light,
+    fontFamily: "Outfit_700Bold",
+  },
+  confirmBtn: {
+    backgroundColor: Colors.brand.DEFAULT,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+  },
+  confirmText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 15,
+    color: "#fff",
+  },
+});
 
 export default function TransactionModal() {
   const insets = useSafeAreaInsets();
@@ -103,14 +352,15 @@ export default function TransactionModal() {
       : getLocalDateString()
   );
   const [recurrence, setRecurrence] = useState<RecurrenceType>("none");
-  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [showDateEdit, setShowDateEdit] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [showRecurrenceSheet, setShowRecurrenceSheet] = useState(false);
+  const [showDateSheet, setShowDateSheet] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
 
   const segmentType = SEGMENT_CONFIG[segment].type;
+  const segColor = SEGMENT_CONFIG[segment].color;
   const categories = pnlStructure[segment] || [];
   const currencyInfo = CURRENCIES.find((c) => c.id === currency) || CURRENCIES[0];
 
@@ -271,9 +521,7 @@ export default function TransactionModal() {
             ref={amountInputRef}
             style={[
               styles.amountDisplay,
-              segment === "ingresos" && { color: Colors.brand.light },
-              (segment === "gastos_fijos" || segment === "gastos_variables") && { color: "#fb7185" },
-              segment === "ahorro" && { color: "#60a5fa" },
+              { color: segColor },
             ]}
             value={amount || "0.00"}
             onChangeText={(text) => {
@@ -286,7 +534,7 @@ export default function TransactionModal() {
             keyboardType="numeric"
             placeholder="0.00"
             placeholderTextColor={Colors.text.disabled}
-            selectionColor={Colors.brand.DEFAULT}
+            selectionColor={segColor}
           />
           <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
         </Pressable>
@@ -322,226 +570,95 @@ export default function TransactionModal() {
         <View style={styles.inlineRow}>
           <View style={styles.inlineField}>
             <Text style={styles.inlineLabel}>FECHA</Text>
-            {showDateEdit ? (
-              <TextInput
-                style={styles.dateEditInput}
-                value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Colors.text.disabled}
-                autoFocus
-                onBlur={() => setShowDateEdit(false)}
-              />
-            ) : (
-              <Pressable
-                onPress={() => setShowDateEdit(true)}
-                style={styles.inlineValueBox}
-              >
+            <Pressable
+              onPress={() => setShowDateSheet(true)}
+              style={styles.inlineValueBox}
+            >
+              <View style={styles.inlineValueInner}>
                 <Text style={styles.inlineValueText}>
                   {formatDisplayDate(date)}
                 </Text>
-              </Pressable>
-            )}
+                <Ionicons name="calendar-outline" size={16} color={Colors.text.muted} />
+              </View>
+            </Pressable>
           </View>
           <View style={styles.inlineField}>
-            <Text style={styles.inlineLabel}>CATEGORIA</Text>
+            <Text style={[styles.inlineLabel, category ? { color: segColor } : undefined]}>
+              CATEGORIA
+            </Text>
             <Pressable
-              onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+              onPress={() => setShowCategorySheet(true)}
               style={[
                 styles.inlineValueBox,
                 category ? {
-                  borderColor: SEGMENT_CONFIG[segment].color,
-                  backgroundColor: `${SEGMENT_CONFIG[segment].color}15`,
+                  borderColor: segColor,
+                  backgroundColor: `${segColor}12`,
                 } : undefined,
               ]}
             >
-              <View style={styles.categoryDropdownInner}>
+              <View style={styles.inlineValueInner}>
                 <Text
                   style={[
                     styles.inlineValueText,
                     !category && { color: Colors.text.disabled },
-                    category ? { color: SEGMENT_CONFIG[segment].color } : undefined,
+                    category ? { color: segColor } : undefined,
                   ]}
                   numberOfLines={1}
                 >
                   {category || "Seleccionar"}
                 </Text>
                 <Ionicons
-                  name={showCategoryPicker ? "chevron-up" : "chevron-down"}
+                  name="chevron-down"
                   size={16}
-                  color={category ? SEGMENT_CONFIG[segment].color : Colors.text.muted}
+                  color={category ? segColor : Colors.text.muted}
                 />
               </View>
             </Pressable>
           </View>
         </View>
 
-        {showCategoryPicker && (
-          <View style={styles.categoryDropdown}>
-            {categories.length > 0 ? (
-              categories.map((cat) => {
-                const isActive = category === cat;
-                const segColor = SEGMENT_CONFIG[segment].color;
-                return (
-                  <Pressable
-                    key={cat}
-                    onPress={() => {
-                      setCategory(cat);
-                      setShowCategoryPicker(false);
-                      Haptics.selectionAsync();
-                    }}
-                    style={[
-                      styles.categoryDropdownOption,
-                      isActive && { backgroundColor: `${segColor}18` },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.categoryDot,
-                        { backgroundColor: isActive ? segColor : Colors.dark.highlight },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.categoryDropdownText,
-                        isActive && { color: segColor, fontFamily: "Outfit_700Bold" },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {cat}
-                    </Text>
-                    {isActive && (
-                      <Ionicons name="checkmark" size={16} color={segColor} />
-                    )}
-                  </Pressable>
-                );
-              })
-            ) : (
-              <View style={styles.categoryDropdownOption}>
-                <Text style={styles.noCategoriesText}>
-                  No hay categorias configuradas
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
         {!editingTx && (
           <>
             <Text style={styles.fieldLabel}>REPETIR</Text>
             <Pressable
-              onPress={() => setShowRecurrencePicker(!showRecurrencePicker)}
+              onPress={() => setShowRecurrenceSheet(true)}
               style={styles.dropdownBtn}
             >
               <Text style={styles.dropdownBtnText}>{recurrenceLabel}</Text>
-              <Ionicons
-                name={showRecurrencePicker ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={Colors.text.muted}
-              />
+              <Ionicons name="chevron-down" size={18} color={Colors.text.muted} />
             </Pressable>
-            {showRecurrencePicker && (
-              <View style={styles.recurrencePicker}>
-                {RECURRENCE_OPTIONS.map((opt) => (
-                  <Pressable
-                    key={opt.id}
-                    onPress={() => {
-                      setRecurrence(opt.id);
-                      setShowRecurrencePicker(false);
-                      Haptics.selectionAsync();
-                    }}
-                    style={[
-                      styles.recurrenceOption,
-                      recurrence === opt.id && styles.recurrenceOptionActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.recurrenceOptionText,
-                        recurrence === opt.id && styles.recurrenceOptionTextActive,
-                      ]}
-                    >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
           </>
         )}
 
         {(currency === "VES" || currency === "EUR") && (
           <View style={styles.rateButtonsRow}>
             <Pressable
-              onPress={() => {
-                setRateType("bcv");
-                Haptics.selectionAsync();
-              }}
-              style={[
-                styles.rateButton,
-                rateType === "bcv" && styles.rateButtonActive,
-              ]}
+              onPress={() => { setRateType("bcv"); Haptics.selectionAsync(); }}
+              style={[styles.rateButton, rateType === "bcv" && styles.rateButtonActive]}
             >
-              <Text
-                style={[
-                  styles.rateButtonLabel,
-                  rateType === "bcv" && styles.rateButtonLabelActive,
-                ]}
-              >
+              <Text style={[styles.rateButtonLabel, rateType === "bcv" && styles.rateButtonLabelActive]}>
                 BCV
               </Text>
-              <Text
-                style={[
-                  styles.rateButtonValue,
-                  rateType === "bcv" && styles.rateButtonValueActive,
-                ]}
-              >
+              <Text style={[styles.rateButtonValue, rateType === "bcv" && styles.rateButtonValueActive]}>
                 {rates.bcv > 0 ? rates.bcv.toFixed(2) : "--"}
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => {
-                setRateType("parallel");
-                Haptics.selectionAsync();
-              }}
-              style={[
-                styles.rateButton,
-                rateType === "parallel" && styles.rateButtonActive,
-              ]}
+              onPress={() => { setRateType("parallel"); Haptics.selectionAsync(); }}
+              style={[styles.rateButton, rateType === "parallel" && styles.rateButtonActive]}
             >
-              <Text
-                style={[
-                  styles.rateButtonLabel,
-                  rateType === "parallel" && styles.rateButtonLabelActive,
-                ]}
-              >
+              <Text style={[styles.rateButtonLabel, rateType === "parallel" && styles.rateButtonLabelActive]}>
                 USDC
               </Text>
-              <Text
-                style={[
-                  styles.rateButtonValue,
-                  rateType === "parallel" && styles.rateButtonValueActive,
-                ]}
-              >
+              <Text style={[styles.rateButtonValue, rateType === "parallel" && styles.rateButtonValueActive]}>
                 {rates.parallel > 0 ? rates.parallel.toFixed(2) : "--"}
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => {
-                setRateType("manual");
-                Haptics.selectionAsync();
-              }}
-              style={[
-                styles.rateButton,
-                rateType === "manual" && styles.rateButtonActive,
-              ]}
+              onPress={() => { setRateType("manual"); Haptics.selectionAsync(); }}
+              style={[styles.rateButton, rateType === "manual" && styles.rateButtonActive]}
             >
-              <Text
-                style={[
-                  styles.rateButtonLabel,
-                  rateType === "manual" && styles.rateButtonLabelActive,
-                ]}
-              >
+              <Text style={[styles.rateButtonLabel, rateType === "manual" && styles.rateButtonLabelActive]}>
                 Manual
               </Text>
             </Pressable>
@@ -569,7 +686,7 @@ export default function TransactionModal() {
 
         <View style={styles.usdRefRow}>
           <Text style={styles.usdRefLabel}>Ref. USD Reporte:</Text>
-          <Text style={styles.usdRefValue}>
+          <Text style={[styles.usdRefValue, { color: segColor }]}>
             ${formatCurrency(amountUSD)}
           </Text>
         </View>
@@ -599,6 +716,93 @@ export default function TransactionModal() {
           </Pressable>
         )}
       </ScrollView>
+
+      <BottomSheetPicker
+        visible={showCategorySheet}
+        onClose={() => setShowCategorySheet(false)}
+        title="Categoria"
+      >
+        <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+          {categories.length > 0 ? (
+            categories.map((cat) => {
+              const isActive = category === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => {
+                    setCategory(cat);
+                    setShowCategorySheet(false);
+                    Haptics.selectionAsync();
+                  }}
+                  style={[
+                    styles.sheetOption,
+                    isActive && { backgroundColor: `${segColor}15` },
+                  ]}
+                >
+                  <View style={[styles.sheetDot, { backgroundColor: isActive ? segColor : Colors.dark.highlight }]} />
+                  <Text
+                    style={[
+                      styles.sheetOptionText,
+                      isActive && { color: segColor, fontFamily: "Outfit_700Bold" },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {cat}
+                  </Text>
+                  {isActive && <Ionicons name="checkmark-circle" size={20} color={segColor} />}
+                </Pressable>
+              );
+            })
+          ) : (
+            <View style={styles.sheetOption}>
+              <Text style={styles.noCategoriesText}>No hay categorias configuradas</Text>
+            </View>
+          )}
+        </ScrollView>
+      </BottomSheetPicker>
+
+      <BottomSheetPicker
+        visible={showRecurrenceSheet}
+        onClose={() => setShowRecurrenceSheet(false)}
+        title="Repetir"
+      >
+        <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+          {RECURRENCE_OPTIONS.map((opt) => {
+            const isActive = recurrence === opt.id;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => {
+                  setRecurrence(opt.id);
+                  setShowRecurrenceSheet(false);
+                  Haptics.selectionAsync();
+                }}
+                style={[
+                  styles.sheetOption,
+                  isActive && { backgroundColor: "rgba(16,185,129,0.1)" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sheetOptionText,
+                    isActive && { color: Colors.brand.light, fontFamily: "Outfit_700Bold" },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+                {isActive && <Ionicons name="checkmark-circle" size={20} color={Colors.brand.light} />}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </BottomSheetPicker>
+
+      <DatePickerSheet
+        visible={showDateSheet}
+        onClose={() => setShowDateSheet(false)}
+        dateStr={date}
+        onConfirm={setDate}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -724,61 +928,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  inlineValueText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
-    color: Colors.text.primary,
-  },
-  dateEditInput: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: Colors.brand.DEFAULT,
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
-    color: Colors.text.primary,
-  },
-  categoryDropdownInner: {
+  inlineValueInner: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
   },
-  categoryDropdown: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    overflow: "hidden" as const,
-    marginBottom: 16,
-  },
-  categoryDropdownOption: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderSubtle,
-    gap: 10,
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  categoryDropdownText: {
-    fontFamily: "Outfit_500Medium",
+  inlineValueText: {
+    fontFamily: "Outfit_600SemiBold",
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.text.primary,
     flex: 1,
-  },
-  noCategoriesText: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 13,
-    color: Colors.text.disabled,
-    fontStyle: "italic" as const,
-    paddingVertical: 8,
   },
   fieldLabel: {
     fontFamily: "Outfit_700Bold",
@@ -798,44 +957,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   dropdownBtnText: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 14,
     color: Colors.text.primary,
   },
-  recurrencePicker: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    overflow: "hidden" as const,
-    marginBottom: 16,
-  },
-  recurrenceOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderSubtle,
-  },
-  recurrenceOptionActive: {
-    backgroundColor: "rgba(16,185,129,0.1)",
-  },
-  recurrenceOptionText: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 14,
-    color: Colors.text.secondary,
-  },
-  recurrenceOptionTextActive: {
-    color: Colors.brand.light,
-    fontFamily: "Outfit_700Bold",
-  },
   rateButtonsRow: {
     flexDirection: "row" as const,
     gap: 10,
     marginBottom: 16,
-    marginTop: 4,
   },
   rateButton: {
     flex: 1,
@@ -908,7 +1040,6 @@ const styles = StyleSheet.create({
   usdRefValue: {
     fontFamily: "Outfit_800ExtraBold",
     fontSize: 22,
-    color: Colors.brand.light,
     letterSpacing: -0.5,
   },
   saveButton: {
@@ -936,5 +1067,31 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_600SemiBold",
     fontSize: 14,
     color: "#ef4444",
+  },
+  sheetOption: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
+    gap: 12,
+  },
+  sheetDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sheetOptionText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 15,
+    color: Colors.text.secondary,
+    flex: 1,
+  },
+  noCategoriesText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.disabled,
+    fontStyle: "italic" as const,
   },
 });
