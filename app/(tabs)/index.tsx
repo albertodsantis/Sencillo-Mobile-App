@@ -35,12 +35,16 @@ const CHART_CATEGORY_COLORS = [
 function MiniKpi({
   label,
   total,
+  vesAmount,
+  hardAmount,
   color,
   icon,
   onPress,
 }: {
   label: string;
   total: number;
+  vesAmount: number;
+  hardAmount: number;
   color: string;
   icon: React.ReactNode;
   onPress?: () => void;
@@ -53,13 +57,25 @@ function MiniKpi({
         pressed && { opacity: 0.8 },
       ]}
     >
-      <View style={[styles.miniKpiIcon, { backgroundColor: color + "18" }]}>
-        {icon}
+      <View style={styles.miniKpiTop}>
+        <View style={[styles.miniKpiIcon, { backgroundColor: color + "18" }]}>
+          {icon}
+        </View>
+        <Text style={styles.miniKpiLabel} numberOfLines={1}>{label}</Text>
       </View>
-      <Text style={styles.miniKpiLabel} numberOfLines={1}>{label}</Text>
       <Text style={[styles.miniKpiValue, { color }]} numberOfLines={1}>
         ${formatCompact(total)}
       </Text>
+      <View style={styles.miniKpiBreakdown}>
+        <View style={styles.miniKpiTag}>
+          <Text style={styles.miniKpiTagPrefix}>$</Text>
+          <Text style={styles.miniKpiTagVal}>{formatCompact(hardAmount)}</Text>
+        </View>
+        <View style={styles.miniKpiTag}>
+          <Text style={styles.miniKpiTagPrefix}>Bs</Text>
+          <Text style={styles.miniKpiTagVal}>{formatCompact(vesAmount)}</Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -327,6 +343,8 @@ export default function HomeScreen() {
         <MiniKpi
           label="Ingresos"
           total={dashboardData.ingresos}
+          vesAmount={dashboardData.ingresosVES}
+          hardAmount={dashboardData.ingresosHard}
           color={Colors.segments.ingresos.color}
           icon={<Ionicons name="trending-up" size={12} color={Colors.segments.ingresos.color} />}
           onPress={() => navigateToHistory("ingresos")}
@@ -334,6 +352,8 @@ export default function HomeScreen() {
         <MiniKpi
           label="G. Fijos"
           total={dashboardData.gastosFijos}
+          vesAmount={dashboardData.gastosFijosVES}
+          hardAmount={dashboardData.gastosFijosHard}
           color={Colors.segments.gastos_fijos.color}
           icon={<MaterialCommunityIcons name="credit-card" size={12} color={Colors.segments.gastos_fijos.color} />}
           onPress={() => navigateToHistory("gastos")}
@@ -341,6 +361,8 @@ export default function HomeScreen() {
         <MiniKpi
           label="G. Var."
           total={dashboardData.gastosVariables}
+          vesAmount={dashboardData.gastosVariablesVES}
+          hardAmount={dashboardData.gastosVariablesHard}
           color={Colors.segments.gastos_variables.color}
           icon={<Ionicons name="trending-down" size={12} color={Colors.segments.gastos_variables.color} />}
           onPress={() => navigateToHistory("gastos")}
@@ -348,6 +370,8 @@ export default function HomeScreen() {
         <MiniKpi
           label="Ahorro"
           total={dashboardData.ahorro}
+          vesAmount={dashboardData.ahorroVES}
+          hardAmount={dashboardData.ahorroHard}
           color={Colors.segments.ahorro.color}
           icon={<MaterialCommunityIcons name="piggy-bank" size={12} color={Colors.segments.ahorro.color} />}
           onPress={() => navigateToHistory("ahorro")}
@@ -735,31 +759,59 @@ const styles = StyleSheet.create({
   miniKpi: {
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: Colors.dark.border,
     alignItems: "center" as const,
-    minWidth: 80,
+    minWidth: 90,
+  },
+  miniKpiTop: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+    marginBottom: 6,
   },
   miniKpiIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 7,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginBottom: 6,
   },
   miniKpiLabel: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 10,
     color: Colors.text.muted,
-    marginBottom: 2,
   },
   miniKpiValue: {
     fontFamily: "Outfit_800ExtraBold",
-    fontSize: 15,
+    fontSize: 16,
     letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  miniKpiBreakdown: {
+    flexDirection: "row" as const,
+    gap: 6,
+  },
+  miniKpiTag: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 2,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  miniKpiTagPrefix: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 8,
+    color: "rgba(148,163,184,0.7)",
+  },
+  miniKpiTagVal: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 8,
+    color: Colors.text.secondary,
   },
   chartsContainer: {
     gap: 16,
