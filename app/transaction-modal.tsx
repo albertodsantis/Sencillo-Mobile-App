@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -329,36 +329,8 @@ export default function TransactionModal() {
   const [segment, setSegment] = useState<Segment>(
     editingTx?.segment || "ingresos"
   );
-  const [rawCents, setRawCents] = useState(
-    editingTx ? Math.round(editingTx.amount * 100).toString() : ""
-  );
-
-  const amount = useMemo(() => {
-    if (!rawCents) return "";
-    return (parseInt(rawCents, 10) / 100).toString();
-  }, [rawCents]);
-
-  const displayAmount = useMemo(() => {
-    if (!rawCents) return "0,00";
-    const cents = parseInt(rawCents, 10);
-    const whole = Math.floor(cents / 100);
-    const frac = cents % 100;
-    const wholeStr = whole.toLocaleString("es-VE");
-    return `${wholeStr},${String(frac).padStart(2, "0")}`;
-  }, [rawCents]);
-
-  const handleDigitPress = useCallback((digit: string) => {
-    if (Platform.OS !== "web") Haptics.selectionAsync();
-    setRawCents((prev) => {
-      if (digit === "backspace") {
-        return prev.length <= 1 ? "" : prev.slice(0, -1);
-      }
-      if (digit === "." || digit === ",") return prev;
-      const next = prev + digit;
-      if (parseInt(next, 10) > 99999999) return prev;
-      return next;
-    });
-  }, []);
+  const [amount, setAmount] = useState(editingTx?.amount.toString() || "");
+  const amountInputRef = useRef<TextInput>(null);
 
   const [currency, setCurrency] = useState<Currency>(
     editingTx?.currency || "VES"
@@ -546,38 +518,34 @@ export default function TransactionModal() {
           })}
         </ScrollView>
 
-        <View style={styles.amountSection}>
-          <Text style={[styles.amountDisplay, { color: segColor }]}>
-            {currencyInfo.symbol} {displayAmount}
-          </Text>
+        <Pressable
+          style={styles.amountSection}
+          onPress={() => amountInputRef.current?.focus()}
+        >
+          <View style={styles.amountRow}>
+            <Text style={[styles.amountSymbol, { color: segColor }]}>
+              {currencyInfo.symbol}
+            </Text>
+            <TextInput
+              ref={amountInputRef}
+              style={[styles.amountInput, { color: segColor }]}
+              value={amount}
+              onChangeText={(text) => {
+                const cleaned = text.replace(/[^0-9.,]/g, "").replace(",", ".");
+                const parts = cleaned.split(".");
+                if (parts.length > 2) return;
+                if (parts[1] && parts[1].length > 2) return;
+                setAmount(cleaned);
+              }}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={Colors.text.disabled}
+              selectionColor={segColor}
+              textAlign="center"
+            />
+          </View>
           <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
-        </View>
-
-        <View style={styles.numpad}>
-          {[["1","2","3"],["4","5","6"],["7","8","9"],["","0","backspace"]].map((row, ri) => (
-            <View key={ri} style={styles.numpadRow}>
-              {row.map((key, ki) => {
-                if (key === "") return <View key={ki} style={styles.numpadKey} />;
-                return (
-                  <Pressable
-                    key={ki}
-                    onPress={() => handleDigitPress(key)}
-                    style={({ pressed }) => [
-                      styles.numpadKey,
-                      pressed && key !== "" && { backgroundColor: Colors.dark.highlight },
-                    ]}
-                  >
-                    {key === "backspace" ? (
-                      <Ionicons name="backspace-outline" size={24} color={Colors.text.secondary} />
-                    ) : (
-                      <Text style={styles.numpadKeyText}>{key}</Text>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))}
-        </View>
+        </Pressable>
 
         <View style={styles.currencyPillRow}>
           {CURRENCIES.map((c) => {
@@ -896,37 +864,25 @@ const styles = StyleSheet.create({
   },
   amountSection: {
     alignItems: "center" as const,
-    marginBottom: 8,
+    marginBottom: 16,
     paddingVertical: 8,
   },
-  amountDisplay: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 44,
-    color: Colors.text.primary,
-    textAlign: "center" as const,
-    letterSpacing: -1.5,
-  },
-  numpad: {
-    marginBottom: 16,
-    paddingHorizontal: 12,
-  },
-  numpadRow: {
+  amountRow: {
     flexDirection: "row" as const,
-    justifyContent: "center" as const,
-  },
-  numpadKey: {
-    flex: 1,
-    height: 52,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    borderRadius: 14,
-    marginHorizontal: 4,
-    marginVertical: 3,
   },
-  numpadKeyText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 24,
-    color: Colors.text.primary,
+  amountSymbol: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 28,
+    marginRight: 6,
+  },
+  amountInput: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 44,
+    letterSpacing: -1.5,
+    minWidth: 100,
+    paddingVertical: 0,
   },
   currencyFullLabel: {
     fontFamily: "Outfit_700Bold",
