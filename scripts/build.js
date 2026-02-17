@@ -546,12 +546,57 @@ async function main() {
   console.log("Updating manifests and creating landing page...");
   updateManifests(manifests, timestamp, baseUrl, assetsByHash);
 
-  console.log("Build complete! Deploy to:", baseUrl);
-
   if (metroProcess) {
     metroProcess.kill();
+    metroProcess = null;
   }
+
+  console.log("Building web version...");
+  await buildWeb(domain);
+
+  console.log("Build complete! Deploy to:", baseUrl);
   process.exit(0);
+}
+
+async function buildWeb(domain) {
+  return new Promise((resolve, reject) => {
+    const env = {
+      ...process.env,
+      EXPO_PUBLIC_DOMAIN: domain,
+    };
+    const webBuild = spawn("npx", ["expo", "export", "--platform", "web", "--output-dir", "web-build"], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env,
+    });
+
+    if (webBuild.stdout) {
+      webBuild.stdout.on("data", (data) => {
+        const output = data.toString().trim();
+        if (output) console.log(`[Web Build] ${output}`);
+      });
+    }
+    if (webBuild.stderr) {
+      webBuild.stderr.on("data", (data) => {
+        const output = data.toString().trim();
+        if (output) console.error(`[Web Build] ${output}`);
+      });
+    }
+
+    webBuild.on("close", (code) => {
+      if (code === 0) {
+        console.log("Web build complete");
+        resolve();
+      } else {
+        console.error(`Web build exited with code ${code}`);
+        resolve();
+      }
+    });
+
+    webBuild.on("error", (err) => {
+      console.error("Web build error:", err.message);
+      resolve();
+    });
+  });
 }
 
 main().catch((error) => {
