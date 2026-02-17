@@ -124,7 +124,13 @@ export default function HomeScreen() {
     isRefreshingRates,
     refreshRates,
     setHistoryFilter,
+    profile,
   } = useApp();
+
+  const displayName =
+    (profile.firstName || profile.lastName)
+      ? `${profile.firstName} ${profile.lastName}`.trim()
+      : "Sencillo";
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -197,7 +203,7 @@ export default function HomeScreen() {
       }
     >
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Sencillo</Text>
+        <Text style={styles.headerTitle}>{displayName}</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={refreshRates} style={styles.refreshBtn}>
             <Feather
