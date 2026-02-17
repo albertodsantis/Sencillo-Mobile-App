@@ -8,6 +8,7 @@ import { StatusBar } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { AppProvider } from "@/lib/context/AppContext";
+import "@/lib/notifications";
 import {
   useFonts,
   Outfit_400Regular,
