@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,22 +9,27 @@ import {
   Platform,
   Alert,
   Modal,
-  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
 import { formatCurrency } from "@/lib/domain/finance";
+import dayjs from "dayjs";
 
 function ProgressBar({
   progress,
   color,
+  inverted,
 }: {
   progress: number;
   color: string;
+  inverted?: boolean;
 }) {
   const clampedProgress = Math.min(Math.max(progress, 0), 100);
+  const barColor = inverted
+    ? (clampedProgress >= 100 ? "#34d399" : clampedProgress >= 70 ? "#eab308" : color)
+    : (clampedProgress > 90 ? "#ef4444" : clampedProgress > 70 ? "#eab308" : color);
   return (
     <View style={styles.progressBarBg}>
       <View
@@ -32,8 +37,7 @@ function ProgressBar({
           styles.progressBarFill,
           {
             width: `${clampedProgress}%` as any,
-            backgroundColor:
-              clampedProgress > 90 ? "#ef4444" : clampedProgress > 70 ? "#eab308" : color,
+            backgroundColor: barColor,
           },
         ]}
       />
@@ -48,15 +52,56 @@ export default function BudgetScreen() {
     budgets,
     budgetSummary,
     updateBudgets,
+    savingsGoals,
+    updateSavingsGoals,
+    transactions,
   } = useApp();
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [goalValue, setGoalValue] = useState("");
   const [showGuide, setShowGuide] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
 
   const variableCategories = pnlStructure.gastos_variables;
+  const ahorroCategories = pnlStructure.ahorro;
+
+  const savingsSpending = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const spending: { [category: string]: number } = {};
+    transactions.forEach((t) => {
+      const d = dayjs(t.date);
+      if (
+        d.isValid() &&
+        d.month() === currentMonth &&
+        d.year() === currentYear &&
+        t.segment === "ahorro"
+      ) {
+        spending[t.category] = (spending[t.category] || 0) + (t.amountUSD || 0);
+      }
+    });
+    return spending;
+  }, [transactions]);
+
+  const totalSavingsGoal = useMemo(() => {
+    return Object.values(savingsGoals).reduce((s, v) => s + v, 0);
+  }, [savingsGoals]);
+
+  const totalSaved = useMemo(() => {
+    let total = 0;
+    ahorroCategories.forEach((cat) => {
+      if (savingsGoals[cat]) {
+        total += savingsSpending[cat] || 0;
+      }
+    });
+    return total;
+  }, [ahorroCategories, savingsGoals, savingsSpending]);
+
+  const overallSavingsProgress = totalSavingsGoal > 0 ? (totalSaved / totalSavingsGoal) * 100 : 0;
 
   const handleSaveBudget = useCallback(
     async (category: string) => {
@@ -81,6 +126,29 @@ export default function BudgetScreen() {
     [budgets, updateBudgets]
   );
 
+  const handleSaveGoal = useCallback(
+    async (category: string) => {
+      const value = parseFloat(goalValue);
+      if (isNaN(value) || value < 0) {
+        setEditingGoal(null);
+        return;
+      }
+      const updated = { ...savingsGoals, [category]: value };
+      await updateSavingsGoals(updated);
+      setEditingGoal(null);
+    },
+    [goalValue, savingsGoals, updateSavingsGoals]
+  );
+
+  const handleRemoveGoal = useCallback(
+    async (category: string) => {
+      const updated = { ...savingsGoals };
+      delete updated[category];
+      await updateSavingsGoals(updated);
+    },
+    [savingsGoals, updateSavingsGoals]
+  );
+
   const overallProgress = budgetSummary.progress;
   const overallColor =
     overallProgress > 90
@@ -97,8 +165,8 @@ export default function BudgetScreen() {
     >
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>Presupuesto</Text>
-          <Text style={styles.subtitle}>Control de gastos variables del mes</Text>
+          <Text style={styles.title}>Presupuestos y Ahorro</Text>
+          <Text style={styles.subtitle}>Control mensual de gastos y metas</Text>
         </View>
         <Pressable
           onPress={() => setShowGuide(true)}
@@ -107,6 +175,8 @@ export default function BudgetScreen() {
           <Ionicons name="help-circle-outline" size={26} color={Colors.text.muted} />
         </Pressable>
       </View>
+
+      <Text style={styles.sectionLabel}>Presupuestos</Text>
 
       {budgetSummary.totalBudget > 0 && (
         <View style={styles.overallCard}>
@@ -214,6 +284,119 @@ export default function BudgetScreen() {
           </View>
         );
       })}
+
+      <View style={styles.divider} />
+
+      <Text style={styles.sectionLabel}>Objetivos de Ahorro</Text>
+
+      {totalSavingsGoal > 0 && (
+        <View style={[styles.overallCard, { borderColor: "rgba(96,165,250,0.2)" }]}>
+          <View style={styles.overallHeader}>
+            <Text style={styles.overallLabel}>Progreso Total</Text>
+            <Text style={[styles.overallPercent, { color: overallSavingsProgress >= 100 ? "#34d399" : overallSavingsProgress >= 70 ? "#eab308" : "#60a5fa" }]}>
+              {overallSavingsProgress.toFixed(0)}%
+            </Text>
+          </View>
+          <ProgressBar progress={overallSavingsProgress} color="#60a5fa" inverted />
+          <View style={styles.overallFooter}>
+            <Text style={styles.overallSpent}>
+              Ahorrado: ${formatCurrency(totalSaved)}
+            </Text>
+            <Text style={styles.overallBudget}>
+              Meta: ${formatCurrency(totalSavingsGoal)}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {ahorroCategories.map((cat) => {
+        const goal = savingsGoals[cat] || 0;
+        const saved = savingsSpending[cat] || 0;
+        const catProgress = goal > 0 ? (saved / goal) * 100 : 0;
+        const isEditing = editingGoal === cat;
+
+        return (
+          <View key={cat} style={styles.categoryCard}>
+            <View style={styles.catHeader}>
+              <Text style={styles.catName}>{cat}</Text>
+              {goal > 0 && (
+                <Pressable onPress={() => handleRemoveGoal(cat)}>
+                  <Ionicons
+                    name="close-circle"
+                    size={18}
+                    color={Colors.text.disabled}
+                  />
+                </Pressable>
+              )}
+            </View>
+
+            {isEditing ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={[styles.editInput, { borderColor: "#60a5fa" }]}
+                  value={goalValue}
+                  onChangeText={setGoalValue}
+                  keyboardType="numeric"
+                  placeholder="Meta en USD"
+                  placeholderTextColor={Colors.text.disabled}
+                  autoFocus
+                />
+                <Pressable
+                  onPress={() => handleSaveGoal(cat)}
+                  style={[styles.saveBtn, { backgroundColor: "#60a5fa" }]}
+                >
+                  <Ionicons name="checkmark" size={20} color="#fff" />
+                </Pressable>
+                <Pressable
+                  onPress={() => setEditingGoal(null)}
+                  style={styles.cancelBtn}
+                >
+                  <Ionicons name="close" size={20} color={Colors.text.muted} />
+                </Pressable>
+              </View>
+            ) : goal > 0 ? (
+              <Pressable
+                onPress={() => {
+                  setGoalValue(goal.toString());
+                  setEditingGoal(cat);
+                }}
+              >
+                <View style={styles.catValues}>
+                  <Text style={styles.catSpent}>
+                    ${formatCurrency(saved)}
+                  </Text>
+                  <Text style={styles.catBudget}>
+                    / ${formatCurrency(goal)}
+                  </Text>
+                </View>
+                <ProgressBar
+                  progress={catProgress}
+                  color="#60a5fa"
+                  inverted
+                />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setGoalValue("");
+                  setEditingGoal(cat);
+                }}
+                style={styles.setBudgetBtn}
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={16}
+                  color="#60a5fa"
+                />
+                <Text style={[styles.setBudgetText, { color: "#60a5fa" }]}>
+                  Establecer meta
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        );
+      })}
+
       <Modal
         visible={showGuide}
         transparent
@@ -226,11 +409,12 @@ export default function BudgetScreen() {
               <View style={guideStyles.iconCircle}>
                 <Ionicons name="information-circle" size={28} color="#a78bfa" />
               </View>
-              <Text style={guideStyles.cardTitle}>Guia de Presupuestos</Text>
+              <Text style={guideStyles.cardTitle}>Guia</Text>
             </View>
 
-            <Text style={guideStyles.intro}>
-              Controla aqui tus <Text style={guideStyles.bold}>Gastos Variables</Text>.
+            <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
+            <Text style={guideStyles.sectionDesc}>
+              Controla tus <Text style={guideStyles.bold}>Gastos Variables</Text> definiendo un tope para cada categoria. Cuando te acerques al limite, la barra cambiara de color.
             </Text>
 
             <View style={guideStyles.infoBox}>
@@ -247,9 +431,9 @@ export default function BudgetScreen() {
               </View>
             </View>
 
-            <Text style={guideStyles.sectionTitle}>Partidas de Gastos</Text>
+            <Text style={guideStyles.sectionTitle}>Objetivos de Ahorro</Text>
             <Text style={guideStyles.sectionDesc}>
-              Aqui estan tus categorias de Gastos Variables (configuradas en Personalizacion). Define un tope para cada una y aumenta tu capacidad de ahorro.
+              Define metas mensuales para tus categorias de <Text style={guideStyles.bold}>Ahorro</Text>. A medida que registres movimientos de ahorro, veras tu progreso hacia cada meta.
             </Text>
 
             <Pressable
@@ -396,7 +580,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "Outfit_900Black",
-    fontSize: 24,
+    fontSize: 22,
     color: Colors.text.primary,
     letterSpacing: -0.5,
   },
@@ -414,6 +598,19 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
     marginTop: 2,
+  },
+  sectionLabel: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 16,
+    color: Colors.text.secondary,
+    letterSpacing: 0.3,
+    marginBottom: 14,
+    textTransform: "uppercase" as const,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.dark.border,
+    marginVertical: 24,
   },
   overallCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
