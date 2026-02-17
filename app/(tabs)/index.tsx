@@ -195,7 +195,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
+      contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120, paddingHorizontal: 24 }}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -517,7 +517,6 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    paddingHorizontal: 24,
     marginBottom: 16,
   },
   headerTitle: {
@@ -553,7 +552,6 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: 32,
     marginBottom: 12,
   },
   navButton: {
@@ -572,7 +570,6 @@ const styles = StyleSheet.create({
   },
   segmentControl: {
     flexDirection: "row" as const,
-    marginHorizontal: 24,
     backgroundColor: Colors.dark.surface,
     borderRadius: 16,
     padding: 4,
@@ -598,7 +595,6 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   ratesBar: {
-    marginHorizontal: 24,
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 16,
     padding: 14,
@@ -635,7 +631,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
   },
   balanceCard: {
-    marginHorizontal: 24,
     borderRadius: 32,
     paddingVertical: 28,
     paddingHorizontal: 24,
@@ -677,7 +672,6 @@ const styles = StyleSheet.create({
   kpiGrid: {
     flexDirection: "row" as const,
     flexWrap: "wrap" as const,
-    paddingHorizontal: 24,
     gap: 12,
   },
   kpiCard: {
