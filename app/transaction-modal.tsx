@@ -528,7 +528,11 @@ export default function TransactionModal() {
             </Text>
             <TextInput
               ref={amountInputRef}
-              style={[styles.amountInput, { color: segColor }]}
+              style={[
+                styles.amountInput,
+                { color: segColor },
+                Platform.OS === "web" && { outlineStyle: "none" as any },
+              ]}
               value={amount}
               onChangeText={(text) => {
                 const cleaned = text.replace(/[^0-9.,]/g, "").replace(",", ".");
@@ -882,6 +886,7 @@ const styles = StyleSheet.create({
     fontSize: 44,
     letterSpacing: -1.5,
     minWidth: 100,
+    height: 56,
     paddingVertical: 0,
   },
   currencyFullLabel: {
