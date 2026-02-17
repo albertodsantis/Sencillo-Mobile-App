@@ -439,12 +439,16 @@ export default function TransactionModal() {
       router.back();
     };
     if (Platform.OS === "web") {
-      if (confirm("Eliminar este movimiento?")) doDelete();
+      if (confirm("¿Eliminar movimiento?\nEsta acción no se puede deshacer.")) doDelete();
     } else {
-      Alert.alert("Eliminar", "Eliminar este movimiento?", [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: doDelete },
-      ]);
+      Alert.alert(
+        "¿Eliminar movimiento?",
+        "Esta acción no se puede deshacer.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Eliminar", style: "destructive", onPress: doDelete },
+        ]
+      );
     }
   }, [editingTx, deleteTx, router]);
 
