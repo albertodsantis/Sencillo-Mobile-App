@@ -25,109 +25,8 @@ import {
 } from "@/lib/notifications";
 
 const PHONE_PREFIXES = [
-  "+58",
-  "+1",
-  "+34",
-  "+57",
-  "+52",
-  "+56",
-  "+51",
-  "+55",
-  "+44",
-  "+33",
+  "+58", "+1", "+34", "+57", "+52", "+56", "+51", "+55", "+44", "+33",
 ];
-
-function ProfileField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType,
-  autoCapitalize,
-  secureTextEntry,
-  editable,
-  rightElement,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  keyboardType?: "default" | "email-address" | "phone-pad" | "numeric";
-  autoCapitalize?: "none" | "sentences" | "words" | "characters";
-  secureTextEntry?: boolean;
-  editable?: boolean;
-  rightElement?: React.ReactNode;
-}) {
-  return (
-    <View style={styles.fieldContainer}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.fieldInputRow}>
-        <TextInput
-          style={[
-            styles.fieldInput,
-            editable === false && styles.fieldInputDisabled,
-            rightElement ? { flex: 1 } : undefined,
-          ]}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.text.disabled}
-          keyboardType={keyboardType || "default"}
-          autoCapitalize={autoCapitalize || "sentences"}
-          secureTextEntry={secureTextEntry}
-          editable={editable !== false}
-        />
-        {rightElement}
-      </View>
-    </View>
-  );
-}
-
-function ActionRow({
-  icon,
-  label,
-  sublabel,
-  onPress,
-  danger,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  sublabel?: string;
-  onPress: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.actionRow,
-        pressed && { opacity: 0.7 },
-      ]}
-    >
-      <View style={styles.actionRowLeft}>
-        {icon}
-        <View>
-          <Text
-            style={[
-              styles.actionLabel,
-              danger && { color: "#ef4444" },
-            ]}
-          >
-            {label}
-          </Text>
-          {sublabel && (
-            <Text style={styles.actionSublabel}>{sublabel}</Text>
-          )}
-        </View>
-      </View>
-      <Ionicons
-        name="chevron-forward"
-        size={18}
-        color={Colors.text.disabled}
-      />
-    </Pressable>
-  );
-}
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -309,7 +208,7 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: Colors.dark.base }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={90}
     >
@@ -336,83 +235,77 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <Text style={styles.sectionLabel}>INFORMACION PERSONAL</Text>
+        <TextInput
+          style={styles.fieldInput}
+          value={firstName}
+          onChangeText={setFirstName}
+          placeholder="Tu nombre"
+          placeholderTextColor={Colors.text.disabled}
+          autoCapitalize="words"
+        />
+        <TextInput
+          style={styles.fieldInput}
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder="Tu apellido"
+          placeholderTextColor={Colors.text.disabled}
+          autoCapitalize="words"
+        />
 
-        <View style={styles.section}>
-          <ProfileField
-            label="Nombre"
-            value={firstName}
-            onChangeText={setFirstName}
-            placeholder="Tu nombre"
-            autoCapitalize="words"
-          />
-          <ProfileField
-            label="Apellido"
-            value={lastName}
-            onChangeText={setLastName}
-            placeholder="Tu apellido"
-            autoCapitalize="words"
-          />
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Telefono Movil</Text>
-            <View style={styles.phoneRow}>
-              <Pressable
-                onPress={() => setShowPrefixPicker(!showPrefixPicker)}
-                style={styles.prefixBtn}
-              >
-                <Text style={styles.prefixText}>{phonePrefix}</Text>
-                <Ionicons
-                  name="chevron-down"
-                  size={14}
-                  color={Colors.text.muted}
-                />
-              </Pressable>
-              <TextInput
-                style={styles.phoneInput}
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                placeholder="Numero"
-                placeholderTextColor={Colors.text.disabled}
-                keyboardType="phone-pad"
-              />
-            </View>
-            {showPrefixPicker && (
-              <View style={styles.prefixPicker}>
-                {PHONE_PREFIXES.map((p) => (
-                  <Pressable
-                    key={p}
-                    onPress={() => {
-                      setPhonePrefix(p);
-                      setShowPrefixPicker(false);
-                      Haptics.selectionAsync();
-                    }}
-                    style={[
-                      styles.prefixOption,
-                      phonePrefix === p && styles.prefixOptionActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.prefixOptionText,
-                        phonePrefix === p && styles.prefixOptionTextActive,
-                      ]}
-                    >
-                      {p}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
-          <ProfileField
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="tu@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
+        <View style={styles.phoneRow}>
+          <Pressable
+            onPress={() => setShowPrefixPicker(!showPrefixPicker)}
+            style={styles.prefixBtn}
+          >
+            <Text style={styles.prefixText}>{phonePrefix}</Text>
+            <Ionicons name="chevron-down" size={14} color={Colors.text.muted} />
+          </Pressable>
+          <TextInput
+            style={[styles.fieldInput, { flex: 1 }]}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="Tu numero de telefono"
+            placeholderTextColor={Colors.text.disabled}
+            keyboardType="phone-pad"
           />
         </View>
+        {showPrefixPicker && (
+          <View style={styles.prefixPicker}>
+            {PHONE_PREFIXES.map((p) => (
+              <Pressable
+                key={p}
+                onPress={() => {
+                  setPhonePrefix(p);
+                  setShowPrefixPicker(false);
+                  Haptics.selectionAsync();
+                }}
+                style={[
+                  styles.prefixOption,
+                  phonePrefix === p && styles.prefixOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.prefixOptionText,
+                    phonePrefix === p && styles.prefixOptionTextActive,
+                  ]}
+                >
+                  {p}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        <TextInput
+          style={styles.fieldInput}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Tu email"
+          placeholderTextColor={Colors.text.disabled}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
         {hasChanges && (
           <Pressable
@@ -426,81 +319,18 @@ export default function ProfileScreen() {
           </Pressable>
         )}
 
-        <Text style={styles.sectionLabel}>SEGURIDAD</Text>
+        <Text style={styles.sectionLabel}>CUENTA Y SEGURIDAD</Text>
 
-        <View style={styles.section}>
-          {!showPasswordChange ? (
-            <ActionRow
-              icon={<Ionicons name="lock-closed" size={20} color="#eab308" />}
-              label="Cambiar Contrasena"
-              sublabel={
-                profile.password
-                  ? "Contrasena configurada"
-                  : "Sin contrasena"
-              }
-              onPress={() => setShowPasswordChange(true)}
-            />
-          ) : (
-            <View style={styles.passwordSection}>
-              {profile.password ? (
-                <ProfileField
-                  label="Contrasena Actual"
-                  value={currentPassword}
-                  onChangeText={setCurrentPassword}
-                  placeholder="Ingresa tu contrasena actual"
-                  secureTextEntry
-                  autoCapitalize="none"
-                />
-              ) : null}
-              <ProfileField
-                label="Nueva Contrasena"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="Minimo 4 caracteres"
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <ProfileField
-                label="Confirmar Contrasena"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Repetir contrasena"
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <View style={styles.passwordActions}>
-                <Pressable
-                  onPress={handleChangePassword}
-                  style={styles.passwordSaveBtn}
-                >
-                  <Text style={styles.passwordSaveBtnText}>Guardar</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    setShowPasswordChange(false);
-                    setCurrentPassword("");
-                    setNewPassword("");
-                    setConfirmPassword("");
-                  }}
-                  style={styles.passwordCancelBtn}
-                >
-                  <Text style={styles.passwordCancelBtnText}>Cancelar</Text>
-                </Pressable>
+        <View style={styles.card}>
+          <View style={styles.rowItem}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(167,139,250,0.12)" }]}>
+                <Ionicons name="notifications" size={18} color="#a78bfa" />
               </View>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.sectionLabel}>NOTIFICACIONES</Text>
-
-        <View style={styles.section}>
-          <View style={styles.reminderRow}>
-            <View style={styles.actionRowLeft}>
-              <Ionicons name="notifications" size={20} color="#a78bfa" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.actionLabel}>Recordatorio diario</Text>
-                <Text style={styles.actionSublabel}>
-                  {reminderEnabled ? "Activo - 8:00 PM" : "Recibe un aviso para registrar tus movimientos"}
+                <Text style={styles.rowLabel}>Recordatorio diario</Text>
+                <Text style={styles.rowSub}>
+                  {reminderEnabled ? "Activo - 8:00 PM" : "Recibe un aviso cada dia"}
                 </Text>
               </View>
             </View>
@@ -515,36 +345,123 @@ export default function ProfileScreen() {
               />
             )}
           </View>
-        </View>
 
-        <Text style={styles.sectionLabel}>CUENTA</Text>
+          <Pressable
+            onPress={() => setShowPasswordChange(!showPasswordChange)}
+            style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.7 }]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(234,179,8,0.12)" }]}>
+                <Ionicons name="lock-closed" size={18} color="#eab308" />
+              </View>
+              <View>
+                <Text style={styles.rowLabel}>Cambiar Contrasena</Text>
+                <Text style={styles.rowSub}>
+                  {profile.password ? "Configurada" : "Sin contrasena"}
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showPasswordChange ? "chevron-up" : "chevron-forward"}
+              size={18}
+              color={Colors.text.disabled}
+            />
+          </Pressable>
 
-        <View style={styles.section}>
-          <ActionRow
-            icon={
-              <MaterialCommunityIcons
-                name="logout"
-                size={20}
-                color={Colors.text.secondary}
+          {showPasswordChange && (
+            <View style={styles.passwordArea}>
+              {profile.password ? (
+                <TextInput
+                  style={styles.pwInput}
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  placeholder="Contrasena actual"
+                  placeholderTextColor={Colors.text.disabled}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+              ) : null}
+              <TextInput
+                style={styles.pwInput}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Nueva contrasena (min. 4)"
+                placeholderTextColor={Colors.text.disabled}
+                secureTextEntry
+                autoCapitalize="none"
               />
-            }
-            label="Cerrar Sesion"
+              <TextInput
+                style={styles.pwInput}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirmar contrasena"
+                placeholderTextColor={Colors.text.disabled}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <View style={styles.pwActions}>
+                <Pressable onPress={handleChangePassword} style={styles.pwSaveBtn}>
+                  <Ionicons name="checkmark" size={18} color="#fff" />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setShowPasswordChange(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  style={styles.pwCancelBtn}
+                >
+                  <Ionicons name="close" size={18} color={Colors.text.muted} />
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          <Pressable
             onPress={handleLogout}
-          />
-          <ActionRow
-            icon={<Feather name="refresh-cw" size={18} color="#fb923c" />}
-            label="Resetear Movimientos"
-            sublabel="Eliminar todas las transacciones"
+            style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.7 }]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(255,255,255,0.06)" }]}>
+                <MaterialCommunityIcons name="logout" size={18} color={Colors.text.secondary} />
+              </View>
+              <Text style={styles.rowLabel}>Cerrar Sesion</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.disabled} />
+          </Pressable>
+
+          <Pressable
             onPress={handleResetTransactions}
-            danger
-          />
-          <ActionRow
-            icon={<Ionicons name="trash" size={20} color="#ef4444" />}
-            label="Eliminar Cuenta"
-            sublabel="Borrar toda la informacion permanentemente"
+            style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.7 }]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(251,146,60,0.12)" }]}>
+                <Feather name="refresh-cw" size={16} color="#fb923c" />
+              </View>
+              <View>
+                <Text style={[styles.rowLabel, { color: "#fb923c" }]}>Resetear Movimientos</Text>
+                <Text style={styles.rowSub}>Eliminar todas las transacciones</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.disabled} />
+          </Pressable>
+
+          <Pressable
             onPress={handleDeleteAccount}
-            danger
-          />
+            style={({ pressed }) => [styles.rowItem, { borderBottomWidth: 0 }, pressed && { opacity: 0.7 }]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(239,68,68,0.12)" }]}>
+                <Ionicons name="trash" size={18} color="#ef4444" />
+              </View>
+              <View>
+                <Text style={[styles.rowLabel, { color: "#ef4444" }]}>Eliminar Cuenta</Text>
+                <Text style={styles.rowSub}>Borrar toda la informacion</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.disabled} />
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -561,7 +478,7 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    marginBottom: 24,
+    marginBottom: 28,
   },
   backBtn: {
     width: 40,
@@ -585,66 +502,31 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
-  sectionLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 11,
-    color: Colors.text.muted,
-    letterSpacing: 1,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  section: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginBottom: 24,
-    overflow: "hidden" as const,
-  },
-  fieldContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderSubtle,
-  },
-  fieldLabel: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 11,
-    color: Colors.text.muted,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  fieldInputRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 8,
-  },
   fieldInput: {
     backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontFamily: "Outfit_500Medium",
     fontSize: 15,
     color: Colors.text.primary,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-  },
-  fieldInputDisabled: {
-    opacity: 0.5,
+    marginBottom: 10,
   },
   phoneRow: {
     flexDirection: "row" as const,
     gap: 8,
+    marginBottom: 10,
   },
   prefixBtn: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 4,
     backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: Colors.dark.border,
     minWidth: 80,
@@ -654,23 +536,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text.primary,
   },
-  phoneInput: {
-    flex: 1,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: "Outfit_500Medium",
-    fontSize: 15,
-    color: Colors.text.primary,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
   prefixPicker: {
     flexDirection: "row" as const,
     flexWrap: "wrap" as const,
     gap: 6,
-    marginTop: 10,
+    marginBottom: 10,
   },
   prefixOption: {
     paddingHorizontal: 12,
@@ -694,85 +564,103 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: Colors.brand.DEFAULT,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center" as const,
-    marginBottom: 24,
-    shadowColor: Colors.brand.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    marginTop: 4,
+    marginBottom: 10,
   },
   saveButtonText: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 16,
+    fontSize: 15,
     color: "#fff",
   },
-  actionRow: {
+  sectionLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: Colors.text.muted,
+    letterSpacing: 1,
+    marginTop: 18,
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  card: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    overflow: "hidden" as const,
+  },
+  rowItem: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.borderSubtle,
   },
-  actionRowLeft: {
+  rowLeft: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 14,
+    gap: 12,
+    flex: 1,
   },
-  actionLabel: {
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  rowLabel: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.text.primary,
   },
-  actionSublabel: {
+  rowSub: {
     fontFamily: "Outfit_400Regular",
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.text.muted,
     marginTop: 1,
   },
-  reminderRow: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
-    padding: 16,
-    gap: 12,
-  },
-  passwordSection: {
-    padding: 0,
-  },
-  passwordActions: {
-    flexDirection: "row" as const,
-    gap: 10,
-    padding: 16,
-    paddingTop: 8,
-  },
-  passwordSaveBtn: {
-    flex: 1,
-    backgroundColor: Colors.brand.DEFAULT,
-    borderRadius: 12,
+  passwordArea: {
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    alignItems: "center" as const,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
   },
-  passwordSaveBtnText: {
-    fontFamily: "Outfit_700Bold",
+  pwInput: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontFamily: "Outfit_500Medium",
     fontSize: 14,
-    color: "#fff",
-  },
-  passwordCancelBtn: {
-    flex: 1,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center" as const,
+    color: Colors.text.primary,
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  passwordCancelBtnText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
-    color: Colors.text.secondary,
+  pwActions: {
+    flexDirection: "row" as const,
+    gap: 8,
+    marginTop: 2,
+  },
+  pwSaveBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.brand.DEFAULT,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  pwCancelBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 });
