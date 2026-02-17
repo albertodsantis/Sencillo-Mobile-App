@@ -1,61 +1,98 @@
-// template
-import { isLiquidGlassAvailable } from "expo-glass-effect";
-import { Tabs } from "expo-router";
-import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
-import { BlurView } from "expo-blur";
-import { SymbolView } from "expo-symbols";
-import { Platform, StyleSheet, useColorScheme } from "react-native";
+import { Tabs, useRouter } from "expo-router";
+import { Platform, StyleSheet, View, Pressable } from "react-native";
 import React from "react";
-
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import Colors from "@/constants/colors";
 
-//IMPORTANT: iOS 26 Exists, feel free to use NativeTabs for native tabs with liquid glass support.
-function NativeTabLayout() {
-  return (
-    <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
-  );
-}
-
-function ClassicTabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+export default function TabLayout() {
+  const router = useRouter();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.tint,
-        tabBarInactiveTintColor: Colors.light.tabIconDefault,
-        headerShown: true,
+        tabBarActiveTintColor: Colors.brand.DEFAULT,
+        tabBarInactiveTintColor: Colors.text.muted,
+        headerShown: false,
         tabBarStyle: {
-          position: "absolute",
+          position: "absolute" as const,
           backgroundColor: Platform.select({
             ios: "transparent",
-            android: isDark ? "#000" : "#fff",
+            android: Colors.dark.base,
+            web: Colors.dark.base,
           }),
           borderTopWidth: 0,
           elevation: 0,
+          height: Platform.OS === "web" ? 84 : 85,
+          paddingBottom: Platform.OS === "web" ? 34 : 28,
+          paddingTop: 8,
         },
         tabBarBackground: () =>
           Platform.OS === "ios" ? (
             <BlurView
               intensity={100}
-              tint={isDark ? "dark" : "light"}
+              tint="dark"
               style={StyleSheet.absoluteFill}
             />
           ) : null,
+        tabBarLabelStyle: {
+          fontFamily: "Outfit_600SemiBold",
+          fontSize: 10,
+          marginTop: 2,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => (
-            <SymbolView name="house" tintColor={color} size={24} />
+          title: "Inicio",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: "Historial",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="time" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: "",
+          tabBarIcon: () => (
+            <View style={styles.addButton}>
+              <Ionicons name="add" size={28} color="#fff" />
+            </View>
+          ),
+          tabBarLabel: () => null,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push("/transaction-modal");
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="budget"
+        options={{
+          title: "Presupuesto",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chart-donut" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Ajustes",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="settings" size={20} color={color} />
           ),
         }}
       />
@@ -63,9 +100,19 @@ function ClassicTabLayout() {
   );
 }
 
-export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
-  return <ClassicTabLayout />;
-}
+const styles = StyleSheet.create({
+  addButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.brand.DEFAULT,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    marginTop: -20,
+    shadowColor: Colors.brand.DEFAULT,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+});
