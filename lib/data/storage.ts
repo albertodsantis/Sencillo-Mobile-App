@@ -5,6 +5,7 @@ import {
   type Rates,
   type PnlStructure,
   type Budgets,
+  type SavingsGoals,
   type UserProfile,
   DEFAULT_PNL,
   DEFAULT_PROFILE,
@@ -15,6 +16,7 @@ const KEYS = {
   RATES: '@sencillo/rates',
   PNL: '@sencillo/pnl',
   BUDGETS: '@sencillo/budgets',
+  SAVINGS_GOALS: '@sencillo/savings_goals',
   RATES_TIMESTAMP: '@sencillo/rates_timestamp',
   PROFILE: '@sencillo/profile',
 };
@@ -117,6 +119,19 @@ export async function saveBudgets(budgets: Budgets): Promise<void> {
   await AsyncStorage.setItem(KEYS.BUDGETS, JSON.stringify(budgets));
 }
 
+export async function loadSavingsGoals(): Promise<SavingsGoals> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.SAVINGS_GOALS);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function saveSavingsGoals(goals: SavingsGoals): Promise<void> {
+  await AsyncStorage.setItem(KEYS.SAVINGS_GOALS, JSON.stringify(goals));
+}
+
 export async function loadProfile(): Promise<UserProfile> {
   try {
     const data = await AsyncStorage.getItem(KEYS.PROFILE);
@@ -136,6 +151,7 @@ export async function clearAllData(): Promise<void> {
     KEYS.RATES,
     KEYS.PNL,
     KEYS.BUDGETS,
+    KEYS.SAVINGS_GOALS,
     KEYS.RATES_TIMESTAMP,
     KEYS.PROFILE,
   ]);

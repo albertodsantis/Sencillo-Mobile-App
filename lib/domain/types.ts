@@ -38,6 +38,10 @@ export interface Budgets {
   [category: string]: number;
 }
 
+export interface SavingsGoals {
+  [category: string]: number;
+}
+
 export interface DashboardData {
   balance: number;
   ingresos: number;
