@@ -61,6 +61,7 @@ export default function BudgetScreen() {
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalValue, setGoalValue] = useState("");
   const [showGuide, setShowGuide] = useState(false);
+  const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">("presupuestos");
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -176,9 +177,32 @@ export default function BudgetScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.sectionLabel}>Presupuestos</Text>
+      <View style={styles.segmentControl}>
+        {([
+          { id: "presupuestos" as const, label: "Presupuestos" },
+          { id: "ahorro" as const, label: "Ahorro" },
+        ]).map((tab) => (
+          <Pressable
+            key={tab.id}
+            onPress={() => setActiveTab(tab.id)}
+            style={[
+              styles.segmentButton,
+              activeTab === tab.id && styles.segmentButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                activeTab === tab.id && styles.segmentTextActive,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
-      {budgetSummary.totalBudget > 0 && (
+      {activeTab === "presupuestos" && budgetSummary.totalBudget > 0 && (
         <View style={styles.overallCard}>
           <View style={styles.overallHeader}>
             <Text style={styles.overallLabel}>Progreso Total</Text>
@@ -198,7 +222,7 @@ export default function BudgetScreen() {
         </View>
       )}
 
-      {variableCategories.map((cat) => {
+      {activeTab === "presupuestos" && variableCategories.map((cat) => {
         const budget = budgets[cat] || 0;
         const spent = budgetSummary.spending[cat] || 0;
         const catProgress = budget > 0 ? (spent / budget) * 100 : 0;
@@ -285,11 +309,7 @@ export default function BudgetScreen() {
         );
       })}
 
-      <View style={styles.divider} />
-
-      <Text style={styles.sectionLabel}>Objetivos de Ahorro</Text>
-
-      {totalSavingsGoal > 0 && (
+      {activeTab === "ahorro" && totalSavingsGoal > 0 && (
         <View style={[styles.overallCard, { borderColor: "rgba(96,165,250,0.2)" }]}>
           <View style={styles.overallHeader}>
             <Text style={styles.overallLabel}>Progreso Total</Text>
@@ -309,7 +329,7 @@ export default function BudgetScreen() {
         </View>
       )}
 
-      {ahorroCategories.map((cat) => {
+      {activeTab === "ahorro" && ahorroCategories.map((cat) => {
         const goal = savingsGoals[cat] || 0;
         const saved = savingsSpending[cat] || 0;
         const catProgress = goal > 0 ? (saved / goal) * 100 : 0;
@@ -599,18 +619,29 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
     marginTop: 2,
   },
-  sectionLabel: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 16,
-    color: Colors.text.secondary,
-    letterSpacing: 0.3,
-    marginBottom: 14,
-    textTransform: "uppercase" as const,
+  segmentControl: {
+    flexDirection: "row" as const,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: 16,
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.dark.border,
-    marginVertical: 24,
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center" as const,
+  },
+  segmentButtonActive: {
+    backgroundColor: "#fff",
+  },
+  segmentText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 12,
+    color: Colors.text.muted,
+  },
+  segmentTextActive: {
+    color: "#000",
   },
   overallCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
