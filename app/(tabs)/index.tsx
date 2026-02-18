@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { PieChart } from "react-native-gifted-charts";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
 import { type ViewMode, type Segment } from "@/lib/domain/types";
@@ -25,11 +24,6 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: "month", label: "Mes" },
   { id: "ytd", label: "Acumulado" },
   { id: "year", label: "Anual" },
-];
-
-const CHART_CATEGORY_COLORS = [
-  "#fb7185", "#fb923c", "#f59e0b", "#a78bfa",
-  "#38bdf8", "#e879f9", "#f472b6", "#facc15",
 ];
 
 function MiniKpi({
@@ -102,29 +96,6 @@ export default function HomeScreen() {
 
   const [showGuide, setShowGuide] = useState(false);
 
-  const expensesByCategory = useMemo(() => {
-    const filtered = transactions.filter((t) => {
-      const d = new Date(t.date);
-      if (viewMode === "month") {
-        return t.type === "expense" && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-      } else if (viewMode === "ytd") {
-        return t.type === "expense" && d.getFullYear() === currentYear && d.getMonth() <= currentMonth;
-      }
-      return t.type === "expense" && d.getFullYear() === currentYear;
-    });
-    const map: Record<string, number> = {};
-    filtered.forEach((t) => {
-      if (t.segment === "ahorro") return;
-      map[t.category] = (map[t.category] || 0) + t.amountUSD;
-    });
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .map(([cat, val], i) => ({
-        value: val,
-        color: CHART_CATEGORY_COLORS[i % CHART_CATEGORY_COLORS.length],
-        text: cat,
-      }));
-  }, [transactions, viewMode, currentMonth, currentYear]);
 
   const totalExpenses = dashboardData.gastosFijos + dashboardData.gastosVariables;
 
@@ -353,40 +324,6 @@ export default function HomeScreen() {
         />
       </ScrollView>
 
-      <View style={styles.chartsContainer}>
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Gastos por Categoria</Text>
-          {expensesByCategory.length > 0 ? (
-            <View style={styles.donutWrap}>
-              <PieChart
-                data={expensesByCategory}
-                donut
-                radius={70}
-                innerRadius={45}
-                innerCircleColor={Colors.dark.surface}
-                centerLabelComponent={() => (
-                  <View style={styles.donutCenter}>
-                    <Text style={styles.donutCenterValue}>${formatCompact(totalExpenses)}</Text>
-                    <Text style={styles.donutCenterLabel}>total</Text>
-                  </View>
-                )}
-                isAnimated
-              />
-              <View style={styles.legendList}>
-                {expensesByCategory.slice(0, 6).map((item, i) => (
-                  <View key={item.text} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                    <Text style={styles.legendText} numberOfLines={1}>{item.text}</Text>
-                    <Text style={styles.legendValue}>${formatCompact(item.value)}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <Text style={styles.chartEmpty}>Sin gastos registrados</Text>
-          )}
-        </View>
-      </View>
       <Modal
         visible={showGuide}
         transparent
@@ -761,74 +698,5 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_700Bold",
     fontSize: 8,
     color: Colors.text.secondary,
-  },
-  chartsContainer: {
-    gap: 16,
-  },
-  chartCard: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  chartTitle: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 14,
-    color: Colors.text.primary,
-    marginBottom: 16,
-  },
-  chartEmpty: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 12,
-    color: Colors.text.disabled,
-    textAlign: "center" as const,
-    paddingVertical: 24,
-  },
-  donutWrap: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 20,
-  },
-  donutCenter: {
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  donutCenterValue: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 14,
-    color: Colors.text.primary,
-  },
-  donutCenterLabel: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 9,
-    color: Colors.text.muted,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  legendList: {
-    flex: 1,
-    gap: 6,
-  },
-  legendItem: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    flex: 1,
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 11,
-    color: Colors.text.secondary,
-  },
-  legendValue: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 11,
-    color: Colors.text.primary,
   },
 });
