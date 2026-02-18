@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Dimensions,
+  Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -331,6 +332,17 @@ export default function TransactionModal() {
   );
   const [amount, setAmount] = useState(editingTx?.amount.toString() || "");
   const amountInputRef = useRef<TextInput>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const showSub = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const [currency, setCurrency] = useState<Currency>(
     editingTx?.currency || "VES"
@@ -815,6 +827,18 @@ export default function TransactionModal() {
         dateStr={date}
         onConfirm={setDate}
       />
+
+      {keyboardVisible && Platform.OS !== "web" && (
+        <View style={styles.keyboardToolbar}>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            style={styles.keyboardDoneBtn}
+            onPress={() => Keyboard.dismiss()}
+          >
+            <Text style={styles.keyboardDoneText}>Listo</Text>
+          </Pressable>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -1116,5 +1140,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.text.disabled,
     fontStyle: "italic" as const,
+  },
+  keyboardToolbar: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    backgroundColor: "#d1d5db",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  keyboardDoneBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  keyboardDoneText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 16,
+    color: "#0a84ff",
   },
 });
