@@ -34,8 +34,8 @@ const CARD_WIDTH = SCREEN_WIDTH - 72;
 const CARD_GAP = 12;
 
 const DONUT_PALETTE = [
-  "#7dd3fc", "#c4b5fd", "#fcd34d", "#fdba74",
-  "#d8b4fe", "#93c5fd", "#fca5a1", "#a5f3fc",
+  "#e2e8f0", "#94a3b8", "#cbd5e1", "#64748b",
+  "#b8c5d4", "#7e8fa3", "#a8b8cb", "#576a7e",
 ];
 
 interface CategoryStat {
