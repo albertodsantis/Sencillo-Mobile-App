@@ -102,8 +102,8 @@ function KpiCard({
           <Text style={styles.kpiCurrencyVal}>${Math.round(hardAmount).toLocaleString("en-US")}</Text>
         </View>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
-          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>VES</Text>
-          <Text style={styles.kpiCurrencyVal}>Bs {Math.round(vesAmount).toLocaleString("en-US")}</Text>
+          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>Bs</Text>
+          <Text style={styles.kpiCurrencyVal}>{Math.round(vesAmount).toLocaleString("en-US")}</Text>
         </View>
       </View>
 
