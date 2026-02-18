@@ -33,10 +33,12 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_WIDTH = SCREEN_WIDTH - 72;
 const CARD_GAP = 12;
 
-const DONUT_PALETTE = [
-  "#e2e8f0", "#94a3b8", "#cbd5e1", "#64748b",
-  "#b8c5d4", "#7e8fa3", "#a8b8cb", "#576a7e",
-];
+const SEGMENT_PALETTES: Record<string, string[]> = {
+  ingresos: ["#6ee7b7", "#34d399", "#10b981", "#059669", "#047857", "#065f46", "#064e3b", "#022c22"],
+  gastos_fijos: ["#fed7aa", "#fdba74", "#fb923c", "#f97316", "#ea580c", "#c2410c", "#9a3412", "#7c2d12"],
+  gastos_variables: ["#fecdd3", "#fda4af", "#fb7185", "#f43f5e", "#e11d48", "#be123c", "#9f1239", "#881337"],
+  ahorro: ["#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a"],
+};
 
 interface CategoryStat {
   name: string;
@@ -51,6 +53,7 @@ function KpiCard({
   vesAmount,
   hardAmount,
   color,
+  segment,
   icon,
   count,
   categories,
@@ -61,11 +64,14 @@ function KpiCard({
   vesAmount: number;
   hardAmount: number;
   color: string;
+  segment: string;
   icon: React.ReactNode;
   count: number;
   categories: CategoryStat[];
   onPress?: () => void;
 }) {
+  const palette = SEGMENT_PALETTES[segment] || SEGMENT_PALETTES.ingresos;
+
   return (
     <Pressable
       onPress={onPress}
@@ -106,12 +112,14 @@ function KpiCard({
             <PieChart
               data={categories.slice(0, 8).map((cat, i) => ({
                 value: cat.total,
-                color: DONUT_PALETTE[i % DONUT_PALETTE.length],
+                color: palette[i % palette.length],
                 text: "",
+                shiftX: i === 0 ? 2 : 0,
+                shiftY: i === 0 ? -2 : 0,
               }))}
               donut
               radius={56}
-              innerRadius={36}
+              innerRadius={38}
               innerCircleColor={Colors.dark.surface}
               centerLabelComponent={() => (
                 <View style={styles.kpiDonutCenter}>
@@ -119,13 +127,15 @@ function KpiCard({
                 </View>
               )}
               isAnimated
+              sectionAutoFocus
+              focusOnPress
             />
             <View style={styles.kpiLegend}>
               {categories.slice(0, 5).map((cat, i) => (
                 <View key={cat.name} style={styles.kpiLegendRow}>
-                  <View style={[styles.kpiLegendDot, { backgroundColor: DONUT_PALETTE[i % DONUT_PALETTE.length] }]} />
+                  <View style={[styles.kpiLegendDot, { backgroundColor: palette[i % palette.length] }]} />
                   <Text style={styles.kpiLegendName} numberOfLines={1}>{cat.name}</Text>
-                  <Text style={styles.kpiLegendPct}>{cat.pct.toFixed(0)}%</Text>
+                  <Text style={[styles.kpiLegendPct, { color: palette[i % palette.length] }]}>{cat.pct.toFixed(0)}%</Text>
                 </View>
               ))}
             </View>
@@ -421,6 +431,7 @@ export default function HomeScreen() {
           vesAmount={dashboardData.ingresosVES}
           hardAmount={dashboardData.ingresosHard}
           color={Colors.segments.ingresos.color}
+          segment="ingresos"
           icon={<Ionicons name="trending-up" size={18} color={Colors.segments.ingresos.color} />}
           count={ingresosStats.count}
           categories={ingresosStats.categories}
@@ -432,6 +443,7 @@ export default function HomeScreen() {
           vesAmount={dashboardData.gastosFijosVES}
           hardAmount={dashboardData.gastosFijosHard}
           color={Colors.segments.gastos_fijos.color}
+          segment="gastos_fijos"
           icon={<MaterialCommunityIcons name="credit-card" size={18} color={Colors.segments.gastos_fijos.color} />}
           count={fijoStats.count}
           categories={fijoStats.categories}
@@ -443,6 +455,7 @@ export default function HomeScreen() {
           vesAmount={dashboardData.gastosVariablesVES}
           hardAmount={dashboardData.gastosVariablesHard}
           color={Colors.segments.gastos_variables.color}
+          segment="gastos_variables"
           icon={<Ionicons name="trending-down" size={18} color={Colors.segments.gastos_variables.color} />}
           count={varStats.count}
           categories={varStats.categories}
@@ -454,6 +467,7 @@ export default function HomeScreen() {
           vesAmount={dashboardData.ahorroVES}
           hardAmount={dashboardData.ahorroHard}
           color={Colors.segments.ahorro.color}
+          segment="ahorro"
           icon={<MaterialCommunityIcons name="piggy-bank" size={18} color={Colors.segments.ahorro.color} />}
           count={ahorroStats.count}
           categories={ahorroStats.categories}
