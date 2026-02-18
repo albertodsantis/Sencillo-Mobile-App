@@ -101,32 +101,34 @@ function KpiCard({
       </View>
 
       {categories.length > 0 ? (
-        <View style={styles.kpiDonutSection}>
-          <PieChart
-            data={categories.slice(0, 8).map((cat, i) => ({
-              value: cat.total,
-              color: DONUT_PALETTE[i % DONUT_PALETTE.length],
-              text: "",
-            }))}
-            donut
-            radius={56}
-            innerRadius={36}
-            innerCircleColor={Colors.dark.surface}
-            centerLabelComponent={() => (
-              <View style={styles.kpiDonutCenter}>
-                <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
-              </View>
-            )}
-            isAnimated
-          />
-          <View style={styles.kpiLegend}>
-            {categories.slice(0, 5).map((cat, i) => (
-              <View key={cat.name} style={styles.kpiLegendRow}>
-                <View style={[styles.kpiLegendDot, { backgroundColor: DONUT_PALETTE[i % DONUT_PALETTE.length] }]} />
-                <Text style={styles.kpiLegendName} numberOfLines={1}>{cat.name}</Text>
-                <Text style={styles.kpiLegendPct}>{cat.pct.toFixed(0)}%</Text>
-              </View>
-            ))}
+        <>
+          <View style={styles.kpiDonutSection}>
+            <PieChart
+              data={categories.slice(0, 8).map((cat, i) => ({
+                value: cat.total,
+                color: DONUT_PALETTE[i % DONUT_PALETTE.length],
+                text: "",
+              }))}
+              donut
+              radius={56}
+              innerRadius={36}
+              innerCircleColor={Colors.dark.surface}
+              centerLabelComponent={() => (
+                <View style={styles.kpiDonutCenter}>
+                  <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
+                </View>
+              )}
+              isAnimated
+            />
+            <View style={styles.kpiLegend}>
+              {categories.slice(0, 5).map((cat, i) => (
+                <View key={cat.name} style={styles.kpiLegendRow}>
+                  <View style={[styles.kpiLegendDot, { backgroundColor: DONUT_PALETTE[i % DONUT_PALETTE.length] }]} />
+                  <Text style={styles.kpiLegendName} numberOfLines={1}>{cat.name}</Text>
+                  <Text style={styles.kpiLegendPct}>{cat.pct.toFixed(0)}%</Text>
+                </View>
+              ))}
+            </View>
           </View>
 
           {categories.filter((c) => c.count > 1).length > 0 && (
@@ -141,7 +143,7 @@ function KpiCard({
               ))}
             </View>
           )}
-        </View>
+        </>
       ) : (
         <View style={styles.kpiEmptyCat}>
           <Text style={styles.kpiEmptyCatText}>Sin registros</Text>
