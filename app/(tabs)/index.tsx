@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { PieChart } from "react-native-gifted-charts";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
 import { type ViewMode, type Segment, type Transaction } from "@/lib/domain/types";
@@ -31,6 +32,11 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_WIDTH = SCREEN_WIDTH - 72;
 const CARD_GAP = 12;
+
+const DONUT_PALETTE = [
+  "#34d399", "#38bdf8", "#fb923c", "#a78bfa",
+  "#f472b6", "#facc15", "#fb7185", "#2dd4bf",
+];
 
 interface CategoryStat {
   name: string;
@@ -94,26 +100,37 @@ function KpiCard({
         </View>
       </View>
 
-      {categories.length > 0 && (
-        <View style={styles.kpiCatList}>
-          {categories.slice(0, 4).map((cat) => (
-            <View key={cat.name} style={styles.kpiCatRow}>
-              <View style={styles.kpiCatLeft}>
-                <View style={[styles.kpiCatDot, { backgroundColor: color }]} />
-                <Text style={styles.kpiCatName} numberOfLines={1}>{cat.name}</Text>
+      {categories.length > 0 ? (
+        <View style={styles.kpiDonutSection}>
+          <PieChart
+            data={categories.slice(0, 8).map((cat, i) => ({
+              value: cat.total,
+              color: DONUT_PALETTE[i % DONUT_PALETTE.length],
+              text: "",
+            }))}
+            donut
+            radius={56}
+            innerRadius={36}
+            innerCircleColor={Colors.dark.surface}
+            centerLabelComponent={() => (
+              <View style={styles.kpiDonutCenter}>
+                <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
+                <Text style={styles.kpiDonutCenterSub}>cat.</Text>
               </View>
-              <View style={styles.kpiCatRight}>
-                <Text style={styles.kpiCatVal}>${formatCompact(cat.total)}</Text>
-                <View style={[styles.kpiCatPctBadge, { backgroundColor: color + "18" }]}>
-                  <Text style={[styles.kpiCatPct, { color }]}>{cat.pct.toFixed(0)}%</Text>
-                </View>
+            )}
+            isAnimated
+          />
+          <View style={styles.kpiLegend}>
+            {categories.slice(0, 5).map((cat, i) => (
+              <View key={cat.name} style={styles.kpiLegendRow}>
+                <View style={[styles.kpiLegendDot, { backgroundColor: DONUT_PALETTE[i % DONUT_PALETTE.length] }]} />
+                <Text style={styles.kpiLegendName} numberOfLines={1}>{cat.name}</Text>
+                <Text style={styles.kpiLegendPct}>{cat.pct.toFixed(0)}%</Text>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
-      )}
-
-      {categories.length === 0 && (
+      ) : (
         <View style={styles.kpiEmptyCat}>
           <Text style={styles.kpiEmptyCatText}>Sin registros</Text>
         </View>
@@ -825,51 +842,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text.secondary,
   },
-  kpiCatList: {
-    gap: 8,
-  },
-  kpiCatRow: {
+  kpiDonutSection: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    justifyContent: "space-between" as const,
+    gap: 16,
   },
-  kpiCatLeft: {
-    flexDirection: "row" as const,
+  kpiDonutCenter: {
     alignItems: "center" as const,
-    gap: 8,
-    flex: 1,
+    justifyContent: "center" as const,
   },
-  kpiCatDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  kpiDonutCenterVal: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 18,
   },
-  kpiCatName: {
+  kpiDonutCenterSub: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 12,
-    color: Colors.text.secondary,
-    flex: 1,
+    fontSize: 9,
+    color: Colors.text.muted,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
   },
-  kpiCatRight: {
+  kpiLegend: {
+    flex: 1,
+    gap: 6,
+  },
+  kpiLegendRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 8,
+    gap: 7,
   },
-  kpiCatVal: {
+  kpiLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  kpiLegendName: {
+    flex: 1,
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 11,
+    color: Colors.text.secondary,
+  },
+  kpiLegendPct: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.text.primary,
-  },
-  kpiCatPctBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    minWidth: 38,
-    alignItems: "center" as const,
-  },
-  kpiCatPct: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 10,
+    minWidth: 30,
+    textAlign: "right" as const,
   },
   kpiEmptyCat: {
     paddingVertical: 12,
