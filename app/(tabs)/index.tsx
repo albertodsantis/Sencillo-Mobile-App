@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   rateLabel: {
     fontFamily: "Outfit_700Bold",
     fontSize: 9,
-    color: "rgba(167,243,208,0.5)",
+    color: Colors.text.muted,
     letterSpacing: 0.8,
     textTransform: "uppercase" as const,
     marginBottom: 2,
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
   rateValue: {
     fontFamily: "Outfit_700Bold",
     fontSize: 14,
-    color: Colors.text.primary,
+    color: Colors.text.secondary,
   },
   eurRow: {
     flexDirection: "row" as const,
