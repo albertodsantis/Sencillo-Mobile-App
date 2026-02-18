@@ -311,16 +311,16 @@ export default function HomeScreen() {
         <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Pressable onPress={() => router.push("/profile")}>
-            <Ionicons name="person-outline" size={20} color={Colors.text.secondary} />
+            <Ionicons name="person-outline" size={26} color={Colors.text.secondary} />
           </Pressable>
           <Text style={styles.headerTitle}>{displayName}</Text>
         </View>
         <View style={styles.headerRight}>
           <Pressable onPress={() => setHiddenBalances(!hiddenBalances)} hitSlop={8}>
-            <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.text.muted} />
+            <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={26} color={Colors.text.muted} />
           </Pressable>
           <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
-            <Ionicons name="help-circle-outline" size={24} color={Colors.text.muted} />
+            <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
           </Pressable>
         </View>
       </View>
