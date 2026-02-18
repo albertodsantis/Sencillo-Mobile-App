@@ -325,40 +325,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.monthNav}>
-        <Pressable onPress={prevMonth} style={styles.navButton}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text.secondary} />
-        </Pressable>
-        <Text style={styles.monthLabel}>
-          {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
-        </Text>
-        <Pressable onPress={nextMonth} style={styles.navButton}>
-          <Ionicons name="chevron-forward" size={22} color={Colors.text.secondary} />
-        </Pressable>
-      </View>
-
-      <View style={styles.segmentControl}>
-        {VIEW_MODES.map((mode) => (
-          <Pressable
-            key={mode.id}
-            onPress={() => setViewMode(mode.id)}
-            style={[
-              styles.segmentButton,
-              viewMode === mode.id && styles.segmentButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                viewMode === mode.id && styles.segmentTextActive,
-              ]}
-            >
-              {mode.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
       <Pressable
         onPress={refreshRates}
         style={styles.ratesBar}
@@ -400,6 +366,40 @@ export default function HomeScreen() {
           </View>
         </View>
       </Pressable>
+
+      <View style={styles.monthNav}>
+        <Pressable onPress={prevMonth} style={styles.navButton}>
+          <Ionicons name="chevron-back" size={22} color={Colors.text.secondary} />
+        </Pressable>
+        <Text style={styles.monthLabel}>
+          {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
+        </Text>
+        <Pressable onPress={nextMonth} style={styles.navButton}>
+          <Ionicons name="chevron-forward" size={22} color={Colors.text.secondary} />
+        </Pressable>
+      </View>
+
+      <View style={styles.segmentControl}>
+        {VIEW_MODES.map((mode) => (
+          <Pressable
+            key={mode.id}
+            onPress={() => setViewMode(mode.id)}
+            style={[
+              styles.segmentButton,
+              viewMode === mode.id && styles.segmentButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                viewMode === mode.id && styles.segmentTextActive,
+              ]}
+            >
+              {mode.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
       <Pressable onPress={() => router.push("/report")}>
         <LinearGradient
