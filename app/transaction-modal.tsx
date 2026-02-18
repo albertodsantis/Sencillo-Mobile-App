@@ -823,7 +823,7 @@ export default function TransactionModal() {
       />
 
       {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={INPUT_ACCESSORY_ID}>
+        <InputAccessoryView nativeID={INPUT_ACCESSORY_ID} backgroundColor="#2c2c2e">
           <View style={styles.keyboardToolbar}>
             <View style={{ flex: 1 }} />
             <Pressable
