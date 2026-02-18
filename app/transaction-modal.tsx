@@ -11,8 +11,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Dimensions,
-  Keyboard,
-  InputAccessoryView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -333,7 +331,6 @@ export default function TransactionModal() {
   );
   const [amount, setAmount] = useState(editingTx?.amount.toString() || "");
   const amountInputRef = useRef<TextInput>(null);
-  const INPUT_ACCESSORY_ID = "sencillo-keyboard-done";
 
   const [currency, setCurrency] = useState<Currency>(
     editingTx?.currency || "VES"
@@ -472,6 +469,7 @@ export default function TransactionModal() {
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={styles.header}>
           <Text style={styles.title}>
@@ -552,7 +550,6 @@ export default function TransactionModal() {
               placeholderTextColor={Colors.text.disabled}
               selectionColor={segColor}
               textAlign="center"
-              inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
             />
           </View>
           <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
@@ -695,7 +692,6 @@ export default function TransactionModal() {
             spellCheck={false}
             placeholder={currency === "EUR" ? "Tasa Bs/EUR" : "Tasa Bs/$"}
             placeholderTextColor={Colors.text.disabled}
-            inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
           />
         )}
 
@@ -708,7 +704,6 @@ export default function TransactionModal() {
           keyboardAppearance="dark"
           autoCorrect={false}
           spellCheck={false}
-          inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
         />
 
         <View style={styles.usdRefRow}>
@@ -831,20 +826,6 @@ export default function TransactionModal() {
         onConfirm={setDate}
       />
 
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={INPUT_ACCESSORY_ID} backgroundColor="#2c2c2e">
-          <View style={styles.keyboardToolbar}>
-            <View style={{ flex: 1 }} />
-            <Pressable
-              style={styles.keyboardDoneBtn}
-              onPress={() => Keyboard.dismiss()}
-              hitSlop={8}
-            >
-              <Ionicons name="checkmark-circle" size={28} color="#0a84ff" />
-            </Pressable>
-          </View>
-        </InputAccessoryView>
-      )}
     </KeyboardAvoidingView>
   );
 }
@@ -1146,17 +1127,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.text.disabled,
     fontStyle: "italic" as const,
-  },
-  keyboardToolbar: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: "#2c2c2e",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  keyboardDoneBtn: {
-    padding: 4,
   },
 });
