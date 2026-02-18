@@ -128,6 +128,19 @@ function KpiCard({
               </View>
             ))}
           </View>
+
+          {categories.filter((c) => c.count > 1).length > 0 && (
+            <View style={styles.kpiAvgSection}>
+              <Text style={styles.kpiAvgTitle}>Promedio</Text>
+              {categories.filter((c) => c.count > 1).slice(0, 4).map((cat, i) => (
+                <View key={cat.name} style={styles.kpiAvgRow}>
+                  <Text style={styles.kpiAvgName} numberOfLines={1}>{cat.name}</Text>
+                  <Text style={styles.kpiAvgVal}>${formatCompact(cat.total / cat.count)}</Text>
+                  <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       ) : (
         <View style={styles.kpiEmptyCat}>
@@ -886,6 +899,44 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.text.primary,
     minWidth: 30,
+    textAlign: "right" as const,
+  },
+  kpiAvgSection: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+    paddingTop: 10,
+    gap: 5,
+  },
+  kpiAvgTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 10,
+    color: Colors.text.muted,
+    letterSpacing: 0.8,
+    textTransform: "uppercase" as const,
+    marginBottom: 2,
+  },
+  kpiAvgRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+  },
+  kpiAvgName: {
+    flex: 1,
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 11,
+    color: Colors.text.secondary,
+  },
+  kpiAvgVal: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: Colors.text.primary,
+  },
+  kpiAvgCount: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 9,
+    color: Colors.text.disabled,
+    minWidth: 20,
     textAlign: "right" as const,
   },
   kpiEmptyCat: {
