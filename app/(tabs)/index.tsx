@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontFamily: "Outfit_700Bold",
+    fontFamily: "Outfit_400Regular",
     fontSize: 16,
     color: Colors.text.primary,
     letterSpacing: -0.3,
