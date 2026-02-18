@@ -63,7 +63,7 @@ function TransactionRow({
           ]}
         >
           <Ionicons
-            name={isIncome ? "arrow-down" : "arrow-up"}
+            name={isIncome ? "arrow-up-forward" : "arrow-down-forward"}
             size={16}
             color={
               isIncome
