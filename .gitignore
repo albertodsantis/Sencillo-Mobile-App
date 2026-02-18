@@ -39,3 +39,10 @@ yarn-error.*
 .vercel
 
 .env
+
+# Build output
+static-build/
+
+# Replit
+attached_assets/
+.local/
