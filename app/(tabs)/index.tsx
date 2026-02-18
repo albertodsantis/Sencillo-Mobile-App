@@ -91,7 +91,7 @@ function KpiCard({
         </View>
         <View>
           <Text style={[styles.kpiCardTotal, { color }]} numberOfLines={1}>
-            ${formatCompact(total)}
+            ${Math.round(total).toLocaleString("en-US")}
           </Text>
         </View>
       </View>
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
   },
   kpiCardTotal: {
     fontFamily: "Outfit_900Black",
-    fontSize: 24,
+    fontSize: 18,
     letterSpacing: -0.5,
   },
   kpiCurrencyRow: {
