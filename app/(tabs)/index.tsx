@@ -313,15 +313,15 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-        <Text style={styles.headerTitle}>{displayName}</Text>
-        <View style={styles.headerActions}>
-          <Pressable onPress={() => setShowGuide(true)} style={styles.helpBtn}>
-            <Ionicons name="help-circle-outline" size={24} color={Colors.text.muted} />
+        <View style={styles.headerLeft}>
+          <Pressable onPress={() => router.push("/profile")}>
+            <Ionicons name="person-outline" size={20} color={Colors.text.secondary} />
           </Pressable>
-          <Pressable onPress={() => router.push("/profile")} style={styles.profileBtn}>
-            <Ionicons name="person" size={20} color={Colors.text.secondary} />
-          </Pressable>
+          <Text style={styles.headerTitle}>{displayName}</Text>
         </View>
+        <Pressable onPress={() => setShowGuide(true)} style={styles.helpBtn}>
+          <Ionicons name="help-circle-outline" size={24} color={Colors.text.muted} />
+        </Pressable>
       </View>
 
       <View style={styles.monthNav}>
@@ -641,16 +641,16 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     marginBottom: 16,
   },
-  headerTitle: {
-    fontFamily: "Outfit_900Black",
-    fontSize: 22,
-    color: Colors.text.primary,
-    letterSpacing: -0.5,
-  },
-  headerActions: {
+  headerLeft: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 8,
+  },
+  headerTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 16,
+    color: Colors.text.primary,
+    letterSpacing: -0.3,
   },
   helpBtn: {
     width: 40,
@@ -661,14 +661,8 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   profileBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.dark.card,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
   },
   monthNav: {
     flexDirection: "row" as const,
