@@ -403,7 +403,7 @@ export default function HomeScreen() {
 
       <Pressable onPress={() => router.push("/report")}>
         <LinearGradient
-          colors={["#047857", "#065f46", "#064e3b"]}
+          colors={["#e8ecf2", "#d1d9e6", "#f0f4f8", "#c8d0dc"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.balanceCard}
@@ -414,7 +414,7 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.reportLink}>
             <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
-            <Feather name="arrow-right" size={12} color="rgba(255,255,255,0.7)" />
+            <Feather name="arrow-right" size={12} color="rgba(2,6,23,0.5)" />
           </View>
         </LinearGradient>
       </Pressable>
@@ -771,16 +771,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: "center" as const,
     marginBottom: 16,
-    shadowColor: Colors.brand.DEFAULT,
+    shadowColor: "rgba(255,255,255,0.3)",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 24,
     elevation: 12,
   },
   balanceLabel: {
     fontFamily: "Outfit_700Bold",
     fontSize: 11,
-    color: "rgba(167,243,208,0.8)",
+    color: "rgba(2,6,23,0.5)",
     letterSpacing: 2,
     textTransform: "uppercase" as const,
     marginBottom: 4,
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
   balanceValue: {
     fontFamily: "Outfit_900Black",
     fontSize: 34,
-    color: Colors.text.primary,
+    color: "#020617",
     letterSpacing: -1.5,
   },
   reportLink: {
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   reportLinkText: {
     fontFamily: "Outfit_700Bold",
     fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(2,6,23,0.5)",
     letterSpacing: 1,
     textTransform: "uppercase" as const,
   },
