@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -141,6 +142,7 @@ export default function SettingsScreen() {
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -181,8 +183,15 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-      <Text style={styles.title}>Personalizacion</Text>
-      <Text style={styles.subtitle}>Gestionar categorias por segmento</Text>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.title}>Personalizacion</Text>
+          <Text style={styles.subtitle}>Gestionar categorias por segmento</Text>
+        </View>
+        <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+          <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
+        </Pressable>
+      </View>
 
       {SEGMENTS.map((seg) => {
         const config = SEGMENT_CONFIG[seg];
@@ -284,15 +293,149 @@ export default function SettingsScreen() {
           </View>
         );
       })}
+      <Modal
+        visible={showGuide}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGuide(false)}
+      >
+        <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
+          <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
+            <View style={guideStyles.iconRow}>
+              <View style={guideStyles.iconCircle}>
+                <Ionicons name="information-circle" size={28} color="#a78bfa" />
+              </View>
+              <Text style={guideStyles.cardTitle}>Guia</Text>
+            </View>
+
+            <Text style={guideStyles.sectionTitle}>Segmentos</Text>
+            <Text style={guideStyles.sectionDesc}>
+              Tu estructura financiera se divide en 4 segmentos: <Text style={guideStyles.bold}>Ingresos</Text>, <Text style={guideStyles.bold}>Gastos Fijos</Text>, <Text style={guideStyles.bold}>Gastos Variables</Text> y <Text style={guideStyles.bold}>Ahorro</Text>.
+            </Text>
+
+            <Text style={guideStyles.sectionTitle}>Categorias</Text>
+            <Text style={guideStyles.sectionDesc}>
+              Cada segmento tiene sus propias categorias. Puedes <Text style={guideStyles.bold}>agregar</Text>, <Text style={guideStyles.bold}>editar</Text> o <Text style={guideStyles.bold}>eliminar</Text> categorias segun tus necesidades.
+            </Text>
+
+            <View style={guideStyles.infoBox}>
+              <Text style={guideStyles.infoTitle}>Consejos</Text>
+              <Text style={guideStyles.infoDesc}>
+                Toca una categoria para editarla. Usa el icono de papelera para eliminarla. Las categorias que uses en transacciones existentes se mantendran en el historial.
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={() => setShowGuide(false)}
+              style={guideStyles.dismissBtn}
+            >
+              <Text style={guideStyles.dismissText}>Entendido</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
       </ScrollView>
     </View>
   );
 }
 
+const guideStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    padding: 28,
+  },
+  card: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 360,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  iconRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    marginBottom: 16,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(167,139,250,0.15)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  cardTitle: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 18,
+    color: Colors.text.primary,
+    flex: 1,
+  },
+  sectionTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: Colors.text.primary,
+    marginBottom: 6,
+  },
+  sectionDesc: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  bold: {
+    fontFamily: "Outfit_700Bold",
+    color: Colors.text.primary,
+  },
+  infoBox: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.borderSubtle,
+  },
+  infoTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: "#a78bfa",
+    marginBottom: 8,
+  },
+  infoDesc: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 19,
+  },
+  dismissBtn: {
+    backgroundColor: Colors.brand.DEFAULT,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+  },
+  dismissText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 15,
+    color: "#fff",
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.base,
+  },
+  headerRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start" as const,
+    marginBottom: 20,
   },
   title: {
     fontFamily: "Outfit_900Black",
