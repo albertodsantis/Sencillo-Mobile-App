@@ -1,12 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import Svg, {
-  Path,
-  Defs,
-  Filter,
-  FeGaussianBlur,
-  G,
-} from "react-native-svg";
+import Svg, { Path, G } from "react-native-svg";
 
 interface Segment {
   value: number;
@@ -62,7 +56,7 @@ export default function GlowRingChart({
   const segments: { startAngle: number; endAngle: number; color: string }[] = [];
   let cursor = 0;
 
-  data.forEach((d, i) => {
+  data.forEach((d) => {
     const segDeg = (d.value / total) * availableDeg;
     const start = cursor + gapDeg / 2;
     const end = start + segDeg;
@@ -75,22 +69,15 @@ export default function GlowRingChart({
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Defs>
-          <Filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <FeGaussianBlur stdDeviation={String(glowIntensity)} result="blur" />
-          </Filter>
-        </Defs>
-
         {segments.map((seg, i) => (
           <G key={i}>
             <Path
               d={arcPath(cx, cy, radius, seg.startAngle, seg.endAngle)}
               stroke={seg.color}
-              strokeWidth={strokeWidth + glowIntensity}
+              strokeWidth={strokeWidth + glowIntensity * 2}
               strokeLinecap="round"
               fill="none"
-              opacity={0.15}
-              filter="url(#glow)"
+              opacity={0.12}
             />
             <Path
               d={arcPath(cx, cy, radius, seg.startAngle, seg.endAngle)}
