@@ -34,8 +34,8 @@ const CARD_WIDTH = SCREEN_WIDTH - 72;
 const CARD_GAP = 12;
 
 const DONUT_PALETTE = [
-  "#34d399", "#38bdf8", "#fb923c", "#a78bfa",
-  "#f472b6", "#facc15", "#fb7185", "#2dd4bf",
+  "#7dd3fc", "#c4b5fd", "#fcd34d", "#fdba74",
+  "#d8b4fe", "#93c5fd", "#fca5a1", "#a5f3fc",
 ];
 
 interface CategoryStat {
@@ -115,7 +115,6 @@ function KpiCard({
             centerLabelComponent={() => (
               <View style={styles.kpiDonutCenter}>
                 <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
-                <Text style={styles.kpiDonutCenterSub}>cat.</Text>
               </View>
             )}
             isAnimated
