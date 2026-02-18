@@ -836,7 +836,7 @@ export default function TransactionModal() {
         <InputAccessoryView nativeID={DONE_BTN_ID} backgroundColor="#48484a">
           <View style={{ flexDirection: "row", justifyContent: "flex-end", backgroundColor: "#48484a", paddingHorizontal: 10, paddingVertical: 4 }}>
             <Pressable onPress={() => Keyboard.dismiss()} hitSlop={10} style={{ padding: 6 }}>
-              <Ionicons name="checkmark-circle" size={28} color={Colors.accent.primary} />
+              <Ionicons name="checkmark-circle" size={28} color={Colors.brand.DEFAULT} />
             </Pressable>
           </View>
         </InputAccessoryView>
