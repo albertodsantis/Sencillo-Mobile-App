@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
   balanceValue: {
     fontFamily: "Outfit_900Black",
     fontSize: 34,
-    color: "#4a5568",
+    color: "#2d3748",
     letterSpacing: -1.5,
   },
   reportLink: {
