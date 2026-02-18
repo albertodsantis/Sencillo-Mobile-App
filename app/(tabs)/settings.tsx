@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { type Segment, SEGMENT_CONFIG } from "@/lib/domain/types";
 
@@ -169,15 +170,17 @@ export default function SettingsScreen() {
   );
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{
-        paddingTop: topPadding,
-        paddingBottom: 120,
-      }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={styles.container}>
+      <AmbientGlow />
+      <ScrollView
+        style={{ flex: 1, paddingHorizontal: 24 }}
+        contentContainerStyle={{
+          paddingTop: topPadding,
+          paddingBottom: 120,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       <Text style={styles.title}>Personalizacion</Text>
       <Text style={styles.subtitle}>Gestionar categorias por segmento</Text>
 
@@ -281,7 +284,8 @@ export default function SettingsScreen() {
           </View>
         );
       })}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -289,7 +293,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.base,
-    paddingHorizontal: 24,
   },
   title: {
     fontFamily: "Outfit_900Black",

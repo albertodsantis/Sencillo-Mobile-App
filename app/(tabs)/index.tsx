@@ -19,6 +19,7 @@ import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { PieChart } from "react-native-gifted-charts";
 import Colors from "@/constants/colors";
+import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { type ViewMode, type Segment, type Transaction } from "@/lib/domain/types";
 import { formatCurrency, formatCompact } from "@/lib/domain/finance";
@@ -296,20 +297,22 @@ export default function HomeScreen() {
         : "BALANCE NETO";
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120, paddingHorizontal: 24 }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshingRates}
-          onRefresh={refreshRates}
-          tintColor={Colors.brand.DEFAULT}
-          colors={[Colors.brand.DEFAULT]}
-        />
-      }
-    >
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <AmbientGlow />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120, paddingHorizontal: 24 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshingRates}
+            onRefresh={refreshRates}
+            tintColor={Colors.brand.DEFAULT}
+            colors={[Colors.brand.DEFAULT]}
+          />
+        }
+      >
+        <View style={styles.header}>
         <Text style={styles.headerTitle}>{displayName}</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={() => setShowGuide(true)} style={styles.helpBtn}>
@@ -552,7 +555,8 @@ export default function HomeScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

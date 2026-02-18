@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { formatCurrency } from "@/lib/domain/finance";
 import dayjs from "dayjs";
@@ -159,11 +160,13 @@ export default function BudgetScreen() {
         : Colors.brand.DEFAULT;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
+      <AmbientGlow />
+      <ScrollView
+        style={{ flex: 1, paddingHorizontal: 24 }}
+        contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.title}>Presupuestos y Ahorro</Text>
@@ -465,7 +468,8 @@ export default function BudgetScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -590,7 +594,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.base,
-    paddingHorizontal: 24,
   },
   headerRow: {
     flexDirection: "row" as const,

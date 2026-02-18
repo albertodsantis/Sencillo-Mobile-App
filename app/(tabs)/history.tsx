@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import dayjs from "dayjs";
 import Colors from "@/constants/colors";
+import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { formatCurrency } from "@/lib/domain/finance";
 import type { Transaction } from "@/lib/domain/types";
@@ -205,6 +206,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
+      <AmbientGlow />
       <View style={styles.header}>
         <Text style={styles.title}>Movimientos</Text>
         <View style={styles.monthSelector}>
