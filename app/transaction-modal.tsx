@@ -11,6 +11,8 @@ import {
   KeyboardAvoidingView,
   Modal,
   Dimensions,
+  Keyboard,
+  InputAccessoryView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -331,6 +333,7 @@ export default function TransactionModal() {
   );
   const [amount, setAmount] = useState(editingTx?.amount.toString() || "");
   const amountInputRef = useRef<TextInput>(null);
+  const DONE_BTN_ID = "txn-done";
 
   const [currency, setCurrency] = useState<Currency>(
     editingTx?.currency || "VES"
@@ -550,6 +553,7 @@ export default function TransactionModal() {
               placeholderTextColor={Colors.text.disabled}
               selectionColor={segColor}
               textAlign="center"
+              {...(Platform.OS === "ios" ? { inputAccessoryViewID: DONE_BTN_ID } : {})}
             />
           </View>
           <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
@@ -692,6 +696,7 @@ export default function TransactionModal() {
             spellCheck={false}
             placeholder={currency === "EUR" ? "Tasa Bs/EUR" : "Tasa Bs/$"}
             placeholderTextColor={Colors.text.disabled}
+            {...(Platform.OS === "ios" ? { inputAccessoryViewID: DONE_BTN_ID } : {})}
           />
         )}
 
@@ -704,6 +709,7 @@ export default function TransactionModal() {
           keyboardAppearance="dark"
           autoCorrect={false}
           spellCheck={false}
+          {...(Platform.OS === "ios" ? { inputAccessoryViewID: DONE_BTN_ID } : {})}
         />
 
         <View style={styles.usdRefRow}>
@@ -826,6 +832,15 @@ export default function TransactionModal() {
         onConfirm={setDate}
       />
 
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={DONE_BTN_ID} backgroundColor="#48484a">
+          <View style={{ flexDirection: "row", justifyContent: "flex-end", backgroundColor: "#48484a", paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Pressable onPress={() => Keyboard.dismiss()} hitSlop={10} style={{ padding: 6 }}>
+              <Ionicons name="checkmark-circle" size={28} color={Colors.accent.primary} />
+            </Pressable>
+          </View>
+        </InputAccessoryView>
+      )}
     </KeyboardAvoidingView>
   );
 }
