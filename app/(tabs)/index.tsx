@@ -137,11 +137,11 @@ function KpiCard({
 
           {categories.filter((c) => c.count > 1).length > 0 && (
             <View style={styles.kpiAvgSection}>
-              <Text style={styles.kpiAvgTitle}>Promedio</Text>
+              <Text style={styles.kpiAvgTitle}>Promedios</Text>
               {categories.filter((c) => c.count > 1).slice(0, 4).map((cat, i) => (
                 <View key={cat.name} style={styles.kpiAvgRow}>
                   <Text style={styles.kpiAvgName} numberOfLines={1}>{cat.name}</Text>
-                  <Text style={styles.kpiAvgVal}>${formatCompact(cat.total / cat.count)}</Text>
+                  <Text style={styles.kpiAvgVal}>${Math.round(cat.total / cat.count).toLocaleString("en-US")}</Text>
                   <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
                 </View>
               ))}
