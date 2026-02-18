@@ -721,13 +721,9 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   ratesBar: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 16,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginBottom: 16,
+    paddingHorizontal: 4,
+    marginBottom: 12,
   },
   ratesRow: {
     flexDirection: "row" as const,
