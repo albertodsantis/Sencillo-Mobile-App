@@ -18,7 +18,7 @@ export default function AmbientGlow({
     <View style={styles.container} pointerEvents="none">
       <Svg width={SCREEN_W} height={SCREEN_H} style={StyleSheet.absoluteFill}>
         <Defs>
-          <RadialGradient id="topGlow" cx="50%" cy="0%" rx="70%" ry="45%">
+          <RadialGradient id="topGlow" cx="50%" cy="0%" rx="85%" ry="55%">
             <Stop offset="0" stopColor={color} stopOpacity={String(intensity)} />
             <Stop offset="0.35" stopColor={color} stopOpacity={String(intensity * 0.45)} />
             <Stop offset="0.65" stopColor={color} stopOpacity={String(intensity * 0.12)} />
