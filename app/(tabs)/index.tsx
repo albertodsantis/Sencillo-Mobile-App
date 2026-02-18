@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { PieChart } from "react-native-gifted-charts";
+import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
@@ -110,27 +110,20 @@ function KpiCard({
       {categories.length > 0 ? (
         <>
           <View style={styles.kpiDonutSection}>
-            <PieChart
+            <GlowRingChart
               data={categories.slice(0, 8).map((cat, i) => ({
                 value: cat.total,
                 color: palette[i % palette.length],
-                text: "",
-                shiftX: i === 0 ? 2 : 0,
-                shiftY: i === 0 ? -2 : 0,
               }))}
-              donut
-              radius={56}
-              innerRadius={38}
-              innerCircleColor={Colors.dark.surface}
-              centerLabelComponent={() => (
-                <View style={styles.kpiDonutCenter}>
-                  <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
-                </View>
-              )}
-              isAnimated
-              sectionAutoFocus
-              focusOnPress
-            />
+              size={120}
+              strokeWidth={14}
+              gapDeg={5}
+              glowIntensity={6}
+            >
+              <View style={styles.kpiDonutCenter}>
+                <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
+              </View>
+            </GlowRingChart>
             <View style={styles.kpiLegend}>
               {categories.slice(0, 5).map((cat, i) => (
                 <View key={cat.name} style={styles.kpiLegendRow}>
