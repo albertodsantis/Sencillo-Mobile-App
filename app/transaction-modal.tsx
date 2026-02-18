@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -12,6 +12,7 @@ import {
   Modal,
   Dimensions,
   Keyboard,
+  InputAccessoryView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -332,17 +333,7 @@ export default function TransactionModal() {
   );
   const [amount, setAmount] = useState(editingTx?.amount.toString() || "");
   const amountInputRef = useRef<TextInput>(null);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    const showSub = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const INPUT_ACCESSORY_ID = "sencillo-keyboard-done";
 
   const [currency, setCurrency] = useState<Currency>(
     editingTx?.currency || "VES"
@@ -558,6 +549,7 @@ export default function TransactionModal() {
               placeholderTextColor={Colors.text.disabled}
               selectionColor={segColor}
               textAlign="center"
+              inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
             />
           </View>
           <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
@@ -697,6 +689,7 @@ export default function TransactionModal() {
             keyboardType="numeric"
             placeholder={currency === "EUR" ? "Tasa Bs/EUR" : "Tasa Bs/$"}
             placeholderTextColor={Colors.text.disabled}
+            inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
           />
         )}
 
@@ -706,6 +699,7 @@ export default function TransactionModal() {
           onChangeText={setDescription}
           placeholder="Nota opcional"
           placeholderTextColor={Colors.text.disabled}
+          inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
         />
 
         <View style={styles.usdRefRow}>
@@ -828,16 +822,18 @@ export default function TransactionModal() {
         onConfirm={setDate}
       />
 
-      {keyboardVisible && Platform.OS !== "web" && (
-        <View style={styles.keyboardToolbar}>
-          <View style={{ flex: 1 }} />
-          <Pressable
-            style={styles.keyboardDoneBtn}
-            onPress={() => Keyboard.dismiss()}
-          >
-            <Text style={styles.keyboardDoneText}>Listo</Text>
-          </Pressable>
-        </View>
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={INPUT_ACCESSORY_ID}>
+          <View style={styles.keyboardToolbar}>
+            <View style={{ flex: 1 }} />
+            <Pressable
+              style={styles.keyboardDoneBtn}
+              onPress={() => Keyboard.dismiss()}
+            >
+              <Text style={styles.keyboardDoneText}>Listo</Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
       )}
     </KeyboardAvoidingView>
   );
