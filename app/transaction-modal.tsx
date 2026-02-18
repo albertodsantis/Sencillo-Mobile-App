@@ -546,6 +546,8 @@ export default function TransactionModal() {
               }}
               keyboardType="decimal-pad"
               keyboardAppearance="dark"
+              autoCorrect={false}
+              spellCheck={false}
               placeholder="0.00"
               placeholderTextColor={Colors.text.disabled}
               selectionColor={segColor}
@@ -689,6 +691,8 @@ export default function TransactionModal() {
             onChangeText={setCustomRate}
             keyboardType="numeric"
             keyboardAppearance="dark"
+            autoCorrect={false}
+            spellCheck={false}
             placeholder={currency === "EUR" ? "Tasa Bs/EUR" : "Tasa Bs/$"}
             placeholderTextColor={Colors.text.disabled}
             inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
@@ -702,6 +706,8 @@ export default function TransactionModal() {
           placeholder="Nota opcional"
           placeholderTextColor={Colors.text.disabled}
           keyboardAppearance="dark"
+          autoCorrect={false}
+          spellCheck={false}
           inputAccessoryViewID={Platform.OS === "ios" ? INPUT_ACCESSORY_ID : undefined}
         />
 
