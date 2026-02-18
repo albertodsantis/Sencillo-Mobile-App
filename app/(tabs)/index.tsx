@@ -59,6 +59,7 @@ function KpiCard({
   count,
   categories,
   onPress,
+  hidden,
 }: {
   label: string;
   total: number;
@@ -70,6 +71,7 @@ function KpiCard({
   count: number;
   categories: CategoryStat[];
   onPress?: () => void;
+  hidden?: boolean;
 }) {
   const palette = SEGMENT_PALETTES[segment] || SEGMENT_PALETTES.ingresos;
 
@@ -91,7 +93,7 @@ function KpiCard({
         </View>
         <View>
           <Text style={[styles.kpiCardTotal, { color }]} numberOfLines={1}>
-            ${Math.round(total).toLocaleString("en-US")}
+            {hidden ? "$ ••••" : `$${Math.round(total).toLocaleString("en-US")}`}
           </Text>
         </View>
       </View>
@@ -99,11 +101,11 @@ function KpiCard({
       <View style={styles.kpiCurrencyRow}>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
           <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>USD</Text>
-          <Text style={styles.kpiCurrencyVal}>${Math.round(hardAmount).toLocaleString("en-US")}</Text>
+          <Text style={styles.kpiCurrencyVal}>{hidden ? "••••" : `$${Math.round(hardAmount).toLocaleString("en-US")}`}</Text>
         </View>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
           <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>Bs</Text>
-          <Text style={styles.kpiCurrencyVal}>{Math.round(vesAmount).toLocaleString("en-US")}</Text>
+          <Text style={styles.kpiCurrencyVal}>{hidden ? "••••" : Math.round(vesAmount).toLocaleString("en-US")}</Text>
         </View>
       </View>
 
@@ -141,7 +143,7 @@ function KpiCard({
               {categories.filter((c) => c.count > 1).slice(0, 4).map((cat, i) => (
                 <View key={cat.name} style={styles.kpiAvgRow}>
                   <Text style={styles.kpiAvgName} numberOfLines={1}>{cat.name}</Text>
-                  <Text style={styles.kpiAvgVal}>${Math.round(cat.total / cat.count).toLocaleString("en-US")}</Text>
+                  <Text style={styles.kpiAvgVal}>{hidden ? "$ ••••" : `$${Math.round(cat.total / cat.count).toLocaleString("en-US")}`}</Text>
                   <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
                 </View>
               ))}
@@ -179,6 +181,7 @@ export default function HomeScreen() {
 
   const [showGuide, setShowGuide] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const [hiddenBalances, setHiddenBalances] = useState(false);
 
   const totalExpenses = dashboardData.gastosFijos + dashboardData.gastosVariables;
 
@@ -312,9 +315,14 @@ export default function HomeScreen() {
           </Pressable>
           <Text style={styles.headerTitle}>{displayName}</Text>
         </View>
-        <Pressable onPress={() => setShowGuide(true)} style={styles.helpBtn}>
-          <Ionicons name="help-circle-outline" size={24} color={Colors.text.muted} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable onPress={() => setHiddenBalances(!hiddenBalances)} hitSlop={8}>
+            <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.text.muted} />
+          </Pressable>
+          <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+            <Ionicons name="help-circle-outline" size={24} color={Colors.text.muted} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.monthNav}>
@@ -402,7 +410,7 @@ export default function HomeScreen() {
         >
           <Text style={styles.balanceLabel}>{balanceLabel}</Text>
           <Text style={styles.balanceValue}>
-            ${formatCurrency(dashboardData.balance)}
+            {hiddenBalances ? "$ ••••••" : `$${formatCurrency(dashboardData.balance)}`}
           </Text>
           <View style={styles.reportLink}>
             <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
@@ -432,6 +440,7 @@ export default function HomeScreen() {
           count={ingresosStats.count}
           categories={ingresosStats.categories}
           onPress={() => navigateToHistory("ingresos")}
+          hidden={hiddenBalances}
         />
         <KpiCard
           label="Gastos Fijos"
@@ -444,6 +453,7 @@ export default function HomeScreen() {
           count={fijoStats.count}
           categories={fijoStats.categories}
           onPress={() => navigateToHistory("gastos")}
+          hidden={hiddenBalances}
         />
         <KpiCard
           label="Gastos Variables"
@@ -456,6 +466,7 @@ export default function HomeScreen() {
           count={varStats.count}
           categories={varStats.categories}
           onPress={() => navigateToHistory("gastos")}
+          hidden={hiddenBalances}
         />
         <KpiCard
           label="Ahorro"
@@ -468,6 +479,7 @@ export default function HomeScreen() {
           count={ahorroStats.count}
           categories={ahorroStats.categories}
           onPress={() => navigateToHistory("ahorro")}
+          hidden={hiddenBalances}
         />
       </ScrollView>
 
@@ -644,6 +656,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.primary,
     letterSpacing: -0.3,
+  },
+  headerRight: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
   },
   helpBtn: {
     width: 40,
