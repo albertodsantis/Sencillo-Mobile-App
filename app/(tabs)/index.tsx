@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Modal,
   Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,7 +19,7 @@ import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
-import { type ViewMode, type Segment } from "@/lib/domain/types";
+import { type ViewMode, type Segment, type Transaction } from "@/lib/domain/types";
 import { formatCurrency, formatCompact } from "@/lib/domain/finance";
 
 const VIEW_MODES: { id: ViewMode; label: string }[] = [
@@ -26,13 +28,26 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: "year", label: "Anual" },
 ];
 
-function MiniKpi({
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const CARD_WIDTH = SCREEN_WIDTH - 72;
+const CARD_GAP = 12;
+
+interface CategoryStat {
+  name: string;
+  total: number;
+  count: number;
+  pct: number;
+}
+
+function KpiCard({
   label,
   total,
   vesAmount,
   hardAmount,
   color,
   icon,
+  count,
+  categories,
   onPress,
 }: {
   label: string;
@@ -41,35 +56,68 @@ function MiniKpi({
   hardAmount: number;
   color: string;
   icon: React.ReactNode;
+  count: number;
+  categories: CategoryStat[];
   onPress?: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.miniKpi,
-        pressed && { opacity: 0.8 },
+        styles.kpiCard,
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
       ]}
     >
-      <View style={styles.miniKpiTop}>
-        <View style={[styles.miniKpiIcon, { backgroundColor: color + "18" }]}>
+      <View style={styles.kpiCardHeader}>
+        <View style={[styles.kpiIconCircle, { backgroundColor: color + "20" }]}>
           {icon}
         </View>
-        <Text style={styles.miniKpiLabel} numberOfLines={1}>{label}</Text>
-      </View>
-      <Text style={[styles.miniKpiValue, { color }]} numberOfLines={1}>
-        ${formatCompact(total)}
-      </Text>
-      <View style={styles.miniKpiBreakdown}>
-        <View style={styles.miniKpiTag}>
-          <Text style={styles.miniKpiTagPrefix}>$</Text>
-          <Text style={styles.miniKpiTagVal}>{formatCompact(hardAmount)}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.kpiCardLabel}>{label}</Text>
+          <Text style={styles.kpiCardCount}>{count} registro{count !== 1 ? "s" : ""}</Text>
         </View>
-        <View style={styles.miniKpiTag}>
-          <Text style={styles.miniKpiTagPrefix}>Bs</Text>
-          <Text style={styles.miniKpiTagVal}>{formatCompact(vesAmount)}</Text>
+        <View>
+          <Text style={[styles.kpiCardTotal, { color }]} numberOfLines={1}>
+            ${formatCompact(total)}
+          </Text>
         </View>
       </View>
+
+      <View style={styles.kpiCurrencyRow}>
+        <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
+          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>USD</Text>
+          <Text style={styles.kpiCurrencyVal}>${formatCompact(hardAmount)}</Text>
+        </View>
+        <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
+          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>VES</Text>
+          <Text style={styles.kpiCurrencyVal}>Bs {formatCompact(vesAmount)}</Text>
+        </View>
+      </View>
+
+      {categories.length > 0 && (
+        <View style={styles.kpiCatList}>
+          {categories.slice(0, 4).map((cat) => (
+            <View key={cat.name} style={styles.kpiCatRow}>
+              <View style={styles.kpiCatLeft}>
+                <View style={[styles.kpiCatDot, { backgroundColor: color }]} />
+                <Text style={styles.kpiCatName} numberOfLines={1}>{cat.name}</Text>
+              </View>
+              <View style={styles.kpiCatRight}>
+                <Text style={styles.kpiCatVal}>${formatCompact(cat.total)}</Text>
+                <View style={[styles.kpiCatPctBadge, { backgroundColor: color + "18" }]}>
+                  <Text style={[styles.kpiCatPct, { color }]}>{cat.pct.toFixed(0)}%</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {categories.length === 0 && (
+        <View style={styles.kpiEmptyCat}>
+          <Text style={styles.kpiEmptyCatText}>Sin registros</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -95,9 +143,55 @@ export default function HomeScreen() {
   } = useApp();
 
   const [showGuide, setShowGuide] = useState(false);
-
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
 
   const totalExpenses = dashboardData.gastosFijos + dashboardData.gastosVariables;
+
+  const filteredByPeriod = useMemo(() => {
+    return transactions.filter((t) => {
+      const d = new Date(t.date);
+      if (viewMode === "month") {
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      } else if (viewMode === "ytd") {
+        return d.getFullYear() === currentYear && d.getMonth() <= currentMonth;
+      }
+      return d.getFullYear() === currentYear;
+    });
+  }, [transactions, viewMode, currentMonth, currentYear]);
+
+  const buildCategoryStats = useCallback(
+    (segment: Segment): { count: number; categories: CategoryStat[] } => {
+      const items = filteredByPeriod.filter((t) => t.segment === segment);
+      const catMap: Record<string, { total: number; count: number }> = {};
+      items.forEach((t) => {
+        if (!catMap[t.category]) catMap[t.category] = { total: 0, count: 0 };
+        catMap[t.category].total += t.amountUSD;
+        catMap[t.category].count += 1;
+      });
+      const totalUSD = items.reduce((s, t) => s + t.amountUSD, 0);
+      const categories = Object.entries(catMap)
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([name, { total, count }]) => ({
+          name,
+          total,
+          count,
+          pct: totalUSD > 0 ? (total / totalUSD) * 100 : 0,
+        }));
+      return { count: items.length, categories };
+    },
+    [filteredByPeriod]
+  );
+
+  const ingresosStats = useMemo(() => buildCategoryStats("ingresos"), [buildCategoryStats]);
+  const fijoStats = useMemo(() => buildCategoryStats("gastos_fijos"), [buildCategoryStats]);
+  const varStats = useMemo(() => buildCategoryStats("gastos_variables"), [buildCategoryStats]);
+  const ahorroStats = useMemo(() => buildCategoryStats("ahorro"), [buildCategoryStats]);
+
+  const handleKpiScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    const idx = Math.round(x / (CARD_WIDTH + CARD_GAP));
+    setActiveCardIdx(Math.max(0, Math.min(idx, 3)));
+  }, []);
 
   const displayName =
     (profile.firstName || profile.lastName)
@@ -285,44 +379,68 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         style={styles.kpiScroll}
         contentContainerStyle={styles.kpiRow}
+        snapToInterval={CARD_WIDTH + CARD_GAP}
+        decelerationRate="fast"
+        onScroll={handleKpiScroll}
+        scrollEventThrottle={16}
       >
-        <MiniKpi
+        <KpiCard
           label="Ingresos"
           total={dashboardData.ingresos}
           vesAmount={dashboardData.ingresosVES}
           hardAmount={dashboardData.ingresosHard}
           color={Colors.segments.ingresos.color}
-          icon={<Ionicons name="trending-up" size={12} color={Colors.segments.ingresos.color} />}
+          icon={<Ionicons name="trending-up" size={18} color={Colors.segments.ingresos.color} />}
+          count={ingresosStats.count}
+          categories={ingresosStats.categories}
           onPress={() => navigateToHistory("ingresos")}
         />
-        <MiniKpi
-          label="G. Fijos"
+        <KpiCard
+          label="Gastos Fijos"
           total={dashboardData.gastosFijos}
           vesAmount={dashboardData.gastosFijosVES}
           hardAmount={dashboardData.gastosFijosHard}
           color={Colors.segments.gastos_fijos.color}
-          icon={<MaterialCommunityIcons name="credit-card" size={12} color={Colors.segments.gastos_fijos.color} />}
+          icon={<MaterialCommunityIcons name="credit-card" size={18} color={Colors.segments.gastos_fijos.color} />}
+          count={fijoStats.count}
+          categories={fijoStats.categories}
           onPress={() => navigateToHistory("gastos")}
         />
-        <MiniKpi
-          label="G. Var."
+        <KpiCard
+          label="Gastos Variables"
           total={dashboardData.gastosVariables}
           vesAmount={dashboardData.gastosVariablesVES}
           hardAmount={dashboardData.gastosVariablesHard}
           color={Colors.segments.gastos_variables.color}
-          icon={<Ionicons name="trending-down" size={12} color={Colors.segments.gastos_variables.color} />}
+          icon={<Ionicons name="trending-down" size={18} color={Colors.segments.gastos_variables.color} />}
+          count={varStats.count}
+          categories={varStats.categories}
           onPress={() => navigateToHistory("gastos")}
         />
-        <MiniKpi
+        <KpiCard
           label="Ahorro"
           total={dashboardData.ahorro}
           vesAmount={dashboardData.ahorroVES}
           hardAmount={dashboardData.ahorroHard}
           color={Colors.segments.ahorro.color}
-          icon={<MaterialCommunityIcons name="piggy-bank" size={12} color={Colors.segments.ahorro.color} />}
+          icon={<MaterialCommunityIcons name="piggy-bank" size={18} color={Colors.segments.ahorro.color} />}
+          count={ahorroStats.count}
+          categories={ahorroStats.categories}
           onPress={() => navigateToHistory("ahorro")}
         />
       </ScrollView>
+
+      <View style={styles.kpiDots}>
+        {[0, 1, 2, 3].map((i) => (
+          <View
+            key={i}
+            style={[
+              styles.kpiDot,
+              i === activeCardIdx && styles.kpiDotActive,
+            ]}
+          />
+        ))}
+      </View>
 
       <Modal
         visible={showGuide}
@@ -634,69 +752,149 @@ const styles = StyleSheet.create({
     textTransform: "uppercase" as const,
   },
   kpiScroll: {
-    marginBottom: 16,
+    marginBottom: 8,
     marginHorizontal: -24,
   },
   kpiRow: {
     flexDirection: "row" as const,
-    gap: 10,
+    gap: CARD_GAP,
     paddingHorizontal: 24,
+    paddingRight: 24 + (SCREEN_WIDTH - CARD_WIDTH - 48),
   },
-  miniKpi: {
+  kpiCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    alignItems: "center" as const,
-    minWidth: 90,
+    width: CARD_WIDTH,
   },
-  miniKpiTop: {
+  kpiCardHeader: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 5,
-    marginBottom: 6,
+    gap: 12,
+    marginBottom: 14,
   },
-  miniKpiIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
+  kpiIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
-  miniKpiLabel: {
+  kpiCardLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  kpiCardCount: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.text.muted,
+    marginTop: 1,
   },
-  miniKpiValue: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 16,
-    letterSpacing: -0.3,
-    marginBottom: 6,
+  kpiCardTotal: {
+    fontFamily: "Outfit_900Black",
+    fontSize: 24,
+    letterSpacing: -0.5,
   },
-  miniKpiBreakdown: {
-    gap: 3,
-    alignSelf: "stretch" as const,
+  kpiCurrencyRow: {
+    flexDirection: "row" as const,
+    gap: 8,
+    marginBottom: 14,
   },
-  miniKpiTag: {
+  kpiCurrencyPill: {
+    flex: 1,
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: "rgba(255,255,255,0.02)",
   },
-  miniKpiTagPrefix: {
+  kpiCurrencySymbol: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 8,
-    color: "rgba(148,163,184,0.7)",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
-  miniKpiTagVal: {
+  kpiCurrencyVal: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 8,
+    fontSize: 12,
     color: Colors.text.secondary,
+  },
+  kpiCatList: {
+    gap: 8,
+  },
+  kpiCatRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+  },
+  kpiCatLeft: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    flex: 1,
+  },
+  kpiCatDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  kpiCatName: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 12,
+    color: Colors.text.secondary,
+    flex: 1,
+  },
+  kpiCatRight: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  kpiCatVal: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 12,
+    color: Colors.text.primary,
+  },
+  kpiCatPctBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    minWidth: 38,
+    alignItems: "center" as const,
+  },
+  kpiCatPct: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 10,
+  },
+  kpiEmptyCat: {
+    paddingVertical: 12,
+    alignItems: "center" as const,
+  },
+  kpiEmptyCatText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 11,
+    color: Colors.text.disabled,
+  },
+  kpiDots: {
+    flexDirection: "row" as const,
+    justifyContent: "center" as const,
+    gap: 6,
+    marginBottom: 16,
+  },
+  kpiDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  kpiDotActive: {
+    backgroundColor: Colors.brand.DEFAULT,
+    width: 18,
+    borderRadius: 4,
   },
 });
