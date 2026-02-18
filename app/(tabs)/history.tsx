@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import dayjs from "dayjs";
+import "dayjs/locale/es";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
@@ -40,7 +41,7 @@ function TransactionRow({
     devaluation = ((item.originalRate / rates.bcv) - 1) * 100;
   }
   const isIncome = item.type === "income";
-  const dateLabel = dayjs(item.date).format("ddd D");
+  const dateLabel = dayjs(item.date).locale("es").format("ddd D MMM");
 
   return (
     <Pressable
@@ -78,7 +79,7 @@ function TransactionRow({
           </Text>
           <View style={styles.txMetaRow}>
             <Text style={styles.txDate}>
-              {item.description || dateLabel}
+              {dateLabel}{item.description ? ` · ${item.description}` : ""}
             </Text>
             {isVesSaving && devaluation < -0.1 && (
               <View style={styles.devalBadge}>
