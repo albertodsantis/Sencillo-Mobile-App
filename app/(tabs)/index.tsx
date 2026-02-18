@@ -31,7 +31,7 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
 ];
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const CARD_WIDTH = SCREEN_WIDTH - 72;
+const CARD_WIDTH = SCREEN_WIDTH - 56;
 const CARD_GAP = 12;
 
 const SEGMENT_PALETTES: Record<string, string[]> = {
@@ -99,11 +99,11 @@ function KpiCard({
       <View style={styles.kpiCurrencyRow}>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
           <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>USD</Text>
-          <Text style={styles.kpiCurrencyVal}>${formatCompact(hardAmount)}</Text>
+          <Text style={styles.kpiCurrencyVal}>${Math.round(hardAmount).toLocaleString("en-US")}</Text>
         </View>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
           <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>VES</Text>
-          <Text style={styles.kpiCurrencyVal}>Bs {formatCompact(vesAmount)}</Text>
+          <Text style={styles.kpiCurrencyVal}>Bs {Math.round(vesAmount).toLocaleString("en-US")}</Text>
         </View>
       </View>
 
@@ -117,7 +117,7 @@ function KpiCard({
               }))}
               size={140}
               strokeWidth={14}
-              gapDeg={14}
+              gapDeg={20}
               glowIntensity={4}
             >
               <View style={styles.kpiDonutCenter}>
@@ -800,8 +800,8 @@ const styles = StyleSheet.create({
   kpiCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    paddingVertical: 22,
+    paddingHorizontal: 22,
     borderWidth: 1,
     borderColor: Colors.dark.border,
     width: CARD_WIDTH,
