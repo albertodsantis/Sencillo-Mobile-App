@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import dayjs from "dayjs";
 import Colors from "@/constants/colors";
@@ -62,8 +62,8 @@ function TransactionRow({
             },
           ]}
         >
-          <Ionicons
-            name={isIncome ? "arrow-up-forward" : "arrow-down-forward"}
+          <Feather
+            name={isIncome ? "arrow-up-right" : "arrow-down-right"}
             size={16}
             color={
               isIncome
