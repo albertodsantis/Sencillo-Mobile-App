@@ -115,10 +115,10 @@ function KpiCard({
                 value: cat.total,
                 color: palette[i % palette.length],
               }))}
-              size={120}
+              size={140}
               strokeWidth={14}
-              gapDeg={5}
-              glowIntensity={6}
+              gapDeg={8}
+              glowIntensity={4}
             >
               <View style={styles.kpiDonutCenter}>
                 <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>

@@ -86,10 +86,10 @@ export default function GlowRingChart({
             <Path
               d={arcPath(cx, cy, radius, seg.startAngle, seg.endAngle)}
               stroke={seg.color}
-              strokeWidth={strokeWidth + glowIntensity * 2}
+              strokeWidth={strokeWidth + glowIntensity}
               strokeLinecap="round"
               fill="none"
-              opacity={0.35}
+              opacity={0.15}
               filter="url(#glow)"
             />
             <Path
