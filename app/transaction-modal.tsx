@@ -829,8 +829,9 @@ export default function TransactionModal() {
             <Pressable
               style={styles.keyboardDoneBtn}
               onPress={() => Keyboard.dismiss()}
+              hitSlop={8}
             >
-              <Text style={styles.keyboardDoneText}>Listo</Text>
+              <Ionicons name="checkmark-circle" size={28} color="#0a84ff" />
             </Pressable>
           </View>
         </InputAccessoryView>
@@ -1140,17 +1141,13 @@ const styles = StyleSheet.create({
   keyboardToolbar: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    backgroundColor: "#d1d5db",
+    backgroundColor: "#2c2c2e",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.15)",
     paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  keyboardDoneBtn: {
-    paddingHorizontal: 14,
     paddingVertical: 6,
   },
-  keyboardDoneText: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 16,
-    color: "#0a84ff",
+  keyboardDoneBtn: {
+    padding: 4,
   },
 });
