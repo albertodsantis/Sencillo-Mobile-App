@@ -117,7 +117,7 @@ function KpiCard({
               }))}
               size={140}
               strokeWidth={14}
-              gapDeg={8}
+              gapDeg={14}
               glowIntensity={4}
             >
               <View style={styles.kpiDonutCenter}>
