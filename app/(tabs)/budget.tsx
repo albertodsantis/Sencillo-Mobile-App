@@ -300,7 +300,7 @@ export default function BudgetScreen() {
               >
                 <Ionicons
                   name="add-circle-outline"
-                  size={16}
+                  size={20}
                   color={Colors.brand.DEFAULT}
                 />
                 <Text style={styles.setBudgetText}>
@@ -408,7 +408,7 @@ export default function BudgetScreen() {
               >
                 <Ionicons
                   name="add-circle-outline"
-                  size={16}
+                  size={20}
                   color="#60a5fa"
                 />
                 <Text style={[styles.setBudgetText, { color: "#60a5fa" }]}>
@@ -732,11 +732,20 @@ const styles = StyleSheet.create({
   setBudgetBtn: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 6,
+    justifyContent: "center" as const,
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    borderStyle: "dashed" as const,
+    marginTop: 4,
   },
   setBudgetText: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.brand.DEFAULT,
   },
   editRow: {
