@@ -172,11 +172,8 @@ export default function BudgetScreen() {
           <Text style={styles.title}>Presupuestos y Ahorro</Text>
           <Text style={styles.subtitle}>Control mensual de gastos y metas</Text>
         </View>
-        <Pressable
-          onPress={() => setShowGuide(true)}
-          style={styles.helpBtn}
-        >
-          <Ionicons name="help-circle-outline" size={26} color={Colors.text.muted} />
+        <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+          <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
         </Pressable>
       </View>
 
@@ -614,13 +611,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   helpBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginTop: 2,
   },
   segmentControl: {
     flexDirection: "row" as const,
