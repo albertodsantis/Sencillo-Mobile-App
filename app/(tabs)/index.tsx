@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { PieChart, BarChart } from "react-native-gifted-charts";
+import { PieChart } from "react-native-gifted-charts";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
 import { type ViewMode, type Segment } from "@/lib/domain/types";
@@ -127,31 +127,6 @@ export default function HomeScreen() {
   }, [transactions, viewMode, currentMonth, currentYear]);
 
   const totalExpenses = dashboardData.gastosFijos + dashboardData.gastosVariables;
-  const barData = useMemo(() => {
-    const maxVal = Math.max(dashboardData.ingresos, totalExpenses, 1);
-    return [
-      {
-        value: dashboardData.ingresos,
-        label: "Ingresos",
-        frontColor: Colors.segments.ingresos.color,
-        topLabelComponent: () => (
-          <Text style={{ fontFamily: "Outfit_700Bold", fontSize: 10, color: Colors.segments.ingresos.color, marginBottom: 4 }}>
-            ${formatCompact(dashboardData.ingresos)}
-          </Text>
-        ),
-      },
-      {
-        value: totalExpenses,
-        label: "Gastos",
-        frontColor: "#fb7185",
-        topLabelComponent: () => (
-          <Text style={{ fontFamily: "Outfit_700Bold", fontSize: 10, color: "#fb7185", marginBottom: 4 }}>
-            ${formatCompact(totalExpenses)}
-          </Text>
-        ),
-      },
-    ];
-  }, [dashboardData.ingresos, totalExpenses]);
 
   const displayName =
     (profile.firstName || profile.lastName)
@@ -379,32 +354,6 @@ export default function HomeScreen() {
       </ScrollView>
 
       <View style={styles.chartsContainer}>
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Ingresos vs Gastos</Text>
-          {dashboardData.ingresos > 0 || totalExpenses > 0 ? (
-            <View style={styles.barChartWrap}>
-              <BarChart
-                data={barData}
-                width={Dimensions.get("window").width - 120}
-                height={120}
-                barWidth={40}
-                spacing={50}
-                noOfSections={4}
-                barBorderRadius={6}
-                yAxisThickness={0}
-                xAxisThickness={0}
-                xAxisLabelTextStyle={{ fontFamily: "Outfit_600SemiBold", fontSize: 10, color: Colors.text.muted }}
-                yAxisTextStyle={{ fontFamily: "Outfit_600SemiBold", fontSize: 9, color: Colors.text.disabled }}
-                hideRules
-                backgroundColor="transparent"
-                isAnimated
-              />
-            </View>
-          ) : (
-            <Text style={styles.chartEmpty}>Sin datos para este periodo</Text>
-          )}
-        </View>
-
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Gastos por Categoria</Text>
           {expensesByCategory.length > 0 ? (
@@ -835,9 +784,6 @@ const styles = StyleSheet.create({
     color: Colors.text.disabled,
     textAlign: "center" as const,
     paddingVertical: 24,
-  },
-  barChartWrap: {
-    alignItems: "center" as const,
   },
   donutWrap: {
     flexDirection: "row" as const,
