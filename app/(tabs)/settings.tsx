@@ -188,9 +188,6 @@ export default function SettingsScreen() {
           <Text style={styles.title}>Personalizacion</Text>
           <Text style={styles.subtitle}>Gestionar categorias por segmento</Text>
         </View>
-        <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
-          <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
-        </Pressable>
       </View>
 
       {SEGMENTS.map((seg) => {
@@ -301,13 +298,6 @@ export default function SettingsScreen() {
       >
         <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
           <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
-            <View style={guideStyles.iconRow}>
-              <View style={guideStyles.iconCircle}>
-                <Ionicons name="information-circle" size={28} color="#a78bfa" />
-              </View>
-              <Text style={guideStyles.cardTitle}>Guia</Text>
-            </View>
-
             <Text style={guideStyles.sectionTitle}>Segmentos</Text>
             <Text style={guideStyles.sectionDesc}>
               Tu estructura financiera se divide en 4 segmentos: <Text style={guideStyles.bold}>Ingresos</Text>, <Text style={guideStyles.bold}>Gastos Fijos</Text>, <Text style={guideStyles.bold}>Gastos Variables</Text> y <Text style={guideStyles.bold}>Ahorro</Text>.
