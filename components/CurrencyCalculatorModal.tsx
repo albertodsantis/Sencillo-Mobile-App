@@ -103,8 +103,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
   const brechaPositive = brechaValue > 0;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <View style={[styles.overlay, { paddingTop: insets.top + webTopInset }]}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+      <View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8 }]}>
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.handleBar} />
 
@@ -242,16 +242,16 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end" as const,
+    justifyContent: "flex-start" as const,
   },
   sheet: {
     backgroundColor: Colors.dark.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     maxHeight: "90%",
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    borderBottomWidth: 0,
+    borderTopWidth: 0,
   },
   handleBar: {
     width: 40,
