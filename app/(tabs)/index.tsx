@@ -318,7 +318,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerRight}>
           <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
-            <MaterialCommunityIcons name="swap-horizontal" size={26} color={Colors.text.muted} />
+            <MaterialCommunityIcons name="currency-usd" size={26} color={Colors.text.muted} />
           </Pressable>
           <Pressable onPress={() => setHiddenBalances(!hiddenBalances)} hitSlop={8}>
             <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={26} color={Colors.text.muted} />
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 12,
+    gap: 20,
   },
   helpBtn: {
     width: 40,
