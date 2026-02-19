@@ -425,13 +425,6 @@ export default function BudgetScreen() {
       >
         <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
           <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
-            <View style={guideStyles.iconRow}>
-              <View style={guideStyles.iconCircle}>
-                <Ionicons name="information-circle" size={28} color="#a78bfa" />
-              </View>
-              <Text style={guideStyles.cardTitle}>Guia</Text>
-            </View>
-
             <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
             <Text style={guideStyles.sectionDesc}>
               Controla tus <Text style={guideStyles.bold}>Gastos Variables</Text> definiendo un tope para cada categoria. Cuando te acerques al limite, la barra cambiara de color.
