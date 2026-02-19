@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 16,
+    marginBottom: 28,
   },
   headerLeft: {
     flexDirection: "row" as const,
