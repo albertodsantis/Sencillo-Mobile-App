@@ -506,7 +506,7 @@ export default function HomeScreen() {
             </View>
           )}
           <View style={styles.reportLink}>
-            <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
+            <Text style={styles.reportLinkText}>Ver Reporte</Text>
             <Feather name="arrow-right" size={12} color={Colors.text.muted} />
           </View>
         </Pressable>

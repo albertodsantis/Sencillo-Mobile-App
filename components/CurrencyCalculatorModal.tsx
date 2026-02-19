@@ -9,7 +9,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 
@@ -20,20 +20,18 @@ interface Rates {
   eurCross: number;
 }
 
-type CurrencyKey = "USD" | "BS_BCV" | "BS_PARALLEL" | "EUR";
+type CurrencyKey = "USD" | "VES" | "EUR";
 
 interface CurrencyOption {
   key: CurrencyKey;
   label: string;
   symbol: string;
-  flag: string;
 }
 
 const CURRENCIES: CurrencyOption[] = [
-  { key: "USD", label: "Dolar", symbol: "$", flag: "USD" },
-  { key: "BS_BCV", label: "Bolivares (BCV)", symbol: "Bs", flag: "BCV" },
-  { key: "BS_PARALLEL", label: "Bolivares (Paralelo)", symbol: "Bs", flag: "PAR" },
-  { key: "EUR", label: "Euro", symbol: "\u20AC", flag: "EUR" },
+  { key: "USD", label: "Dolar", symbol: "$" },
+  { key: "VES", label: "Bolivares", symbol: "Bs" },
+  { key: "EUR", label: "Euro", symbol: "\u20AC" },
 ];
 
 interface Props {
@@ -49,37 +47,27 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
 
-  const convertToUSD = useCallback(
-    (val: number, from: CurrencyKey): number => {
-      if (from === "USD") return val;
-      if (from === "BS_BCV" && rates.bcv > 0) return val / rates.bcv;
-      if (from === "BS_PARALLEL" && rates.parallel > 0) return val / rates.parallel;
-      if (from === "EUR" && rates.eurCross > 0) return val * rates.eurCross;
-      return 0;
-    },
-    [rates]
-  );
-
-  const convertFromUSD = useCallback(
-    (usd: number, to: CurrencyKey): number => {
-      if (to === "USD") return usd;
-      if (to === "BS_BCV") return usd * rates.bcv;
-      if (to === "BS_PARALLEL") return usd * rates.parallel;
-      if (to === "EUR" && rates.eurCross > 0) return usd / rates.eurCross;
-      return 0;
-    },
-    [rates]
-  );
-
   const conversions = useMemo(() => {
     const val = parseFloat(amount.replace(",", ".")) || 0;
-    if (val === 0) return CURRENCIES.filter((c) => c.key !== selectedCurrency).map((c) => ({ ...c, value: 0 }));
-    const usd = convertToUSD(val, selectedCurrency);
-    return CURRENCIES.filter((c) => c.key !== selectedCurrency).map((c) => ({
-      ...c,
-      value: convertFromUSD(usd, c.key),
-    }));
-  }, [amount, selectedCurrency, convertToUSD, convertFromUSD]);
+
+    const results: { key: string; label: string; symbol: string; value: number }[] = [];
+
+    if (selectedCurrency === "USD") {
+      results.push({ key: "VES_BCV", label: "Bs (BCV)", symbol: "Bs", value: val * rates.bcv });
+      results.push({ key: "VES_PAR", label: "Bs (Paralelo)", symbol: "Bs", value: val * rates.parallel });
+      results.push({ key: "EUR", label: "Euro", symbol: "\u20AC", value: rates.eurCross > 0 ? val / rates.eurCross : 0 });
+    } else if (selectedCurrency === "VES") {
+      results.push({ key: "USD_BCV", label: "USD (BCV)", symbol: "$", value: rates.bcv > 0 ? val / rates.bcv : 0 });
+      results.push({ key: "USD_PAR", label: "USD (Paralelo)", symbol: "$", value: rates.parallel > 0 ? val / rates.parallel : 0 });
+      results.push({ key: "EUR", label: "Euro", symbol: "\u20AC", value: rates.eur > 0 ? val / rates.eur : 0 });
+    } else {
+      results.push({ key: "USD", label: "Dolar", symbol: "$", value: val * (rates.eurCross || 0) });
+      results.push({ key: "VES_BCV", label: "Bs (BCV)", symbol: "Bs", value: val * rates.eur });
+      results.push({ key: "VES_PAR", label: "Bs (Paralelo)", symbol: "Bs", value: val * (rates.eurCross || 0) * rates.parallel });
+    }
+
+    return results;
+  }, [amount, selectedCurrency, rates]);
 
   const formatResult = (val: number): string => {
     if (val === 0) return "0.00";
@@ -93,14 +81,14 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
     onClose();
   };
 
-  const rateRows = [
-    { label: "BCV", sublabel: "Tasa oficial", value: rates.bcv, unit: "Bs/$" },
-    { label: "Paralelo", sublabel: "USDC / P2P", value: rates.parallel, unit: "Bs/$" },
-    { label: "BCV EUR", sublabel: "Euro oficial", value: rates.eur, unit: "Bs/\u20AC" },
-    { label: "EUR/USD", sublabel: "Cruce", value: rates.eurCross, unit: "$/\u20AC" },
+  const rateItems = [
+    { label: "BCV", sub: "Tasa oficial", value: rates.bcv, unit: "Bs/$" },
+    { label: "Paralelo", sub: "USDC / P2P", value: rates.parallel, unit: "Bs/$" },
+    { label: "BCV EUR", sub: "Euro oficial", value: rates.eur, unit: "Bs/\u20AC" },
+    { label: "EUR/USD", sub: "Cruce", value: rates.eurCross, unit: "$/\u20AC" },
     {
       label: "Brecha",
-      sublabel: "Paralelo vs BCV",
+      sub: "Par. vs BCV",
       value: rates.bcv && rates.parallel ? ((rates.parallel - rates.bcv) / rates.bcv) * 100 : 0,
       unit: "%",
     },
@@ -120,83 +108,70 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
-            <View style={styles.ratesSection}>
-              <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
-              <View style={styles.ratesGrid}>
-                {rateRows.map((r) => (
-                  <View key={r.label} style={styles.rateCard}>
-                    <View>
-                      <Text style={styles.rateCardLabel}>{r.label}</Text>
-                      <Text style={styles.rateCardSub}>{r.sublabel}</Text>
-                    </View>
-                    <View style={styles.rateCardRight}>
-                      <Text style={styles.rateCardValue}>
-                        {r.unit === "%" ? `${r.value.toFixed(1)}` : r.value.toFixed(2)}
-                      </Text>
-                      <Text style={styles.rateCardUnit}>{r.unit}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
+            <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
+            <View style={styles.ratesGrid}>
+              {rateItems.map((r) => (
+                <View key={r.label} style={styles.rateItem}>
+                  <Text style={styles.rateValue}>
+                    {r.unit === "%" ? `${r.value.toFixed(1)}%` : r.value.toFixed(2)}
+                  </Text>
+                  <Text style={styles.rateLabel}>{r.label}</Text>
+                  <Text style={styles.rateSub}>{r.unit !== "%" ? r.unit : r.sub}</Text>
+                </View>
+              ))}
             </View>
 
-            <View style={styles.calcSection}>
-              <Text style={styles.sectionLabel}>CALCULADORA</Text>
+            <View style={styles.divider} />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputSymbol}>
-                  {CURRENCIES.find((c) => c.key === selectedCurrency)?.symbol}
-                </Text>
-                <TextInput
-                  style={styles.amountInput}
-                  value={amount}
-                  onChangeText={setAmount}
-                  placeholder="0.00"
-                  placeholderTextColor={Colors.text.disabled}
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
-                />
-              </View>
+            <Text style={styles.sectionLabel}>CALCULADORA</Text>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.currencyPicker}>
-                {CURRENCIES.map((c) => (
-                  <Pressable
-                    key={c.key}
-                    onPress={() => setSelectedCurrency(c.key)}
+            <View style={styles.currencyPicker}>
+              {CURRENCIES.map((c) => (
+                <Pressable
+                  key={c.key}
+                  onPress={() => setSelectedCurrency(c.key)}
+                  style={[
+                    styles.currencyChip,
+                    selectedCurrency === c.key && styles.currencyChipActive,
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.currencyChip,
-                      selectedCurrency === c.key && styles.currencyChipActive,
+                      styles.currencyChipText,
+                      selectedCurrency === c.key && styles.currencyChipTextActive,
                     ]}
                   >
-                    <Text style={styles.currencyChipFlag}>{c.flag}</Text>
-                    <Text
-                      style={[
-                        styles.currencyChipText,
-                        selectedCurrency === c.key && styles.currencyChipTextActive,
-                      ]}
-                    >
-                      {c.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
+                    {c.symbol} {c.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
 
-              <View style={styles.resultsContainer}>
-                {conversions.map((c) => (
-                  <View key={c.key} style={styles.resultRow}>
-                    <View style={styles.resultLeft}>
-                      <View style={styles.resultBadge}>
-                        <Text style={styles.resultBadgeText}>{c.flag}</Text>
-                      </View>
-                      <Text style={styles.resultLabel}>{c.label}</Text>
-                    </View>
-                    <View style={styles.resultRight}>
-                      <Text style={styles.resultSymbol}>{c.symbol}</Text>
-                      <Text style={styles.resultValue}>{formatResult(c.value)}</Text>
-                    </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputSymbol}>
+                {CURRENCIES.find((c) => c.key === selectedCurrency)?.symbol}
+              </Text>
+              <TextInput
+                style={styles.amountInput}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+                placeholderTextColor={Colors.text.disabled}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+              />
+            </View>
+
+            <View style={styles.resultsContainer}>
+              {conversions.map((c) => (
+                <View key={c.key} style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>{c.label}</Text>
+                  <View style={styles.resultRight}>
+                    <Text style={styles.resultSymbol}>{c.symbol} </Text>
+                    <Text style={styles.resultValue}>{formatResult(c.value)}</Text>
                   </View>
-                ))}
-              </View>
+                </View>
+              ))}
             </View>
           </ScrollView>
         </View>
@@ -215,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    maxHeight: "92%",
+    maxHeight: "88%",
     borderWidth: 1,
     borderColor: Colors.dark.border,
     borderBottomWidth: 0,
@@ -254,49 +229,63 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 20,
   },
-  ratesSection: {},
   ratesGrid: {
-    gap: 8,
-  },
-  rateCard: {
     flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
+    flexWrap: "wrap" as const,
+    gap: 0,
   },
-  rateCardLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 14,
-    color: Colors.text.primary,
+  rateItem: {
+    width: "50%" as any,
+    paddingVertical: 10,
+    paddingRight: 8,
   },
-  rateCardSub: {
-    fontFamily: "Outfit_400Regular",
-    fontSize: 11,
-    color: Colors.text.muted,
-    marginTop: 1,
-  },
-  rateCardRight: {
-    flexDirection: "row" as const,
-    alignItems: "baseline" as const,
-    gap: 4,
-  },
-  rateCardValue: {
+  rateValue: {
     fontFamily: "Outfit_800ExtraBold",
     fontSize: 20,
     color: Colors.text.primary,
+    letterSpacing: -0.5,
   },
-  rateCardUnit: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 11,
+  rateLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 12,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  rateSub: {
+    fontFamily: "Outfit_400Regular",
+    fontSize: 10,
     color: Colors.text.muted,
   },
-  calcSection: {
-    paddingBottom: 24,
+  divider: {
+    height: 1,
+    backgroundColor: Colors.dark.borderSubtle,
+    marginTop: 16,
+  },
+  currencyPicker: {
+    flexDirection: "row" as const,
+    gap: 8,
+    marginBottom: 14,
+  },
+  currencyChip: {
+    flex: 1,
+    alignItems: "center" as const,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  currencyChipActive: {
+    backgroundColor: Colors.brand.DEFAULT + "18",
+    borderColor: Colors.brand.DEFAULT + "50",
+  },
+  currencyChipText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 13,
+    color: Colors.text.secondary,
+  },
+  currencyChipTextActive: {
+    color: Colors.brand.DEFAULT,
   },
   inputContainer: {
     flexDirection: "row" as const,
@@ -306,8 +295,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
     paddingHorizontal: 18,
-    paddingVertical: 6,
+    paddingVertical: 4,
     gap: 6,
+    marginBottom: 14,
   },
   inputSymbol: {
     fontFamily: "Outfit_700Bold",
@@ -319,72 +309,20 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_700Bold",
     fontSize: 28,
     color: Colors.text.primary,
-    paddingVertical: 12,
-  },
-  currencyPicker: {
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  currencyChip: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginRight: 8,
-  },
-  currencyChipActive: {
-    backgroundColor: Colors.brand.DEFAULT + "18",
-    borderColor: Colors.brand.DEFAULT + "50",
-  },
-  currencyChipFlag: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 10,
-    color: Colors.text.muted,
-    letterSpacing: 0.5,
-  },
-  currencyChipText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 13,
-    color: Colors.text.secondary,
-  },
-  currencyChipTextActive: {
-    color: Colors.brand.DEFAULT,
   },
   resultsContainer: {
-    gap: 6,
+    gap: 4,
+    paddingBottom: 24,
   },
   resultRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  resultLeft: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 10,
-  },
-  resultBadge: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  resultBadgeText: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 10,
-    color: Colors.text.muted,
-    letterSpacing: 0.5,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
   },
   resultLabel: {
     fontFamily: "Outfit_600SemiBold",
@@ -394,10 +332,9 @@ const styles = StyleSheet.create({
   resultRight: {
     flexDirection: "row" as const,
     alignItems: "baseline" as const,
-    gap: 3,
   },
   resultSymbol: {
-    fontFamily: "Outfit_700Bold",
+    fontFamily: "Outfit_600SemiBold",
     fontSize: 14,
     color: Colors.text.muted,
   },
