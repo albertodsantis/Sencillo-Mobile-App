@@ -145,12 +145,20 @@ function DraggableCategoryCard({
       },
       onPanResponderTerminate: () => {
         Animated.parallel([
-          Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 8 }),
-          Animated.timing(elevation, { toValue: 0, duration: 150, useNativeDriver: true }),
+          Animated.spring(scale, {
+            toValue: 1,
+            useNativeDriver: true,
+            friction: 8,
+          }),
+          Animated.timing(elevation, {
+            toValue: 0,
+            duration: 150,
+            useNativeDriver: true,
+          }),
         ]).start();
         onDragEnd();
       },
-    })
+    }),
   ).current;
 
   const cardOpacity = elevation.interpolate({
@@ -170,11 +178,12 @@ function DraggableCategoryCard({
     >
       <View style={styles.cardInner}>
         {isReordering && (
-          <View
-            style={styles.dragHandle}
-            {...panResponder.panHandlers}
-          >
-            <Ionicons name="reorder-three" size={22} color={Colors.text.muted} />
+          <View style={styles.dragHandle} {...panResponder.panHandlers}>
+            <Ionicons
+              name="reorder-three"
+              size={22}
+              color={Colors.text.muted}
+            />
           </View>
         )}
         <View style={styles.cardContent}>{children}</View>
@@ -200,7 +209,9 @@ export default function BudgetScreen() {
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalValue, setGoalValue] = useState("");
   const [showGuide, setShowGuide] = useState(false);
-  const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">("presupuestos");
+  const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">(
+    "presupuestos",
+  );
   const [isReordering, setIsReordering] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -257,7 +268,7 @@ export default function BudgetScreen() {
       await updateBudgets(updated);
       setEditingCategory(null);
     },
-    [editValue, budgets, updateBudgets]
+    [editValue, budgets, updateBudgets],
   );
 
   const handleRemoveBudget = useCallback(
@@ -266,7 +277,7 @@ export default function BudgetScreen() {
       delete updated[category];
       await updateBudgets(updated);
     },
-    [budgets, updateBudgets]
+    [budgets, updateBudgets],
   );
 
   const handleSaveGoal = useCallback(
@@ -280,7 +291,7 @@ export default function BudgetScreen() {
       await updateSavingsGoals(updated);
       setEditingGoal(null);
     },
-    [goalValue, savingsGoals, updateSavingsGoals]
+    [goalValue, savingsGoals, updateSavingsGoals],
   );
 
   const handleRemoveGoal = useCallback(
@@ -289,11 +300,15 @@ export default function BudgetScreen() {
       delete updated[category];
       await updateSavingsGoals(updated);
     },
-    [savingsGoals, updateSavingsGoals]
+    [savingsGoals, updateSavingsGoals],
   );
 
   const moveCategory = useCallback(
-    (segment: "gastos_variables" | "ahorro", fromIdx: number, toIdx: number) => {
+    (
+      segment: "gastos_variables" | "ahorro",
+      fromIdx: number,
+      toIdx: number,
+    ) => {
       const cats = [...pnlStructure[segment]];
       if (toIdx < 0 || toIdx >= cats.length) return;
       const [moved] = cats.splice(fromIdx, 1);
@@ -301,7 +316,7 @@ export default function BudgetScreen() {
       const updated = { ...pnlStructure, [segment]: cats };
       updatePnlStructure(updated);
     },
-    [pnlStructure, updatePnlStructure]
+    [pnlStructure, updatePnlStructure],
   );
 
   const toggleReordering = useCallback(() => {
@@ -330,28 +345,36 @@ export default function BudgetScreen() {
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Presupuestos y{"\n"}Ahorro</Text>
-            <Text style={styles.subtitle}>Control mensual de gastos y metas</Text>
+            <Text style={styles.title}>Presupuestos y Ahorro</Text>
+            <Text style={styles.subtitle}>
+              Control mensual de gastos y metas
+            </Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable onPress={toggleReordering} hitSlop={8} style={styles.headerIconBtn}>
+            <Pressable onPress={toggleReordering} hitSlop={8}>
               <Ionicons
                 name={isReordering ? "checkmark-circle" : "swap-vertical"}
-                size={22}
+                size={24}
                 color={isReordering ? Colors.brand.DEFAULT : Colors.text.muted}
               />
             </Pressable>
-            <Pressable onPress={() => setShowGuide(true)} hitSlop={8} style={styles.headerIconBtn}>
-              <Ionicons name="help-circle-outline" size={22} color={Colors.text.muted} />
+            <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+              <Ionicons
+                name="help-circle-outline"
+                size={28}
+                color={Colors.text.muted}
+              />
             </Pressable>
           </View>
         </View>
 
         <View style={styles.segmentControl}>
-          {([
-            { id: "presupuestos" as const, label: "Presupuesto" },
-            { id: "ahorro" as const, label: "Ahorro" },
-          ] as const).map((tab) => (
+          {(
+            [
+              { id: "presupuestos" as const, label: "Presupuesto" },
+              { id: "ahorro" as const, label: "Ahorro" },
+            ] as const
+          ).map((tab) => (
             <Pressable
               key={tab.id}
               onPress={() => {
@@ -375,25 +398,27 @@ export default function BudgetScreen() {
           ))}
         </View>
 
-        {activeTab === "presupuestos" && budgetSummary.totalBudget > 0 && !isReordering && (
-          <View style={styles.overallCard}>
-            <View style={styles.overallHeader}>
-              <Text style={styles.overallLabel}>Progreso Total</Text>
-              <Text style={[styles.overallPercent, { color: overallColor }]}>
-                {overallProgress.toFixed(0)}%
-              </Text>
+        {activeTab === "presupuestos" &&
+          budgetSummary.totalBudget > 0 &&
+          !isReordering && (
+            <View style={styles.overallCard}>
+              <View style={styles.overallHeader}>
+                <Text style={styles.overallLabel}>Progreso Total</Text>
+                <Text style={[styles.overallPercent, { color: overallColor }]}>
+                  {overallProgress.toFixed(0)}%
+                </Text>
+              </View>
+              <ProgressBar progress={overallProgress} color={overallColor} />
+              <View style={styles.overallFooter}>
+                <Text style={styles.overallSpent}>
+                  Gastado: ${formatCurrency(budgetSummary.variableTotal)}
+                </Text>
+                <Text style={styles.overallBudget}>
+                  Presupuesto: ${formatCurrency(budgetSummary.totalBudget)}
+                </Text>
+              </View>
             </View>
-            <ProgressBar progress={overallProgress} color={overallColor} />
-            <View style={styles.overallFooter}>
-              <Text style={styles.overallSpent}>
-                Gastado: ${formatCurrency(budgetSummary.variableTotal)}
-              </Text>
-              <Text style={styles.overallBudget}>
-                Presupuesto: ${formatCurrency(budgetSummary.totalBudget)}
-              </Text>
-            </View>
-          </View>
-        )}
+          )}
 
         {activeTab === "presupuestos" &&
           variableCategories.map((cat, idx) => {
@@ -410,7 +435,9 @@ export default function BudgetScreen() {
                 isFirst={idx === 0}
                 isLast={idx === variableCategories.length - 1}
                 onMoveUp={() => moveCategory("gastos_variables", idx, idx - 1)}
-                onMoveDown={() => moveCategory("gastos_variables", idx, idx + 1)}
+                onMoveDown={() =>
+                  moveCategory("gastos_variables", idx, idx + 1)
+                }
                 onDragStart={() => setIsDragging(true)}
                 onDragEnd={() => setIsDragging(false)}
               >
@@ -418,15 +445,25 @@ export default function BudgetScreen() {
                   <Text style={styles.catName}>{cat}</Text>
                   {budget > 0 && !isReordering && (
                     <Pressable onPress={() => handleRemoveBudget(cat)}>
-                      <Ionicons name="close-circle" size={18} color={Colors.text.disabled} />
+                      <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={Colors.text.disabled}
+                      />
                     </Pressable>
                   )}
                 </View>
 
                 {isReordering ? (
                   <View style={styles.reorderHint}>
-                    <Ionicons name="move" size={14} color={Colors.text.disabled} />
-                    <Text style={styles.reorderHintText}>Arrastra para reordenar</Text>
+                    <Ionicons
+                      name="move"
+                      size={14}
+                      color={Colors.text.disabled}
+                    />
+                    <Text style={styles.reorderHintText}>
+                      Arrastra para reordenar
+                    </Text>
                   </View>
                 ) : isEditing ? (
                   <View style={styles.editRow}>
@@ -449,7 +486,11 @@ export default function BudgetScreen() {
                       onPress={() => setEditingCategory(null)}
                       style={styles.cancelBtn}
                     >
-                      <Ionicons name="close" size={20} color={Colors.text.muted} />
+                      <Ionicons
+                        name="close"
+                        size={20}
+                        color={Colors.text.muted}
+                      />
                     </Pressable>
                   </View>
                 ) : budget > 0 ? (
@@ -460,8 +501,12 @@ export default function BudgetScreen() {
                     }}
                   >
                     <View style={styles.catValues}>
-                      <Text style={styles.catSpent}>${formatCurrency(spent)}</Text>
-                      <Text style={styles.catBudget}>/ ${formatCurrency(budget)}</Text>
+                      <Text style={styles.catSpent}>
+                        ${formatCurrency(spent)}
+                      </Text>
+                      <Text style={styles.catBudget}>
+                        / ${formatCurrency(budget)}
+                      </Text>
                     </View>
                     <ProgressBar
                       progress={catProgress}
@@ -481,7 +526,9 @@ export default function BudgetScreen() {
                       size={18}
                       color={Colors.brand.DEFAULT}
                     />
-                    <Text style={styles.setBudgetText}>Establecer presupuesto</Text>
+                    <Text style={styles.setBudgetText}>
+                      Establecer presupuesto
+                    </Text>
                   </Pressable>
                 )}
               </DraggableCategoryCard>
@@ -490,7 +537,10 @@ export default function BudgetScreen() {
 
         {activeTab === "ahorro" && totalSavingsGoal > 0 && !isReordering && (
           <View
-            style={[styles.overallCard, { borderColor: "rgba(96,165,250,0.15)" }]}
+            style={[
+              styles.overallCard,
+              { borderColor: "rgba(96,165,250,0.15)" },
+            ]}
           >
             <View style={styles.overallHeader}>
               <Text style={styles.overallLabel}>Progreso Total</Text>
@@ -510,7 +560,11 @@ export default function BudgetScreen() {
                 {overallSavingsProgress.toFixed(0)}%
               </Text>
             </View>
-            <ProgressBar progress={overallSavingsProgress} color="#60a5fa" inverted />
+            <ProgressBar
+              progress={overallSavingsProgress}
+              color="#60a5fa"
+              inverted
+            />
             <View style={styles.overallFooter}>
               <Text style={styles.overallSpent}>
                 Ahorrado: ${formatCurrency(totalSaved)}
@@ -556,8 +610,14 @@ export default function BudgetScreen() {
 
                 {isReordering ? (
                   <View style={styles.reorderHint}>
-                    <Ionicons name="move" size={14} color={Colors.text.disabled} />
-                    <Text style={styles.reorderHintText}>Arrastra para reordenar</Text>
+                    <Ionicons
+                      name="move"
+                      size={14}
+                      color={Colors.text.disabled}
+                    />
+                    <Text style={styles.reorderHintText}>
+                      Arrastra para reordenar
+                    </Text>
                   </View>
                 ) : isEditing ? (
                   <View style={styles.editRow}>
@@ -580,7 +640,11 @@ export default function BudgetScreen() {
                       onPress={() => setEditingGoal(null)}
                       style={styles.cancelBtn}
                     >
-                      <Ionicons name="close" size={20} color={Colors.text.muted} />
+                      <Ionicons
+                        name="close"
+                        size={20}
+                        color={Colors.text.muted}
+                      />
                     </Pressable>
                   </View>
                 ) : goal > 0 ? (
@@ -591,10 +655,18 @@ export default function BudgetScreen() {
                     }}
                   >
                     <View style={styles.catValues}>
-                      <Text style={styles.catSpent}>${formatCurrency(saved)}</Text>
-                      <Text style={styles.catBudget}>/ ${formatCurrency(goal)}</Text>
+                      <Text style={styles.catSpent}>
+                        ${formatCurrency(saved)}
+                      </Text>
+                      <Text style={styles.catBudget}>
+                        / ${formatCurrency(goal)}
+                      </Text>
                     </View>
-                    <ProgressBar progress={catProgress} color="#60a5fa" inverted />
+                    <ProgressBar
+                      progress={catProgress}
+                      color="#60a5fa"
+                      inverted
+                    />
                   </Pressable>
                 ) : (
                   <Pressable
@@ -604,7 +676,11 @@ export default function BudgetScreen() {
                     }}
                     style={styles.setBudgetBtn}
                   >
-                    <Ionicons name="add-circle-outline" size={18} color="#60a5fa" />
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={18}
+                      color="#60a5fa"
+                    />
                     <Text style={[styles.setBudgetText, { color: "#60a5fa" }]}>
                       Establecer meta
                     </Text>
@@ -631,9 +707,9 @@ export default function BudgetScreen() {
               <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
               <Text style={guideStyles.sectionDesc}>
                 Controla tus{" "}
-                <Text style={guideStyles.bold}>Gastos Variables</Text> definiendo
-                un tope para cada categoria. Cuando te acerques al limite, la
-                barra cambiara de color.
+                <Text style={guideStyles.bold}>Gastos Variables</Text>{" "}
+                definiendo un tope para cada categoria. Cuando te acerques al
+                limite, la barra cambiara de color.
               </Text>
 
               <View style={guideStyles.infoBox}>
@@ -784,16 +860,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 12,
-    paddingTop: 4,
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    gap: 20,
   },
   title: {
     fontFamily: "Outfit_900Black",
