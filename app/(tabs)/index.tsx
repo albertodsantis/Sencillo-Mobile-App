@@ -329,48 +329,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Pressable
-        onPress={refreshRates}
-        style={styles.ratesBar}
-      >
-        <View style={styles.ratesRow}>
-          <View style={styles.rateItem}>
-            <Text style={styles.rateLabel}>BCV $</Text>
-            <Text style={styles.rateValue}>
-              {rates.bcv?.toFixed(2) || "---"}
-            </Text>
-          </View>
-          <View style={styles.rateDivider} />
-          <View style={styles.rateItem}>
-            <Text style={styles.rateLabel}>USDC</Text>
-            <Text style={styles.rateValue}>
-              {rates.parallel?.toFixed(2) || "---"}
-            </Text>
-          </View>
-          <View style={styles.rateDivider} />
-          <View style={styles.rateItem}>
-            <Text style={styles.rateLabel}>BRECHA</Text>
-            <Text style={styles.rateValue}>
-              {rates.bcv && rates.parallel
-                ? `${(((rates.parallel - rates.bcv) / rates.bcv) * 100).toFixed(1)}%`
-                : "---"}
-            </Text>
-          </View>
-          <View style={styles.rateDivider} />
-          <View style={styles.rateItem}>
-            <Text style={styles.rateLabel}>BCV EUR</Text>
-            <View style={styles.eurRow}>
-              <Text style={styles.rateValue}>
-                {rates.eur?.toFixed(2) || "---"}
-              </Text>
-              <Text style={styles.eurCrossText}>
-                {rates.eurCross ? `$/€ ${rates.eurCross.toFixed(2)}` : ""}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </Pressable>
-
       <View style={styles.monthNav}>
         <Pressable onPress={prevMonth} style={styles.navButton}>
           <Ionicons name="chevron-back" size={26} color={Colors.text.secondary} />
@@ -728,47 +686,6 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: "#000",
-  },
-  ratesBar: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    marginBottom: 12,
-  },
-  ratesRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-  },
-  rateItem: {
-    alignItems: "center" as const,
-  },
-  rateLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 9,
-    color: Colors.text.muted,
-    letterSpacing: 0.8,
-    textTransform: "uppercase" as const,
-    marginBottom: 2,
-  },
-  rateValue: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 14,
-    color: Colors.text.secondary,
-  },
-  eurRow: {
-    flexDirection: "row" as const,
-    alignItems: "baseline" as const,
-    gap: 4,
-  },
-  eurCrossText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 9,
-    color: Colors.text.muted,
-  },
-  rateDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: "rgba(255,255,255,0.08)",
   },
   balanceSection: {
     alignItems: "center" as const,
