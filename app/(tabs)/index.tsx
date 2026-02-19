@@ -369,13 +369,13 @@ export default function HomeScreen() {
 
       <View style={styles.monthNav}>
         <Pressable onPress={prevMonth} style={styles.navButton}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text.secondary} />
+          <Ionicons name="chevron-back" size={26} color={Colors.text.secondary} />
         </Pressable>
         <Text style={styles.monthLabel}>
           {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
         </Text>
         <Pressable onPress={nextMonth} style={styles.navButton}>
-          <Ionicons name="chevron-forward" size={22} color={Colors.text.secondary} />
+          <Ionicons name="chevron-forward" size={26} color={Colors.text.secondary} />
         </Pressable>
       </View>
 
@@ -681,10 +681,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    padding: 6,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
