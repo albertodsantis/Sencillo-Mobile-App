@@ -13,21 +13,13 @@ import {
   DEFAULT_PROFILE,
 } from '../domain/types';
 import {
-  loadTransactions,
-  saveTransactions,
-  loadRates,
-  saveRates,
-  loadPnlStructure,
-  savePnlStructure,
-  loadBudgets,
-  saveBudgets,
-  loadSavingsGoals,
-  saveSavingsGoals,
-  getRatesAge,
-  loadProfile,
-  saveProfile,
-  clearAllData,
-} from '../data/storage';
+  TransactionRepository,
+  ProfileRepository,
+  RatesRepository,
+  PnlRepository,
+  BudgetRepository,
+  SavingsRepository,
+} from '../repositories';
 import { fetchRates, computeDashboard, computeBudget } from '../domain/finance';
 
 interface AppContextValue {
@@ -87,12 +79,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const [txs, savedRates, pnl, bdg, sg, prof] = await Promise.all([
-          loadTransactions(),
-          loadRates(),
-          loadPnlStructure(),
-          loadBudgets(),
-          loadSavingsGoals(),
-          loadProfile(),
+          TransactionRepository.getAll(),
+          RatesRepository.get(),
+          PnlRepository.get(),
+          BudgetRepository.get(),
+          SavingsRepository.get(),
+          ProfileRepository.get(),
         ]);
         setTransactions(txs);
         if (savedRates) setRates(savedRates);
@@ -101,12 +93,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSavingsGoals(sg);
         setProfile(prof);
 
-        const age = await getRatesAge();
+        const age = await RatesRepository.getAge();
         if (age > 3600000 || !savedRates) {
           const fresh = await fetchRates();
           if (fresh) {
             setRates(fresh);
-            await saveRates(fresh);
+            await RatesRepository.save(fresh);
           }
         }
       } catch (e) {
@@ -123,70 +115,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const fresh = await fetchRates();
       if (fresh) {
         setRates(fresh);
-        await saveRates(fresh);
+        await RatesRepository.save(fresh);
       }
     } finally {
       setIsRefreshingRates(false);
     }
   }, []);
 
-  const persistTx = useCallback(async (newTxs: Transaction[]) => {
-    setTransactions(newTxs);
-    await saveTransactions(newTxs);
+  const addTx = useCallback(async (tx: Omit<Transaction, 'id'>) => {
+    const newTx = await TransactionRepository.add(tx);
+    setTransactions((prev) => [...prev, newTx]);
   }, []);
 
-  const addTx = useCallback(async (tx: Omit<Transaction, 'id'>) => {
-    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    const newTx: Transaction = { ...tx, id };
-    const updated = [...transactions, newTx];
-    await persistTx(updated);
-  }, [transactions, persistTx]);
-
   const addMultipleTx = useCallback(async (txList: Omit<Transaction, 'id'>[]) => {
-    const newTxs = txList.map((tx) => ({
-      ...tx,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-    }));
-    const updated = [...transactions, ...newTxs];
-    await persistTx(updated);
-  }, [transactions, persistTx]);
+    const created = await TransactionRepository.addMany(txList);
+    setTransactions((prev) => [...prev, ...created]);
+  }, []);
 
   const updateTx = useCallback(async (tx: Transaction) => {
-    const updated = transactions.map((t) => (t.id === tx.id ? tx : t));
-    await persistTx(updated);
-  }, [transactions, persistTx]);
+    await TransactionRepository.update(tx);
+    setTransactions((prev) => prev.map((t) => (t.id === tx.id ? tx : t)));
+  }, []);
 
   const deleteTx = useCallback(async (id: string) => {
-    const updated = transactions.filter((t) => t.id !== id);
-    await persistTx(updated);
-  }, [transactions, persistTx]);
+    await TransactionRepository.remove(id);
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const deleteAllTx = useCallback(async () => {
-    await persistTx([]);
-  }, [persistTx]);
+    await TransactionRepository.removeAll();
+    setTransactions([]);
+  }, []);
 
   const updatePnlStructure = useCallback(async (pnl: PnlStructure) => {
     setPnlStructure(pnl);
-    await savePnlStructure(pnl);
+    await PnlRepository.save(pnl);
   }, []);
 
   const updateBudgets = useCallback(async (b: Budgets) => {
     setBudgets(b);
-    await saveBudgets(b);
+    await BudgetRepository.save(b);
   }, []);
 
   const updateSavingsGoals = useCallback(async (g: SavingsGoals) => {
     setSavingsGoals(g);
-    await saveSavingsGoals(g);
+    await SavingsRepository.save(g);
   }, []);
 
   const updateProfile = useCallback(async (p: UserProfile) => {
     setProfile(p);
-    await saveProfile(p);
+    await ProfileRepository.save(p);
   }, []);
 
   const clearAccount = useCallback(async () => {
-    await clearAllData();
+    await Promise.all([
+      TransactionRepository.clear(),
+      RatesRepository.clear(),
+      PnlRepository.clear(),
+      BudgetRepository.clear(),
+      SavingsRepository.clear(),
+      ProfileRepository.clear(),
+    ]);
     setTransactions([]);
     setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
     setPnlStructure(DEFAULT_PNL);
