@@ -14,7 +14,6 @@ import {
   NativeScrollEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GlowRingChart from "@/components/GlowRingChart";
@@ -401,22 +400,24 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <Pressable onPress={() => router.push("/report")}>
-        <LinearGradient
-          colors={["#e8ecf2", "#d1d9e6", "#f0f4f8", "#c8d0dc"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.balanceCard}
-        >
-          <Text style={styles.balanceLabel}>{balanceLabel}</Text>
-          <Text style={styles.balanceValue}>
-            {hiddenBalances ? "$ ••••••" : `$${formatCurrency(dashboardData.balance)}`}
-          </Text>
-          <View style={styles.reportLink}>
-            <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
-            <Feather name="arrow-right" size={12} color="rgba(2,6,23,0.5)" />
+      <Pressable onPress={() => router.push("/report")} style={styles.balanceSection}>
+        <Text style={styles.balanceLabel}>{balanceLabel}</Text>
+        {hiddenBalances ? (
+          <Text style={styles.balanceValue}>$ ••••••</Text>
+        ) : (
+          <View style={styles.balanceRow}>
+            <Text style={styles.balanceValue}>
+              ${formatCurrency(dashboardData.balance, 2).split(".")[0]}
+            </Text>
+            <Text style={styles.balanceDecimals}>
+              .{formatCurrency(dashboardData.balance, 2).split(".")[1] || "00"}
+            </Text>
           </View>
-        </LinearGradient>
+        )}
+        <View style={styles.reportLink}>
+          <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
+          <Feather name="arrow-right" size={12} color={Colors.text.muted} />
+        </View>
       </Pressable>
 
       <ScrollView
@@ -758,42 +759,45 @@ const styles = StyleSheet.create({
     height: 24,
     backgroundColor: "rgba(255,255,255,0.08)",
   },
-  balanceCard: {
-    borderRadius: 24,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
+  balanceSection: {
     alignItems: "center" as const,
-    marginBottom: 16,
-    shadowColor: "rgba(255,255,255,0.3)",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 12,
+    marginBottom: 20,
+    paddingVertical: 8,
   },
   balanceLabel: {
     fontFamily: "Outfit_700Bold",
     fontSize: 11,
-    color: "rgba(2,6,23,0.5)",
+    color: Colors.text.muted,
     letterSpacing: 2,
     textTransform: "uppercase" as const,
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  balanceRow: {
+    flexDirection: "row" as const,
+    alignItems: "baseline" as const,
   },
   balanceValue: {
     fontFamily: "Outfit_900Black",
-    fontSize: 34,
-    color: "#2d3748",
+    fontSize: 42,
+    color: Colors.text.primary,
     letterSpacing: -1.5,
+  },
+  balanceDecimals: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 22,
+    color: Colors.text.secondary,
+    letterSpacing: -0.5,
   },
   reportLink: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 6,
-    marginTop: 12,
+    marginTop: 10,
   },
   reportLinkText: {
     fontFamily: "Outfit_700Bold",
     fontSize: 10,
-    color: "rgba(2,6,23,0.5)",
+    color: Colors.text.muted,
     letterSpacing: 1,
     textTransform: "uppercase" as const,
   },
