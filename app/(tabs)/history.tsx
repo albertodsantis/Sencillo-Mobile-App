@@ -182,7 +182,7 @@ export default function HistoryScreen() {
     year: "numeric",
   });
   const capitalizedMonth =
-    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1).replace(" de ", " ");
 
   const handleEditTx = useCallback(
     (tx: Transaction) => {

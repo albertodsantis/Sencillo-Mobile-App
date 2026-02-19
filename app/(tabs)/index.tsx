@@ -244,7 +244,7 @@ export default function HomeScreen() {
     { month: "long", year: "numeric" }
   );
   const capitalizedMonth =
-    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1).replace(" de ", " ");
 
   const prevMonth = useCallback(() => {
     if (viewMode === "year") {
