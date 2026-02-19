@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,8 +8,6 @@ import {
   TextInput,
   Platform,
   Modal,
-  Animated,
-  PanResponder,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -56,139 +54,63 @@ function ProgressBar({
   );
 }
 
-const SWAP_THRESHOLD = 50;
-
-interface DraggableCardProps {
-  category: string;
+interface ReorderableCardProps {
   isReordering: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
   isFirst: boolean;
   isLast: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
   children: React.ReactNode;
 }
 
-function DraggableCategoryCard({
-  category,
+function ReorderableCard({
   isReordering,
   onMoveUp,
   onMoveDown,
   isFirst,
   isLast,
-  onDragStart,
-  onDragEnd,
   children,
-}: DraggableCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const elevation = useRef(new Animated.Value(0)).current;
-  const baseY = useRef(0);
-  const swapCount = useRef(0);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, { dy }) => Math.abs(dy) > 8,
-      onPanResponderGrant: () => {
-        baseY.current = 0;
-        swapCount.current = 0;
-        Animated.parallel([
-          Animated.spring(scale, {
-            toValue: 1.04,
-            useNativeDriver: true,
-            friction: 8,
-          }),
-          Animated.timing(elevation, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        if (Platform.OS !== "web") {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
-        onDragStart();
-      },
-      onPanResponderMove: (_, { dy }) => {
-        const totalDy = dy - baseY.current;
-        if (totalDy > SWAP_THRESHOLD) {
-          onMoveDown();
-          swapCount.current += 1;
-          baseY.current = dy;
-          if (Platform.OS !== "web") {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        } else if (totalDy < -SWAP_THRESHOLD) {
-          onMoveUp();
-          swapCount.current += 1;
-          baseY.current = dy;
-          if (Platform.OS !== "web") {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        }
-      },
-      onPanResponderRelease: () => {
-        Animated.parallel([
-          Animated.spring(scale, {
-            toValue: 1,
-            useNativeDriver: true,
-            friction: 8,
-          }),
-          Animated.timing(elevation, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        onDragEnd();
-      },
-      onPanResponderTerminate: () => {
-        Animated.parallel([
-          Animated.spring(scale, {
-            toValue: 1,
-            useNativeDriver: true,
-            friction: 8,
-          }),
-          Animated.timing(elevation, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        onDragEnd();
-      },
-    }),
-  ).current;
-
-  const cardOpacity = elevation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.92],
-  });
+}: ReorderableCardProps) {
+  const handleMove = (direction: "up" | "down") => {
+    if (direction === "up") onMoveUp();
+    else onMoveDown();
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
 
   return (
-    <Animated.View
-      style={[
-        styles.categoryCard,
-        {
-          transform: [{ scale }],
-          opacity: cardOpacity,
-        },
-      ]}
-    >
+    <View style={styles.categoryCard}>
       <View style={styles.cardInner}>
         {isReordering && (
-          <View style={styles.dragHandle} {...panResponder.panHandlers}>
-            <Ionicons
-              name="reorder-three"
-              size={22}
-              color={Colors.text.muted}
-            />
+          <View style={styles.arrowColumn}>
+            <Pressable
+              onPress={() => handleMove("up")}
+              disabled={isFirst}
+              style={[styles.arrowBtn, isFirst && styles.arrowBtnDisabled]}
+            >
+              <Ionicons
+                name="chevron-up"
+                size={18}
+                color={isFirst ? Colors.text.disabled : Colors.text.secondary}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => handleMove("down")}
+              disabled={isLast}
+              style={[styles.arrowBtn, isLast && styles.arrowBtnDisabled]}
+            >
+              <Ionicons
+                name="chevron-down"
+                size={18}
+                color={isLast ? Colors.text.disabled : Colors.text.secondary}
+              />
+            </Pressable>
           </View>
         )}
         <View style={styles.cardContent}>{children}</View>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -213,7 +135,6 @@ export default function BudgetScreen() {
     "presupuestos",
   );
   const [isReordering, setIsReordering] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -341,7 +262,6 @@ export default function BudgetScreen() {
         style={{ flex: 1, paddingHorizontal: 24 }}
         contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={!isDragging}
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -428,9 +348,8 @@ export default function BudgetScreen() {
             const isEditing = editingCategory === cat;
 
             return (
-              <DraggableCategoryCard
+              <ReorderableCard
                 key={cat}
-                category={cat}
                 isReordering={isReordering}
                 isFirst={idx === 0}
                 isLast={idx === variableCategories.length - 1}
@@ -438,8 +357,6 @@ export default function BudgetScreen() {
                 onMoveDown={() =>
                   moveCategory("gastos_variables", idx, idx + 1)
                 }
-                onDragStart={() => setIsDragging(true)}
-                onDragEnd={() => setIsDragging(false)}
               >
                 <View style={styles.catHeader}>
                   <Text style={styles.catName}>{cat}</Text>
@@ -531,7 +448,7 @@ export default function BudgetScreen() {
                     </Text>
                   </Pressable>
                 )}
-              </DraggableCategoryCard>
+              </ReorderableCard>
             );
           })}
 
@@ -584,16 +501,13 @@ export default function BudgetScreen() {
             const isEditing = editingGoal === cat;
 
             return (
-              <DraggableCategoryCard
+              <ReorderableCard
                 key={cat}
-                category={cat}
                 isReordering={isReordering}
                 isFirst={idx === 0}
                 isLast={idx === ahorroCategories.length - 1}
                 onMoveUp={() => moveCategory("ahorro", idx, idx - 1)}
                 onMoveDown={() => moveCategory("ahorro", idx, idx + 1)}
-                onDragStart={() => setIsDragging(true)}
-                onDragEnd={() => setIsDragging(false)}
               >
                 <View style={styles.catHeader}>
                   <Text style={styles.catName}>{cat}</Text>
@@ -686,7 +600,7 @@ export default function BudgetScreen() {
                     </Text>
                   </Pressable>
                 )}
-              </DraggableCategoryCard>
+              </ReorderableCard>
             );
           })}
 
@@ -948,13 +862,20 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     alignItems: "stretch" as const,
   },
-  dragHandle: {
-    width: 40,
+  arrowColumn: {
+    width: 36,
     alignItems: "center" as const,
     justifyContent: "center" as const,
+    gap: 2,
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRightWidth: 1,
     borderRightColor: Colors.dark.borderSubtle,
+  },
+  arrowBtn: {
+    padding: 4,
+  },
+  arrowBtnDisabled: {
+    opacity: 0.3,
   },
   cardContent: {
     flex: 1,
