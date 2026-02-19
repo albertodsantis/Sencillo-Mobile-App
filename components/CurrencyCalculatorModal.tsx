@@ -66,7 +66,6 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
 
   const conversions = useMemo(() => {
     const val = parseFloat(amount.replace(",", ".")) || 0;
-
     const results: { key: string; label: string; symbol: string; value: number }[] = [];
 
     if (selectedCurrency === "USD") {
@@ -98,17 +97,10 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
     onClose();
   };
 
-  const rateItems = [
-    { label: "BCV", value: rates.bcv, unit: "Bs/$" },
-    { label: "Paralelo", value: rates.parallel, unit: "Bs/$" },
-    { label: "BCV EUR", value: rates.eur, unit: "Bs/\u20AC" },
-    { label: "EUR/USD", value: rates.eurCross, unit: "$/\u20AC" },
-    {
-      label: "Brecha",
-      value: rates.bcv && rates.parallel ? ((rates.parallel - rates.bcv) / rates.bcv) * 100 : 0,
-      unit: "%",
-    },
-  ];
+  const brechaValue = rates.bcv && rates.parallel
+    ? ((rates.parallel - rates.bcv) / rates.bcv) * 100
+    : 0;
+  const brechaPositive = brechaValue > 0;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
@@ -125,32 +117,69 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
               <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
               {ratesDate ? <Text style={styles.sectionDate}>{ratesDate}</Text> : null}
             </View>
-            <View style={styles.ratesRow}>
-              {rateItems.slice(0, 3).map((r) => (
-                <View key={r.label} style={styles.rateItem}>
-                  <Text style={styles.rateValue}>
-                    {r.unit === "%" ? `${r.value.toFixed(1)}%` : r.value.toFixed(2)}
-                  </Text>
-                  <Text style={styles.rateLabel}>{r.label}</Text>
-                  <Text style={styles.rateSub}>{r.unit}</Text>
+
+            <View style={styles.ratesGrid}>
+              <View style={styles.rateCard}>
+                <View style={styles.rateCardHead}>
+                  <Text style={styles.rateCardTitle}>Dolar BCV</Text>
+                  <Text style={styles.rateCardFlag}>USD</Text>
                 </View>
-              ))}
+                <Text style={styles.rateCardValue}>{rates.bcv.toFixed(2)}</Text>
+                <Text style={styles.rateCardUnit}>Bs</Text>
+              </View>
+
+              <View style={styles.rateCard}>
+                <View style={styles.rateCardHead}>
+                  <Text style={styles.rateCardTitle}>Dolar Paralelo</Text>
+                  <Text style={styles.rateCardFlag}>USDC</Text>
+                </View>
+                <Text style={styles.rateCardValue}>{rates.parallel.toFixed(2)}</Text>
+                <Text style={styles.rateCardUnit}>Bs</Text>
+              </View>
+
+              <View style={styles.rateCard}>
+                <View style={styles.rateCardHead}>
+                  <Text style={styles.rateCardTitle}>Euro BCV</Text>
+                  <Text style={styles.rateCardFlag}>EUR</Text>
+                </View>
+                <Text style={styles.rateCardValue}>{rates.eur.toFixed(2)}</Text>
+                <Text style={styles.rateCardUnit}>Bs</Text>
+              </View>
+
+              <View style={styles.rateCard}>
+                <View style={styles.rateCardHead}>
+                  <Text style={styles.rateCardTitle}>Cruce EUR/USD</Text>
+                  <Text style={styles.rateCardFlag}>FX</Text>
+                </View>
+                <Text style={styles.rateCardValue}>{rates.eurCross.toFixed(2)}</Text>
+                <Text style={styles.rateCardUnit}>$/\u20AC</Text>
+              </View>
             </View>
-            <View style={styles.ratesRow}>
-              {rateItems.slice(3).map((r) => (
-                <View key={r.label} style={styles.rateItem}>
-                  <Text style={styles.rateValue}>
-                    {r.unit === "%" ? `${r.value.toFixed(1)}%` : r.value.toFixed(2)}
-                  </Text>
-                  <Text style={styles.rateLabel}>{r.label}</Text>
-                  <Text style={styles.rateSub}>{r.unit === "%" ? "Par. vs BCV" : r.unit}</Text>
-                </View>
-              ))}
+
+            <View
+              style={[
+                styles.brechaBadge,
+                { backgroundColor: brechaPositive ? "rgba(249,115,22,0.12)" : "rgba(96,165,250,0.12)" },
+              ]}
+            >
+              <View style={styles.brechaLeft}>
+                <Ionicons
+                  name={brechaPositive ? "trending-up" : "trending-down"}
+                  size={16}
+                  color={brechaPositive ? "#fb923c" : "#60a5fa"}
+                />
+                <Text style={[styles.brechaLabel, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
+                  Brecha cambiaria
+                </Text>
+              </View>
+              <Text style={[styles.brechaValue, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
+                {brechaPositive ? "+" : ""}{brechaValue.toFixed(1)}%
+              </Text>
             </View>
 
             <View style={styles.divider} />
 
-            <Text style={styles.sectionLabel}>CALCULADORA</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 16, marginBottom: 12 }]}>CALCULADORA</Text>
 
             <View style={styles.currencyPicker}>
               {CURRENCIES.map((c) => (
@@ -207,6 +236,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
   );
 }
 
+const CARD_BG = "#0f1729";
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -217,7 +248,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    maxHeight: "88%",
+    maxHeight: "90%",
     borderWidth: 1,
     borderColor: Colors.dark.border,
     borderBottomWidth: 0,
@@ -237,13 +268,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   sectionHeader: {
     flexDirection: "row" as const,
     alignItems: "baseline" as const,
     justifyContent: "space-between" as const,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   sectionLabel: {
     fontFamily: "Outfit_700Bold",
@@ -256,40 +287,83 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.text.disabled,
   },
-  ratesRow: {
+  ratesGrid: {
     flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: 10,
   },
-  rateItem: {
-    flex: 1,
-    paddingVertical: 6,
+  rateCard: {
+    width: "47%" as any,
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
-  rateValue: {
+  rateCardHead: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 8,
+  },
+  rateCardTitle: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 11,
+    color: Colors.text.muted,
+  },
+  rateCardFlag: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 9,
+    color: Colors.text.disabled,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: "hidden" as const,
+    letterSpacing: 0.5,
+  },
+  rateCardValue: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 26,
+    color: Colors.text.primary,
+    letterSpacing: -1,
+  },
+  rateCardUnit: {
+    fontFamily: "Outfit_400Regular",
+    fontSize: 11,
+    color: Colors.text.disabled,
+    marginTop: 2,
+  },
+  brechaBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  brechaLeft: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  brechaLabel: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 13,
+  },
+  brechaValue: {
     fontFamily: "Outfit_800ExtraBold",
     fontSize: 18,
-    color: Colors.text.primary,
     letterSpacing: -0.5,
-  },
-  rateLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 11,
-    color: Colors.text.secondary,
-    marginTop: 1,
-  },
-  rateSub: {
-    fontFamily: "Outfit_400Regular",
-    fontSize: 10,
-    color: Colors.text.muted,
   },
   divider: {
     height: 1,
     backgroundColor: Colors.dark.borderSubtle,
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 16,
   },
   currencyPicker: {
     flexDirection: "row" as const,
     gap: 8,
-    marginTop: 10,
     marginBottom: 14,
   },
   currencyChip: {
