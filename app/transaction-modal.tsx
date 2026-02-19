@@ -544,6 +544,7 @@ export default function TransactionModal() {
                 setAmount(cleaned);
               }}
               keyboardType="decimal-pad"
+              returnKeyType="done"
               keyboardAppearance="dark"
               autoCorrect={false}
               spellCheck={false}
@@ -702,7 +703,8 @@ export default function TransactionModal() {
             style={styles.manualRateInput}
             value={customRate}
             onChangeText={setCustomRate}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
+            returnKeyType="done"
             keyboardAppearance="dark"
             autoCorrect={false}
             spellCheck={false}
