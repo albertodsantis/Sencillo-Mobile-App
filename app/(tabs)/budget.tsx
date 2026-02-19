@@ -371,18 +371,7 @@ export default function BudgetScreen() {
                   )}
                 </View>
 
-                {isReordering ? (
-                  <View style={styles.reorderHint}>
-                    <Ionicons
-                      name="move"
-                      size={14}
-                      color={Colors.text.disabled}
-                    />
-                    <Text style={styles.reorderHintText}>
-                      Arrastra para reordenar
-                    </Text>
-                  </View>
-                ) : isEditing ? (
+                {isEditing ? (
                   <View style={styles.editRow}>
                     <TextInput
                       style={styles.editInput}
@@ -522,18 +511,7 @@ export default function BudgetScreen() {
                   )}
                 </View>
 
-                {isReordering ? (
-                  <View style={styles.reorderHint}>
-                    <Ionicons
-                      name="move"
-                      size={14}
-                      color={Colors.text.disabled}
-                    />
-                    <Text style={styles.reorderHintText}>
-                      Arrastra para reordenar
-                    </Text>
-                  </View>
-                ) : isEditing ? (
+                {isEditing ? (
                   <View style={styles.editRow}>
                     <TextInput
                       style={[styles.editInput, { borderColor: "#60a5fa" }]}
@@ -968,16 +946,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-  reorderHint: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-    opacity: 0.5,
-  },
-  reorderHintText: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 12,
-    color: Colors.text.disabled,
   },
 });
