@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 
 const SESSION_KEY = '@sencillo/auth_user';
-const USERS_KEY = '@sencillo/users';
+const ACCOUNTS_KEY = '@sencillo/accounts';
 
 export interface AuthUser {
   id: string;
@@ -12,33 +12,41 @@ export interface AuthUser {
   provider: 'local' | 'google';
 }
 
-interface StoredUser {
+interface StoredAccount {
   id: string;
   name: string;
   email: string;
   passwordHash: string;
-  avatar?: string;
-  provider: 'local' | 'google';
 }
 
-async function hashPassword(password: string): Promise<string> {
-  return await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    password,
-  );
+function hashPassword(password: string): string {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return 'h1$' + Math.abs(hash).toString(36) + '$' + password.length;
 }
 
-async function getStoredUsers(): Promise<StoredUser[]> {
+function verifyPassword(password: string, storedHash: string): boolean {
+  if (!storedHash.startsWith('h1$')) {
+    return password === storedHash;
+  }
+  return hashPassword(password) === storedHash;
+}
+
+async function loadAccounts(): Promise<Record<string, StoredAccount>> {
   try {
-    const data = await AsyncStorage.getItem(USERS_KEY);
-    return data ? JSON.parse(data) : [];
+    const data = await AsyncStorage.getItem(ACCOUNTS_KEY);
+    return data ? JSON.parse(data) : {};
   } catch {
-    return [];
+    return {};
   }
 }
 
-async function saveStoredUsers(users: StoredUser[]): Promise<void> {
-  await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+async function saveAccounts(accounts: Record<string, StoredAccount>): Promise<void> {
+  await AsyncStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
 export const AuthRepository = {
@@ -71,31 +79,20 @@ export const AuthRepository = {
     if (password.length < 4)
       return { success: false, error: 'La contrasena debe tener al menos 4 caracteres' };
 
-    const users = await getStoredUsers();
-    if (users.find((u) => u.email === normalized)) {
+    const accounts = await loadAccounts();
+    if (accounts[normalized])
       return { success: false, error: 'Ya existe una cuenta con este email' };
-    }
 
-    const passwordHash = await hashPassword(password);
     const id = Crypto.randomUUID();
-
-    const storedUser: StoredUser = {
+    accounts[normalized] = {
       id,
       name: name.trim(),
       email: normalized,
-      passwordHash,
-      provider: 'local',
+      passwordHash: hashPassword(password),
     };
+    await saveAccounts(accounts);
 
-    users.push(storedUser);
-    await saveStoredUsers(users);
-
-    const user: AuthUser = {
-      id,
-      name: name.trim(),
-      email: normalized,
-      provider: 'local',
-    };
+    const user: AuthUser = { id, name: name.trim(), email: normalized, provider: 'local' };
     await this.persistSession(user);
     return { success: true, user };
   },
@@ -108,23 +105,17 @@ export const AuthRepository = {
     if (!normalized) return { success: false, error: 'Ingresa tu email' };
     if (!password) return { success: false, error: 'Ingresa tu contrasena' };
 
-    const users = await getStoredUsers();
-    const found = users.find((u) => u.email === normalized);
-    if (!found) {
-      return { success: false, error: 'No se encontro una cuenta con este email' };
-    }
-
-    const passwordHash = await hashPassword(password);
-    if (found.passwordHash !== passwordHash) {
+    const accounts = await loadAccounts();
+    const account = accounts[normalized];
+    if (!account) return { success: false, error: 'No existe una cuenta con este email' };
+    if (!verifyPassword(password, account.passwordHash))
       return { success: false, error: 'Contrasena incorrecta' };
-    }
 
     const user: AuthUser = {
-      id: found.id,
-      name: found.name,
-      email: found.email,
-      avatar: found.avatar,
-      provider: found.provider,
+      id: account.id,
+      name: account.name,
+      email: normalized,
+      provider: 'local',
     };
     await this.persistSession(user);
     return { success: true, user };
