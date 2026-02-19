@@ -21,7 +21,11 @@ import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import CurrencyCalculatorModal from "@/components/CurrencyCalculatorModal";
 import { useApp } from "@/lib/context/AppContext";
-import { type ViewMode, type Segment, type Transaction } from "@/lib/domain/types";
+import {
+  type ViewMode,
+  type Segment,
+  type Transaction,
+} from "@/lib/domain/types";
 import { formatCurrency, formatCompact } from "@/lib/domain/finance";
 
 const VIEW_MODES: { id: ViewMode; label: string }[] = [
@@ -35,10 +39,46 @@ const CARD_WIDTH = SCREEN_WIDTH - 56;
 const CARD_GAP = 12;
 
 const SEGMENT_PALETTES: Record<string, string[]> = {
-  ingresos: ["#6ee7b7", "#34d399", "#10b981", "#059669", "#047857", "#065f46", "#064e3b", "#022c22"],
-  gastos_fijos: ["#fed7aa", "#fdba74", "#fb923c", "#f97316", "#ea580c", "#c2410c", "#9a3412", "#7c2d12"],
-  gastos_variables: ["#fecdd3", "#fda4af", "#fb7185", "#f43f5e", "#e11d48", "#be123c", "#9f1239", "#881337"],
-  ahorro: ["#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a"],
+  ingresos: [
+    "#6ee7b7",
+    "#34d399",
+    "#10b981",
+    "#059669",
+    "#047857",
+    "#065f46",
+    "#064e3b",
+    "#022c22",
+  ],
+  gastos_fijos: [
+    "#fed7aa",
+    "#fdba74",
+    "#fb923c",
+    "#f97316",
+    "#ea580c",
+    "#c2410c",
+    "#9a3412",
+    "#7c2d12",
+  ],
+  gastos_variables: [
+    "#fecdd3",
+    "#fda4af",
+    "#fb7185",
+    "#f43f5e",
+    "#e11d48",
+    "#be123c",
+    "#9f1239",
+    "#881337",
+  ],
+  ahorro: [
+    "#bfdbfe",
+    "#93c5fd",
+    "#60a5fa",
+    "#3b82f6",
+    "#2563eb",
+    "#1d4ed8",
+    "#1e40af",
+    "#1e3a8a",
+  ],
 };
 
 interface CategoryStat {
@@ -89,23 +129,37 @@ function KpiCard({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.kpiCardLabel}>{label}</Text>
-          <Text style={styles.kpiCardCount}>{count} registro{count !== 1 ? "s" : ""}</Text>
+          <Text style={styles.kpiCardCount}>
+            {count} registro{count !== 1 ? "s" : ""}
+          </Text>
         </View>
         <View>
           <Text style={[styles.kpiCardTotal, { color }]} numberOfLines={1}>
-            {hidden ? "$ ••••" : `$${Math.round(total).toLocaleString("en-US")}`}
+            {hidden
+              ? "$ ••••"
+              : `$${Math.round(total).toLocaleString("en-US")}`}
           </Text>
         </View>
       </View>
 
       <View style={styles.kpiCurrencyRow}>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
-          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>USD</Text>
-          <Text style={styles.kpiCurrencyVal}>{hidden ? "••••" : `$${Math.round(hardAmount).toLocaleString("en-US")}`}</Text>
+          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>
+            USD
+          </Text>
+          <Text style={styles.kpiCurrencyVal}>
+            {hidden
+              ? "••••"
+              : `$${Math.round(hardAmount).toLocaleString("en-US")}`}
+          </Text>
         </View>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
-          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>Bs</Text>
-          <Text style={styles.kpiCurrencyVal}>{hidden ? "••••" : Math.round(vesAmount).toLocaleString("en-US")}</Text>
+          <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>
+            Bs
+          </Text>
+          <Text style={styles.kpiCurrencyVal}>
+            {hidden ? "••••" : Math.round(vesAmount).toLocaleString("en-US")}
+          </Text>
         </View>
       </View>
 
@@ -123,15 +177,31 @@ function KpiCard({
               glowIntensity={2}
             >
               <View style={styles.kpiDonutCenter}>
-                <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
+                <Text style={[styles.kpiDonutCenterVal, { color }]}>
+                  {categories.length}
+                </Text>
               </View>
             </GlowRingChart>
             <View style={styles.kpiLegend}>
               {categories.slice(0, 5).map((cat, i) => (
                 <View key={cat.name} style={styles.kpiLegendRow}>
-                  <View style={[styles.kpiLegendDot, { backgroundColor: palette[i % palette.length] }]} />
-                  <Text style={styles.kpiLegendName} numberOfLines={1}>{cat.name}</Text>
-                  <Text style={[styles.kpiLegendPct, { color: palette[i % palette.length] }]}>{cat.pct.toFixed(0)}%</Text>
+                  <View
+                    style={[
+                      styles.kpiLegendDot,
+                      { backgroundColor: palette[i % palette.length] },
+                    ]}
+                  />
+                  <Text style={styles.kpiLegendName} numberOfLines={1}>
+                    {cat.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.kpiLegendPct,
+                      { color: palette[i % palette.length] },
+                    ]}
+                  >
+                    {cat.pct.toFixed(0)}%
+                  </Text>
                 </View>
               ))}
             </View>
@@ -140,13 +210,22 @@ function KpiCard({
           {categories.filter((c) => c.count > 1).length > 0 && (
             <View style={styles.kpiAvgSection}>
               <Text style={styles.kpiAvgTitle}>Promedios</Text>
-              {categories.filter((c) => c.count > 1).slice(0, 4).map((cat, i) => (
-                <View key={cat.name} style={styles.kpiAvgRow}>
-                  <Text style={styles.kpiAvgName} numberOfLines={1}>{cat.name}</Text>
-                  <Text style={styles.kpiAvgVal}>{hidden ? "$ ••••" : `$${Math.round(cat.total / cat.count).toLocaleString("en-US")}`}</Text>
-                  <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
-                </View>
-              ))}
+              {categories
+                .filter((c) => c.count > 1)
+                .slice(0, 4)
+                .map((cat, i) => (
+                  <View key={cat.name} style={styles.kpiAvgRow}>
+                    <Text style={styles.kpiAvgName} numberOfLines={1}>
+                      {cat.name}
+                    </Text>
+                    <Text style={styles.kpiAvgVal}>
+                      {hidden
+                        ? "$ ••••"
+                        : `$${Math.round(cat.total / cat.count).toLocaleString("en-US")}`}
+                    </Text>
+                    <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
+                  </View>
+                ))}
             </View>
           )}
         </>
@@ -184,7 +263,8 @@ export default function HomeScreen() {
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
 
-  const totalExpenses = dashboardData.gastosFijos + dashboardData.gastosVariables;
+  const totalExpenses =
+    dashboardData.gastosFijos + dashboardData.gastosVariables;
 
   const filteredByPeriod = useMemo(() => {
     return transactions.filter((t) => {
@@ -218,34 +298,47 @@ export default function HomeScreen() {
         }));
       return { count: items.length, categories };
     },
-    [filteredByPeriod]
+    [filteredByPeriod],
   );
 
-  const ingresosStats = useMemo(() => buildCategoryStats("ingresos"), [buildCategoryStats]);
-  const fijoStats = useMemo(() => buildCategoryStats("gastos_fijos"), [buildCategoryStats]);
-  const varStats = useMemo(() => buildCategoryStats("gastos_variables"), [buildCategoryStats]);
-  const ahorroStats = useMemo(() => buildCategoryStats("ahorro"), [buildCategoryStats]);
+  const ingresosStats = useMemo(
+    () => buildCategoryStats("ingresos"),
+    [buildCategoryStats],
+  );
+  const fijoStats = useMemo(
+    () => buildCategoryStats("gastos_fijos"),
+    [buildCategoryStats],
+  );
+  const varStats = useMemo(
+    () => buildCategoryStats("gastos_variables"),
+    [buildCategoryStats],
+  );
+  const ahorroStats = useMemo(
+    () => buildCategoryStats("ahorro"),
+    [buildCategoryStats],
+  );
 
-  const handleKpiScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const x = e.nativeEvent.contentOffset.x;
-    const idx = Math.round(x / (CARD_WIDTH + CARD_GAP));
-    setActiveCardIdx(Math.max(0, Math.min(idx, 3)));
-  }, []);
+  const handleKpiScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const idx = Math.round(x / (CARD_WIDTH + CARD_GAP));
+      setActiveCardIdx(Math.max(0, Math.min(idx, 3)));
+    },
+    [],
+  );
 
-  const displayName =
-    (profile.firstName || profile.lastName)
-      ? `${profile.firstName} ${profile.lastName}`.trim()
-      : "Sencillo";
+  const displayName = profile.firstName || "Sencillo";
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
 
   const monthLabel = new Date(currentYear, currentMonth).toLocaleDateString(
     "es-ES",
-    { month: "long", year: "numeric" }
+    { month: "long", year: "numeric" },
   );
   const capitalizedMonth =
-    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1).replace(" de ", " ");
+    monthLabel.charAt(0).toUpperCase() +
+    monthLabel.slice(1).replace(" de ", " ");
 
   const prevMonth = useCallback(() => {
     if (viewMode === "year") {
@@ -288,7 +381,7 @@ export default function HomeScreen() {
 
   const balanceLabel =
     viewMode === "ytd"
-      ? "BALANCE ACUMULADO"
+      ? "ACUMULADO (Lo que va de año)"
       : viewMode === "year"
         ? "BALANCE ANUAL"
         : "BALANCE NETO";
@@ -298,7 +391,11 @@ export default function HomeScreen() {
       <AmbientGlow />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120, paddingHorizontal: 24 }}
+        contentContainerStyle={{
+          paddingTop: topPadding,
+          paddingBottom: 120,
+          paddingHorizontal: 24,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -310,226 +407,310 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Pressable onPress={() => router.push("/profile")}>
-            <Ionicons name="person-outline" size={26} color={Colors.text.secondary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>{displayName}</Text>
+          <View style={styles.headerLeft}>
+            <Pressable onPress={() => router.push("/profile")}>
+              <Ionicons
+                name="person-outline"
+                size={26}
+                color={Colors.text.secondary}
+              />
+            </Pressable>
+            <Text style={styles.headerTitle}>{displayName}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
+              <Ionicons
+                name="calculator-outline"
+                size={24}
+                color={Colors.text.muted}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => setHiddenBalances(!hiddenBalances)}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
+                size={26}
+                color={Colors.text.muted}
+              />
+            </Pressable>
+            <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+              <Ionicons
+                name="help-circle-outline"
+                size={28}
+                color={Colors.text.muted}
+              />
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.headerRight}>
-          <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
-            <Ionicons name="calculator-outline" size={24} color={Colors.text.muted} />
+
+        <View style={styles.monthNav}>
+          <Pressable onPress={prevMonth} style={styles.navButton}>
+            <Ionicons
+              name="chevron-back"
+              size={26}
+              color={Colors.text.secondary}
+            />
           </Pressable>
-          <Pressable onPress={() => setHiddenBalances(!hiddenBalances)} hitSlop={8}>
-            <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={26} color={Colors.text.muted} />
-          </Pressable>
-          <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
-            <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
+          <Text style={styles.monthLabel}>
+            {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
+          </Text>
+          <Pressable onPress={nextMonth} style={styles.navButton}>
+            <Ionicons
+              name="chevron-forward"
+              size={26}
+              color={Colors.text.secondary}
+            />
           </Pressable>
         </View>
-      </View>
 
-      <View style={styles.monthNav}>
-        <Pressable onPress={prevMonth} style={styles.navButton}>
-          <Ionicons name="chevron-back" size={26} color={Colors.text.secondary} />
-        </Pressable>
-        <Text style={styles.monthLabel}>
-          {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
-        </Text>
-        <Pressable onPress={nextMonth} style={styles.navButton}>
-          <Ionicons name="chevron-forward" size={26} color={Colors.text.secondary} />
-        </Pressable>
-      </View>
-
-      <View style={styles.segmentControl}>
-        {VIEW_MODES.map((mode) => (
-          <Pressable
-            key={mode.id}
-            onPress={() => setViewMode(mode.id)}
-            style={[
-              styles.segmentButton,
-              viewMode === mode.id && styles.segmentButtonActive,
-            ]}
-          >
-            <Text
+        <View style={styles.segmentControl}>
+          {VIEW_MODES.map((mode) => (
+            <Pressable
+              key={mode.id}
+              onPress={() => setViewMode(mode.id)}
               style={[
-                styles.segmentText,
-                viewMode === mode.id && styles.segmentTextActive,
+                styles.segmentButton,
+                viewMode === mode.id && styles.segmentButtonActive,
               ]}
             >
-              {mode.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <Pressable onPress={() => router.push("/report")} style={styles.balanceSection}>
-        <Text style={styles.balanceLabel}>{balanceLabel}</Text>
-        {hiddenBalances ? (
-          <Text style={styles.balanceValue}>$ ••••••</Text>
-        ) : (
-          <View style={styles.balanceRow}>
-            <Text style={styles.balanceValue}>
-              ${formatCurrency(dashboardData.balance, 2).split(".")[0]}
-            </Text>
-            <Text style={styles.balanceDecimals}>
-              .{formatCurrency(dashboardData.balance, 2).split(".")[1] || "00"}
-            </Text>
-          </View>
-        )}
-        <View style={styles.reportLink}>
-          <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
-          <Feather name="arrow-right" size={12} color={Colors.text.muted} />
+              <Text
+                style={[
+                  styles.segmentText,
+                  viewMode === mode.id && styles.segmentTextActive,
+                ]}
+              >
+                {mode.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
-      </Pressable>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.kpiScroll}
-        contentContainerStyle={styles.kpiRow}
-        snapToInterval={CARD_WIDTH + CARD_GAP}
-        decelerationRate="fast"
-        onScroll={handleKpiScroll}
-        scrollEventThrottle={16}
-      >
-        <KpiCard
-          label="Ingresos"
-          total={dashboardData.ingresos}
-          vesAmount={dashboardData.ingresosVES}
-          hardAmount={dashboardData.ingresosHard}
-          color={Colors.segments.ingresos.color}
-          segment="ingresos"
-          icon={<Ionicons name="trending-up" size={18} color={Colors.segments.ingresos.color} />}
-          count={ingresosStats.count}
-          categories={ingresosStats.categories}
-          onPress={() => navigateToHistory("ingresos")}
-          hidden={hiddenBalances}
-        />
-        <KpiCard
-          label="Gastos Fijos"
-          total={dashboardData.gastosFijos}
-          vesAmount={dashboardData.gastosFijosVES}
-          hardAmount={dashboardData.gastosFijosHard}
-          color={Colors.segments.gastos_fijos.color}
-          segment="gastos_fijos"
-          icon={<MaterialCommunityIcons name="credit-card" size={18} color={Colors.segments.gastos_fijos.color} />}
-          count={fijoStats.count}
-          categories={fijoStats.categories}
-          onPress={() => navigateToHistory("gastos")}
-          hidden={hiddenBalances}
-        />
-        <KpiCard
-          label="Gastos Variables"
-          total={dashboardData.gastosVariables}
-          vesAmount={dashboardData.gastosVariablesVES}
-          hardAmount={dashboardData.gastosVariablesHard}
-          color={Colors.segments.gastos_variables.color}
-          segment="gastos_variables"
-          icon={<Ionicons name="trending-down" size={18} color={Colors.segments.gastos_variables.color} />}
-          count={varStats.count}
-          categories={varStats.categories}
-          onPress={() => navigateToHistory("gastos")}
-          hidden={hiddenBalances}
-        />
-        <KpiCard
-          label="Ahorro"
-          total={dashboardData.ahorro}
-          vesAmount={dashboardData.ahorroVES}
-          hardAmount={dashboardData.ahorroHard}
-          color={Colors.segments.ahorro.color}
-          segment="ahorro"
-          icon={<MaterialCommunityIcons name="piggy-bank" size={18} color={Colors.segments.ahorro.color} />}
-          count={ahorroStats.count}
-          categories={ahorroStats.categories}
-          onPress={() => navigateToHistory("ahorro")}
-          hidden={hiddenBalances}
-        />
-      </ScrollView>
+        <Pressable
+          onPress={() => router.push("/report")}
+          style={styles.balanceSection}
+        >
+          <Text style={styles.balanceLabel}>{balanceLabel}</Text>
+          {hiddenBalances ? (
+            <Text style={styles.balanceValue}>$ ••••••</Text>
+          ) : (
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceValue}>
+                ${formatCurrency(dashboardData.balance, 2).split(".")[0]}
+              </Text>
+              <Text style={styles.balanceDecimals}>
+                .
+                {formatCurrency(dashboardData.balance, 2).split(".")[1] || "00"}
+              </Text>
+            </View>
+          )}
+          <View style={styles.reportLink}>
+            <Text style={styles.reportLinkText}>Ver Reporte Detallado</Text>
+            <Feather name="arrow-right" size={12} color={Colors.text.muted} />
+          </View>
+        </Pressable>
 
-      <View style={styles.kpiDots}>
-        {[0, 1, 2, 3].map((i) => (
-          <View
-            key={i}
-            style={[
-              styles.kpiDot,
-              i === activeCardIdx && styles.kpiDotActive,
-            ]}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.kpiScroll}
+          contentContainerStyle={styles.kpiRow}
+          snapToInterval={CARD_WIDTH + CARD_GAP}
+          decelerationRate="fast"
+          onScroll={handleKpiScroll}
+          scrollEventThrottle={16}
+        >
+          <KpiCard
+            label="Ingresos"
+            total={dashboardData.ingresos}
+            vesAmount={dashboardData.ingresosVES}
+            hardAmount={dashboardData.ingresosHard}
+            color={Colors.segments.ingresos.color}
+            segment="ingresos"
+            icon={
+              <Ionicons
+                name="trending-up"
+                size={18}
+                color={Colors.segments.ingresos.color}
+              />
+            }
+            count={ingresosStats.count}
+            categories={ingresosStats.categories}
+            onPress={() => navigateToHistory("ingresos")}
+            hidden={hiddenBalances}
           />
-        ))}
-      </View>
+          <KpiCard
+            label="Gastos Fijos"
+            total={dashboardData.gastosFijos}
+            vesAmount={dashboardData.gastosFijosVES}
+            hardAmount={dashboardData.gastosFijosHard}
+            color={Colors.segments.gastos_fijos.color}
+            segment="gastos_fijos"
+            icon={
+              <MaterialCommunityIcons
+                name="credit-card"
+                size={18}
+                color={Colors.segments.gastos_fijos.color}
+              />
+            }
+            count={fijoStats.count}
+            categories={fijoStats.categories}
+            onPress={() => navigateToHistory("gastos")}
+            hidden={hiddenBalances}
+          />
+          <KpiCard
+            label="Gastos Variables"
+            total={dashboardData.gastosVariables}
+            vesAmount={dashboardData.gastosVariablesVES}
+            hardAmount={dashboardData.gastosVariablesHard}
+            color={Colors.segments.gastos_variables.color}
+            segment="gastos_variables"
+            icon={
+              <Ionicons
+                name="trending-down"
+                size={18}
+                color={Colors.segments.gastos_variables.color}
+              />
+            }
+            count={varStats.count}
+            categories={varStats.categories}
+            onPress={() => navigateToHistory("gastos")}
+            hidden={hiddenBalances}
+          />
+          <KpiCard
+            label="Ahorro"
+            total={dashboardData.ahorro}
+            vesAmount={dashboardData.ahorroVES}
+            hardAmount={dashboardData.ahorroHard}
+            color={Colors.segments.ahorro.color}
+            segment="ahorro"
+            icon={
+              <MaterialCommunityIcons
+                name="piggy-bank"
+                size={18}
+                color={Colors.segments.ahorro.color}
+              />
+            }
+            count={ahorroStats.count}
+            categories={ahorroStats.categories}
+            onPress={() => navigateToHistory("ahorro")}
+            hidden={hiddenBalances}
+          />
+        </ScrollView>
 
-      <CurrencyCalculatorModal
-        visible={showCalc}
-        onClose={() => setShowCalc(false)}
-        rates={rates}
-      />
+        <View style={styles.kpiDots}>
+          {[0, 1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.kpiDot,
+                i === activeCardIdx && styles.kpiDotActive,
+              ]}
+            />
+          ))}
+        </View>
 
-      <Modal
-        visible={showGuide}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGuide(false)}
-      >
-        <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
-          <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
-            <View style={guideStyles.step}>
-              <View style={guideStyles.iconCircle}>
-                <Ionicons name="color-palette" size={22} color={Colors.text.secondary} />
-              </View>
-              <View style={guideStyles.stepContent}>
-                <Text style={guideStyles.stepTitle}>1. Personalizacion</Text>
-                <Text style={guideStyles.stepDesc}>
-                  Configura tus categorias de ingresos, gastos fijos y variables para adaptar la app a ti.
-                </Text>
-              </View>
-            </View>
+        <CurrencyCalculatorModal
+          visible={showCalc}
+          onClose={() => setShowCalc(false)}
+          rates={rates}
+        />
 
-            <View style={guideStyles.step}>
-              <View style={[guideStyles.iconCircle, { backgroundColor: "rgba(16,185,129,0.15)" }]}>
-                <Ionicons name="add" size={22} color={Colors.brand.DEFAULT} />
-              </View>
-              <View style={guideStyles.stepContent}>
-                <Text style={guideStyles.stepTitle}>2. Agregar Movimientos</Text>
-                <Text style={guideStyles.stepDesc}>
-                  Registra ingresos o gastos usando el boton central. Puedes usar Bs, USD o EUR.
-                </Text>
-              </View>
-            </View>
-
-            <View style={guideStyles.step}>
-              <View style={guideStyles.iconCircle}>
-                <MaterialCommunityIcons name="chart-donut" size={22} color={Colors.text.secondary} />
-              </View>
-              <View style={guideStyles.stepContent}>
-                <Text style={guideStyles.stepTitle}>3. Presupuestos</Text>
-                <Text style={guideStyles.stepDesc}>
-                  Define limites para tus Gastos Variables y manten siempre positivo tu Disponible Flexible.
-                </Text>
-              </View>
-            </View>
-
-            <View style={[guideStyles.step, { borderBottomWidth: 0 }]}>
-              <View style={guideStyles.iconCircle}>
-                <Ionicons name="time" size={22} color={Colors.text.secondary} />
-              </View>
-              <View style={guideStyles.stepContent}>
-                <Text style={guideStyles.stepTitle}>4. Historial</Text>
-                <Text style={guideStyles.stepDesc}>
-                  Revisa todos tus movimientos, filtra por tipo y edita o elimina lo que necesites.
-                </Text>
-              </View>
-            </View>
-
+        <Modal
+          visible={showGuide}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowGuide(false)}
+        >
+          <Pressable
+            style={guideStyles.overlay}
+            onPress={() => setShowGuide(false)}
+          >
             <Pressable
-              onPress={() => setShowGuide(false)}
-              style={guideStyles.dismissBtn}
+              style={guideStyles.card}
+              onPress={(e) => e.stopPropagation()}
             >
-              <Text style={guideStyles.dismissText}>Entendido</Text>
+              <View style={guideStyles.step}>
+                <View style={guideStyles.iconCircle}>
+                  <Ionicons
+                    name="color-palette"
+                    size={22}
+                    color={Colors.text.secondary}
+                  />
+                </View>
+                <View style={guideStyles.stepContent}>
+                  <Text style={guideStyles.stepTitle}>1. Personalizacion</Text>
+                  <Text style={guideStyles.stepDesc}>
+                    Configura tus categorias de ingresos, gastos fijos y
+                    variables para adaptar la app a ti.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={guideStyles.step}>
+                <View
+                  style={[
+                    guideStyles.iconCircle,
+                    { backgroundColor: "rgba(16,185,129,0.15)" },
+                  ]}
+                >
+                  <Ionicons name="add" size={22} color={Colors.brand.DEFAULT} />
+                </View>
+                <View style={guideStyles.stepContent}>
+                  <Text style={guideStyles.stepTitle}>
+                    2. Agregar Movimientos
+                  </Text>
+                  <Text style={guideStyles.stepDesc}>
+                    Registra ingresos o gastos usando el boton central. Puedes
+                    usar Bs, USD o EUR.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={guideStyles.step}>
+                <View style={guideStyles.iconCircle}>
+                  <MaterialCommunityIcons
+                    name="chart-donut"
+                    size={22}
+                    color={Colors.text.secondary}
+                  />
+                </View>
+                <View style={guideStyles.stepContent}>
+                  <Text style={guideStyles.stepTitle}>3. Presupuestos</Text>
+                  <Text style={guideStyles.stepDesc}>
+                    Define limites para tus Gastos Variables y manten siempre
+                    positivo tu Disponible Flexible.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[guideStyles.step, { borderBottomWidth: 0 }]}>
+                <View style={guideStyles.iconCircle}>
+                  <Ionicons
+                    name="time"
+                    size={22}
+                    color={Colors.text.secondary}
+                  />
+                </View>
+                <View style={guideStyles.stepContent}>
+                  <Text style={guideStyles.stepTitle}>4. Historial</Text>
+                  <Text style={guideStyles.stepDesc}>
+                    Revisa todos tus movimientos, filtra por tipo y edita o
+                    elimina lo que necesites.
+                  </Text>
+                </View>
+              </View>
+
+              <Pressable
+                onPress={() => setShowGuide(false)}
+                style={guideStyles.dismissBtn}
+              >
+                <Text style={guideStyles.dismissText}>Entendido</Text>
+              </Pressable>
             </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
       </ScrollView>
     </View>
   );
