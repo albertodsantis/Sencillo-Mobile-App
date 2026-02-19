@@ -156,22 +156,10 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
               </View>
             </View>
 
-            <View
-              style={[
-                styles.brechaBadge,
-                { backgroundColor: brechaPositive ? "rgba(249,115,22,0.12)" : "rgba(96,165,250,0.12)" },
-              ]}
-            >
-              <View style={styles.brechaLeft}>
-                <Ionicons
-                  name={brechaPositive ? "trending-up" : "trending-down"}
-                  size={16}
-                  color={brechaPositive ? "#fb923c" : "#60a5fa"}
-                />
-                <Text style={[styles.brechaLabel, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
-                  Brecha cambiaria
-                </Text>
-              </View>
+            <View style={styles.brechaRow}>
+              <Text style={[styles.brechaLabel, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
+                Brecha cambiaria
+              </Text>
               <Text style={[styles.brechaValue, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
                 {brechaPositive ? "+" : ""}{brechaValue.toFixed(1)}%
               </Text>
@@ -323,9 +311,9 @@ const styles = StyleSheet.create({
   },
   rateCardValue: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 26,
+    fontSize: 22,
     color: Colors.text.primary,
-    letterSpacing: -1,
+    letterSpacing: -0.8,
   },
   rateCardUnit: {
     fontFamily: "Outfit_400Regular",
@@ -333,28 +321,21 @@ const styles = StyleSheet.create({
     color: Colors.text.disabled,
     marginTop: 2,
   },
-  brechaBadge: {
+  brechaRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 4,
     marginTop: 10,
-  },
-  brechaLeft: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 8,
   },
   brechaLabel: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 13,
+    fontSize: 12,
   },
   brechaValue: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 18,
-    letterSpacing: -0.5,
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    letterSpacing: -0.3,
   },
   divider: {
     height: 1,
