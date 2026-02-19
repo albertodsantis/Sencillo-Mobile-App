@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,8 @@ import {
   TextInput,
   ScrollView,
   Platform,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -102,13 +104,54 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
     : 0;
   const brechaPositive = brechaValue > 0;
 
+  const slideAnim = useRef(new Animated.Value(-Dimensions.get("window").height)).current;
+  const overlayAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(overlayAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          damping: 22,
+          stiffness: 220,
+          mass: 0.9,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
+
+  const animateClose = () => {
+    Animated.parallel([
+      Animated.timing(overlayAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -Dimensions.get("window").height,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      handleClose();
+      slideAnim.setValue(-Dimensions.get("window").height);
+      overlayAnim.setValue(0);
+    });
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8 }]}>
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
+      <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
+        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.handleBar} />
 
-          <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
+          <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
           </Pressable>
 
@@ -218,8 +261,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
               ))}
             </View>
           </ScrollView>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }
