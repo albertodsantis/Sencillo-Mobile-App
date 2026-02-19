@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../../utils/supabase';
+import * as Crypto from 'expo-crypto';
 
 const SESSION_KEY = '@sencillo/auth_user';
+const USERS_KEY = '@sencillo/users';
 
 export interface AuthUser {
   id: string;
@@ -11,25 +12,33 @@ export interface AuthUser {
   provider: 'local' | 'google';
 }
 
-function mapSupabaseUserToAuthUser(supabaseUser: {
+interface StoredUser {
   id: string;
-  email?: string;
-  user_metadata?: {
-    name?: string;
-    avatar_url?: string;
-  };
-}): AuthUser {
-  const email = supabaseUser.email ?? '';
-  const metadataName = supabaseUser.user_metadata?.name?.trim();
-  const fallbackName = email.split('@')[0] || 'Usuario';
+  name: string;
+  email: string;
+  passwordHash: string;
+  avatar?: string;
+  provider: 'local' | 'google';
+}
 
-  return {
-    id: supabaseUser.id,
-    name: metadataName || fallbackName,
-    email,
-    avatar: supabaseUser.user_metadata?.avatar_url,
-    provider: 'local',
-  };
+async function hashPassword(password: string): Promise<string> {
+  return await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    password,
+  );
+}
+
+async function getStoredUsers(): Promise<StoredUser[]> {
+  try {
+    const data = await AsyncStorage.getItem(USERS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveStoredUsers(users: StoredUser[]): Promise<void> {
+  await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
 export const AuthRepository = {
@@ -62,21 +71,31 @@ export const AuthRepository = {
     if (password.length < 4)
       return { success: false, error: 'La contrasena debe tener al menos 4 caracteres' };
 
-    const { data, error } = await supabase.auth.signUp({
-      email: normalized,
-      password,
-      options: {
-        data: {
-          name: name.trim(),
-        },
-      },
-    });
-
-    if (error || !data.user) {
-      return { success: false, error: error?.message || 'No se pudo registrar el usuario' };
+    const users = await getStoredUsers();
+    if (users.find((u) => u.email === normalized)) {
+      return { success: false, error: 'Ya existe una cuenta con este email' };
     }
 
-    const user = mapSupabaseUserToAuthUser(data.user);
+    const passwordHash = await hashPassword(password);
+    const id = Crypto.randomUUID();
+
+    const storedUser: StoredUser = {
+      id,
+      name: name.trim(),
+      email: normalized,
+      passwordHash,
+      provider: 'local',
+    };
+
+    users.push(storedUser);
+    await saveStoredUsers(users);
+
+    const user: AuthUser = {
+      id,
+      name: name.trim(),
+      email: normalized,
+      provider: 'local',
+    };
     await this.persistSession(user);
     return { success: true, user };
   },
@@ -89,16 +108,24 @@ export const AuthRepository = {
     if (!normalized) return { success: false, error: 'Ingresa tu email' };
     if (!password) return { success: false, error: 'Ingresa tu contrasena' };
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalized,
-      password,
-    });
-
-    if (error || !data.user) {
-      return { success: false, error: error?.message || 'Credenciales invalidas' };
+    const users = await getStoredUsers();
+    const found = users.find((u) => u.email === normalized);
+    if (!found) {
+      return { success: false, error: 'No se encontro una cuenta con este email' };
     }
 
-    const user = mapSupabaseUserToAuthUser(data.user);
+    const passwordHash = await hashPassword(password);
+    if (found.passwordHash !== passwordHash) {
+      return { success: false, error: 'Contrasena incorrecta' };
+    }
+
+    const user: AuthUser = {
+      id: found.id,
+      name: found.name,
+      email: found.email,
+      avatar: found.avatar,
+      provider: found.provider,
+    };
     await this.persistSession(user);
     return { success: true, user };
   },
@@ -120,7 +147,6 @@ export const AuthRepository = {
   },
 
   async logout(): Promise<void> {
-    await supabase.auth.signOut();
     await this.clearSession();
   },
 };
