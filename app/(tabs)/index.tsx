@@ -19,6 +19,7 @@ import { useRouter } from "expo-router";
 import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
+import CurrencyCalculatorModal from "@/components/CurrencyCalculatorModal";
 import { useApp } from "@/lib/context/AppContext";
 import { type ViewMode, type Segment, type Transaction } from "@/lib/domain/types";
 import { formatCurrency, formatCompact } from "@/lib/domain/finance";
@@ -179,6 +180,7 @@ export default function HomeScreen() {
   } = useApp();
 
   const [showGuide, setShowGuide] = useState(false);
+  const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
 
@@ -315,6 +317,9 @@ export default function HomeScreen() {
           <Text style={styles.headerTitle}>{displayName}</Text>
         </View>
         <View style={styles.headerRight}>
+          <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
+            <MaterialCommunityIcons name="swap-horizontal" size={26} color={Colors.text.muted} />
+          </Pressable>
           <Pressable onPress={() => setHiddenBalances(!hiddenBalances)} hitSlop={8}>
             <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={26} color={Colors.text.muted} />
           </Pressable>
@@ -495,6 +500,12 @@ export default function HomeScreen() {
           />
         ))}
       </View>
+
+      <CurrencyCalculatorModal
+        visible={showCalc}
+        onClose={() => setShowCalc(false)}
+        rates={rates}
+      />
 
       <Modal
         visible={showGuide}
