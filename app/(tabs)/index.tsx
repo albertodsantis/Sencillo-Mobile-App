@@ -120,7 +120,7 @@ function KpiCard({
               size={140}
               strokeWidth={14}
               gapDeg={20}
-              glowIntensity={4}
+              glowIntensity={2}
             >
               <View style={styles.kpiDonutCenter}>
                 <Text style={[styles.kpiDonutCenterVal, { color }]}>{categories.length}</Text>
