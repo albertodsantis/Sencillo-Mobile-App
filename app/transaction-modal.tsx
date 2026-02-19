@@ -666,8 +666,13 @@ export default function TransactionModal() {
                 BCV
               </Text>
               <Text style={[styles.rateButtonValue, rateType === "bcv" && styles.rateButtonValueActive]}>
-                {rates.bcv > 0 ? rates.bcv.toFixed(2) : "--"}
+                {currency === "EUR"
+                  ? (rates.eur > 0 && rates.bcv > 0 ? (rates.eur / rates.bcv).toFixed(4) : "--")
+                  : (rates.bcv > 0 ? rates.bcv.toFixed(2) : "--")}
               </Text>
+              {currency === "EUR" && (
+                <Text style={[styles.rateButtonUnit, rateType === "bcv" && styles.rateButtonUnitActive]}>EUR/$</Text>
+              )}
             </Pressable>
             <Pressable
               onPress={() => { setRateType("parallel"); Haptics.selectionAsync(); }}
@@ -677,8 +682,13 @@ export default function TransactionModal() {
                 USDC
               </Text>
               <Text style={[styles.rateButtonValue, rateType === "parallel" && styles.rateButtonValueActive]}>
-                {rates.parallel > 0 ? rates.parallel.toFixed(2) : "--"}
+                {currency === "EUR"
+                  ? (rates.eur > 0 && rates.parallel > 0 ? (rates.eur / rates.parallel).toFixed(4) : "--")
+                  : (rates.parallel > 0 ? rates.parallel.toFixed(2) : "--")}
               </Text>
+              {currency === "EUR" && (
+                <Text style={[styles.rateButtonUnit, rateType === "parallel" && styles.rateButtonUnitActive]}>EUR/$</Text>
+              )}
             </Pressable>
             <Pressable
               onPress={() => { setRateType("manual"); Haptics.selectionAsync(); }}
@@ -700,7 +710,7 @@ export default function TransactionModal() {
             keyboardAppearance="dark"
             autoCorrect={false}
             spellCheck={false}
-            placeholder={currency === "EUR" ? "Tasa Bs/EUR" : "Tasa Bs/$"}
+            placeholder={currency === "EUR" ? "Tasa EUR/$" : "Tasa Bs/$"}
             placeholderTextColor={Colors.text.disabled}
           />
         )}
@@ -1047,6 +1057,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rateButtonValueActive: {
+    color: Colors.brand.light,
+  },
+  rateButtonUnit: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 9,
+    color: Colors.text.disabled,
+    marginTop: 1,
+    letterSpacing: 0.5,
+  },
+  rateButtonUnitActive: {
     color: Colors.brand.light,
   },
   manualRateInput: {
