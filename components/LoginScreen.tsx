@@ -18,6 +18,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import AmbientGlow from "@/components/AmbientGlow";
 import { useAuth } from "@/lib/context/AuthContext";
 
 type Mode = "login" | "signup";
@@ -86,11 +87,7 @@ function LoginContent() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={["#020617", "#0a1628", "#0d2818", "#020617"]}
-        locations={[0, 0.3, 0.6, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      <AmbientGlow intensity={0.3} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -118,13 +115,9 @@ function LoginContent() {
               />
               <Text style={styles.logoText}>S</Text>
             </View>
-            <Text style={styles.welcomeTitle}>
-              {mode === "login" ? "Bienvenido" : "Crear Cuenta"}
-            </Text>
+            <Text style={styles.welcomeTitle}>Sencillo</Text>
             <Text style={styles.welcomeSubtitle}>
-              {mode === "login"
-                ? "Ingresa tus datos para continuar"
-                : "Completa los datos para registrarte"}
+              Tus finanzas personales en Venezuela
             </Text>
           </View>
 
@@ -160,7 +153,6 @@ function LoginContent() {
 
           {mode === "signup" && (
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Nombre</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={nameRef}
@@ -178,7 +170,6 @@ function LoginContent() {
           )}
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>E-Mail</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 ref={emailRef}
@@ -197,7 +188,6 @@ function LoginContent() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Contrasena</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 ref={passwordRef}
@@ -363,12 +353,6 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     marginBottom: 16,
-  },
-  fieldLabel: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
-    color: Colors.text.primary,
-    marginBottom: 8,
   },
   inputContainer: {
     flexDirection: "row",
