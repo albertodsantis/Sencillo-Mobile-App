@@ -656,7 +656,13 @@ export default function TransactionModal() {
           </>
         )}
 
-        {(currency === "VES" || currency === "EUR") && (
+        {currency === "EUR" && (
+          <Text style={styles.eurRateInfo}>
+            EUR/$ {rates.eur > 0 && rates.bcv > 0 ? (rates.eur / rates.bcv).toFixed(4) : "--"}
+          </Text>
+        )}
+
+        {currency === "VES" && (
           <View style={styles.rateButtonsRow}>
             <Pressable
               onPress={() => { setRateType("bcv"); Haptics.selectionAsync(); }}
@@ -666,13 +672,8 @@ export default function TransactionModal() {
                 BCV
               </Text>
               <Text style={[styles.rateButtonValue, rateType === "bcv" && styles.rateButtonValueActive]}>
-                {currency === "EUR"
-                  ? (rates.eur > 0 && rates.bcv > 0 ? (rates.eur / rates.bcv).toFixed(4) : "--")
-                  : (rates.bcv > 0 ? rates.bcv.toFixed(2) : "--")}
+                {rates.bcv > 0 ? rates.bcv.toFixed(2) : "--"}
               </Text>
-              {currency === "EUR" && (
-                <Text style={[styles.rateButtonUnit, rateType === "bcv" && styles.rateButtonUnitActive]}>EUR/$</Text>
-              )}
             </Pressable>
             <Pressable
               onPress={() => { setRateType("parallel"); Haptics.selectionAsync(); }}
@@ -682,13 +683,8 @@ export default function TransactionModal() {
                 USDC
               </Text>
               <Text style={[styles.rateButtonValue, rateType === "parallel" && styles.rateButtonValueActive]}>
-                {currency === "EUR"
-                  ? (rates.eur > 0 && rates.parallel > 0 ? (rates.eur / rates.parallel).toFixed(4) : "--")
-                  : (rates.parallel > 0 ? rates.parallel.toFixed(2) : "--")}
+                {rates.parallel > 0 ? rates.parallel.toFixed(2) : "--"}
               </Text>
-              {currency === "EUR" && (
-                <Text style={[styles.rateButtonUnit, rateType === "parallel" && styles.rateButtonUnitActive]}>EUR/$</Text>
-              )}
             </Pressable>
             <Pressable
               onPress={() => { setRateType("manual"); Haptics.selectionAsync(); }}
@@ -701,7 +697,7 @@ export default function TransactionModal() {
           </View>
         )}
 
-        {rateType === "manual" && (currency === "VES" || currency === "EUR") && (
+        {rateType === "manual" && currency === "VES" && (
           <TextInput
             style={styles.manualRateInput}
             value={customRate}
@@ -710,7 +706,7 @@ export default function TransactionModal() {
             keyboardAppearance="dark"
             autoCorrect={false}
             spellCheck={false}
-            placeholder={currency === "EUR" ? "Tasa EUR/$" : "Tasa Bs/$"}
+            placeholder="Tasa Bs/$"
             placeholderTextColor={Colors.text.disabled}
           />
         )}
@@ -1059,15 +1055,13 @@ const styles = StyleSheet.create({
   rateButtonValueActive: {
     color: Colors.brand.light,
   },
-  rateButtonUnit: {
+  eurRateInfo: {
     fontFamily: "Outfit_500Medium",
-    fontSize: 9,
-    color: Colors.text.disabled,
-    marginTop: 1,
-    letterSpacing: 0.5,
-  },
-  rateButtonUnitActive: {
-    color: Colors.brand.light,
+    fontSize: 14,
+    color: Colors.text.secondary,
+    textAlign: "center" as const,
+    marginTop: 8,
+    marginBottom: 4,
   },
   manualRateInput: {
     backgroundColor: Colors.dark.surface,
