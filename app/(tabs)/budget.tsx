@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -60,6 +61,7 @@ export default function BudgetScreen() {
   const [editValue, setEditValue] = useState("");
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalValue, setGoalValue] = useState("");
+  const [showGuide, setShowGuide] = useState(false);
   const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">("presupuestos");
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
@@ -170,6 +172,9 @@ export default function BudgetScreen() {
           <Text style={styles.title}>Presupuestos y Ahorro</Text>
           <Text style={styles.subtitle}>Control mensual de gastos y metas</Text>
         </View>
+        <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+          <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
+        </Pressable>
       </View>
 
       <View style={styles.segmentControl}>
@@ -412,10 +417,175 @@ export default function BudgetScreen() {
         );
       })}
 
+      <Modal
+        visible={showGuide}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGuide(false)}
+      >
+        <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
+          <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
+            <View style={guideStyles.iconRow}>
+              <View style={guideStyles.iconCircle}>
+                <Ionicons name="information-circle" size={28} color="#a78bfa" />
+              </View>
+              <Text style={guideStyles.cardTitle}>Guia</Text>
+            </View>
+
+            <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
+            <Text style={guideStyles.sectionDesc}>
+              Controla tus <Text style={guideStyles.bold}>Gastos Variables</Text> definiendo un tope para cada categoria. Cuando te acerques al limite, la barra cambiara de color.
+            </Text>
+
+            <View style={guideStyles.infoBox}>
+              <Text style={guideStyles.infoTitle}>Disponible Flexible</Text>
+              <Text style={guideStyles.infoDesc}>
+                Es el dinero que te queda libre despues de restar Ahorros y Gastos Fijos a tus Ingresos.
+              </Text>
+              <View style={guideStyles.formulaRow}>
+                <Text style={guideStyles.formulaText}>INGRESOS</Text>
+                <Text style={guideStyles.formulaOp}> - </Text>
+                <Text style={guideStyles.formulaText}>AHORRO</Text>
+                <Text style={guideStyles.formulaOp}> - </Text>
+                <Text style={guideStyles.formulaText}>FIJOS</Text>
+              </View>
+            </View>
+
+            <Text style={guideStyles.sectionTitle}>Objetivos de Ahorro</Text>
+            <Text style={guideStyles.sectionDesc}>
+              Define metas mensuales para tus categorias de <Text style={guideStyles.bold}>Ahorro</Text>. A medida que registres movimientos de ahorro, veras tu progreso hacia cada meta.
+            </Text>
+
+            <Pressable
+              onPress={() => setShowGuide(false)}
+              style={guideStyles.dismissBtn}
+            >
+              <Text style={guideStyles.dismissText}>Entendido</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
       </ScrollView>
     </View>
   );
 }
+
+const guideStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    padding: 28,
+  },
+  card: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 360,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  iconRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    marginBottom: 16,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(167,139,250,0.15)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  cardTitle: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 18,
+    color: Colors.text.primary,
+    flex: 1,
+  },
+  intro: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.secondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  bold: {
+    fontFamily: "Outfit_700Bold",
+    color: Colors.text.primary,
+  },
+  infoBox: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.borderSubtle,
+  },
+  infoTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: "#a78bfa",
+    marginBottom: 8,
+  },
+  infoDesc: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  formulaRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  formulaText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 12,
+    color: Colors.text.muted,
+    letterSpacing: 0.5,
+  },
+  formulaOp: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.disabled,
+  },
+  sectionTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 14,
+    color: Colors.text.primary,
+    marginBottom: 6,
+  },
+  sectionDesc: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 19,
+    marginBottom: 20,
+  },
+  dismissBtn: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  dismissText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 15,
+    color: Colors.text.primary,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
