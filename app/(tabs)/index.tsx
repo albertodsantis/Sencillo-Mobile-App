@@ -243,6 +243,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const {
     rates,
+    ratesTimestamp,
     dashboardData,
     transactions,
     viewMode,
@@ -615,6 +616,7 @@ export default function HomeScreen() {
           visible={showCalc}
           onClose={() => setShowCalc(false)}
           rates={rates}
+          ratesTimestamp={ratesTimestamp}
         />
 
         <Modal
