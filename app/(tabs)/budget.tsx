@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,11 +7,13 @@ import {
   Pressable,
   TextInput,
   Platform,
-  Alert,
   Modal,
+  Animated,
+  PanResponder,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
@@ -29,8 +31,16 @@ function ProgressBar({
 }) {
   const clampedProgress = Math.min(Math.max(progress, 0), 100);
   const barColor = inverted
-    ? (clampedProgress >= 100 ? "#34d399" : clampedProgress >= 70 ? "#eab308" : color)
-    : (clampedProgress > 90 ? "#ef4444" : clampedProgress > 70 ? "#eab308" : color);
+    ? clampedProgress >= 100
+      ? "#34d399"
+      : clampedProgress >= 70
+        ? "#eab308"
+        : color
+    : clampedProgress > 90
+      ? "#ef4444"
+      : clampedProgress > 70
+        ? "#eab308"
+        : color;
   return (
     <View style={styles.progressBarBg}>
       <View
@@ -46,6 +56,133 @@ function ProgressBar({
   );
 }
 
+const SWAP_THRESHOLD = 50;
+
+interface DraggableCardProps {
+  category: string;
+  isReordering: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  children: React.ReactNode;
+}
+
+function DraggableCategoryCard({
+  category,
+  isReordering,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
+  onDragStart,
+  onDragEnd,
+  children,
+}: DraggableCardProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const elevation = useRef(new Animated.Value(0)).current;
+  const baseY = useRef(0);
+  const swapCount = useRef(0);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, { dy }) => Math.abs(dy) > 8,
+      onPanResponderGrant: () => {
+        baseY.current = 0;
+        swapCount.current = 0;
+        Animated.parallel([
+          Animated.spring(scale, {
+            toValue: 1.04,
+            useNativeDriver: true,
+            friction: 8,
+          }),
+          Animated.timing(elevation, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        if (Platform.OS !== "web") {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        onDragStart();
+      },
+      onPanResponderMove: (_, { dy }) => {
+        const totalDy = dy - baseY.current;
+        if (totalDy > SWAP_THRESHOLD) {
+          onMoveDown();
+          swapCount.current += 1;
+          baseY.current = dy;
+          if (Platform.OS !== "web") {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else if (totalDy < -SWAP_THRESHOLD) {
+          onMoveUp();
+          swapCount.current += 1;
+          baseY.current = dy;
+          if (Platform.OS !== "web") {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        }
+      },
+      onPanResponderRelease: () => {
+        Animated.parallel([
+          Animated.spring(scale, {
+            toValue: 1,
+            useNativeDriver: true,
+            friction: 8,
+          }),
+          Animated.timing(elevation, {
+            toValue: 0,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        onDragEnd();
+      },
+      onPanResponderTerminate: () => {
+        Animated.parallel([
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 8 }),
+          Animated.timing(elevation, { toValue: 0, duration: 150, useNativeDriver: true }),
+        ]).start();
+        onDragEnd();
+      },
+    })
+  ).current;
+
+  const cardOpacity = elevation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.92],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.categoryCard,
+        {
+          transform: [{ scale }],
+          opacity: cardOpacity,
+        },
+      ]}
+    >
+      <View style={styles.cardInner}>
+        {isReordering && (
+          <View
+            style={styles.dragHandle}
+            {...panResponder.panHandlers}
+          >
+            <Ionicons name="reorder-three" size={22} color={Colors.text.muted} />
+          </View>
+        )}
+        <View style={styles.cardContent}>{children}</View>
+      </View>
+    </Animated.View>
+  );
+}
+
 export default function BudgetScreen() {
   const insets = useSafeAreaInsets();
   const {
@@ -53,6 +190,7 @@ export default function BudgetScreen() {
     budgets,
     budgetSummary,
     updateBudgets,
+    updatePnlStructure,
     savingsGoals,
     updateSavingsGoals,
     transactions,
@@ -63,6 +201,8 @@ export default function BudgetScreen() {
   const [goalValue, setGoalValue] = useState("");
   const [showGuide, setShowGuide] = useState(false);
   const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">("presupuestos");
+  const [isReordering, setIsReordering] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -103,7 +243,8 @@ export default function BudgetScreen() {
     return total;
   }, [ahorroCategories, savingsGoals, savingsSpending]);
 
-  const overallSavingsProgress = totalSavingsGoal > 0 ? (totalSaved / totalSavingsGoal) * 100 : 0;
+  const overallSavingsProgress =
+    totalSavingsGoal > 0 ? (totalSaved / totalSavingsGoal) * 100 : 0;
 
   const handleSaveBudget = useCallback(
     async (category: string) => {
@@ -151,6 +292,25 @@ export default function BudgetScreen() {
     [savingsGoals, updateSavingsGoals]
   );
 
+  const moveCategory = useCallback(
+    (segment: "gastos_variables" | "ahorro", fromIdx: number, toIdx: number) => {
+      const cats = [...pnlStructure[segment]];
+      if (toIdx < 0 || toIdx >= cats.length) return;
+      const [moved] = cats.splice(fromIdx, 1);
+      cats.splice(toIdx, 0, moved);
+      const updated = { ...pnlStructure, [segment]: cats };
+      updatePnlStructure(updated);
+    },
+    [pnlStructure, updatePnlStructure]
+  );
+
+  const toggleReordering = useCallback(() => {
+    if (isReordering && Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setIsReordering((prev) => !prev);
+  }, [isReordering]);
+
   const overallProgress = budgetSummary.progress;
   const overallColor =
     overallProgress > 90
@@ -166,298 +326,355 @@ export default function BudgetScreen() {
         style={{ flex: 1, paddingHorizontal: 24 }}
         contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isDragging}
       >
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.title}>Presupuestos y Ahorro</Text>
-          <Text style={styles.subtitle}>Control mensual de gastos y metas</Text>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Presupuestos y{"\n"}Ahorro</Text>
+            <Text style={styles.subtitle}>Control mensual de gastos y metas</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable onPress={toggleReordering} hitSlop={8} style={styles.headerIconBtn}>
+              <Ionicons
+                name={isReordering ? "checkmark-circle" : "swap-vertical"}
+                size={22}
+                color={isReordering ? Colors.brand.DEFAULT : Colors.text.muted}
+              />
+            </Pressable>
+            <Pressable onPress={() => setShowGuide(true)} hitSlop={8} style={styles.headerIconBtn}>
+              <Ionicons name="help-circle-outline" size={22} color={Colors.text.muted} />
+            </Pressable>
+          </View>
         </View>
-        <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
-          <Ionicons name="help-circle-outline" size={28} color={Colors.text.muted} />
-        </Pressable>
-      </View>
 
-      <View style={styles.segmentControl}>
-        {([
-          { id: "presupuestos" as const, label: "Presupuestos" },
-          { id: "ahorro" as const, label: "Ahorro" },
-        ]).map((tab) => (
-          <Pressable
-            key={tab.id}
-            onPress={() => setActiveTab(tab.id)}
-            style={[
-              styles.segmentButton,
-              activeTab === tab.id && styles.segmentButtonActive,
-            ]}
-          >
-            <Text
+        <View style={styles.segmentControl}>
+          {([
+            { id: "presupuestos" as const, label: "Presupuesto" },
+            { id: "ahorro" as const, label: "Ahorro" },
+          ] as const).map((tab) => (
+            <Pressable
+              key={tab.id}
+              onPress={() => {
+                setActiveTab(tab.id);
+                setIsReordering(false);
+              }}
               style={[
-                styles.segmentText,
-                activeTab === tab.id && styles.segmentTextActive,
+                styles.segmentButton,
+                activeTab === tab.id && styles.segmentButtonActive,
               ]}
             >
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {activeTab === "presupuestos" && budgetSummary.totalBudget > 0 && (
-        <View style={styles.overallCard}>
-          <View style={styles.overallHeader}>
-            <Text style={styles.overallLabel}>Progreso Total</Text>
-            <Text style={[styles.overallPercent, { color: overallColor }]}>
-              {overallProgress.toFixed(0)}%
-            </Text>
-          </View>
-          <ProgressBar progress={overallProgress} color={overallColor} />
-          <View style={styles.overallFooter}>
-            <Text style={styles.overallSpent}>
-              Gastado: ${formatCurrency(budgetSummary.variableTotal)}
-            </Text>
-            <Text style={styles.overallBudget}>
-              Presupuesto: ${formatCurrency(budgetSummary.totalBudget)}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {activeTab === "presupuestos" && variableCategories.map((cat) => {
-        const budget = budgets[cat] || 0;
-        const spent = budgetSummary.spending[cat] || 0;
-        const catProgress = budget > 0 ? (spent / budget) * 100 : 0;
-        const isEditing = editingCategory === cat;
-
-        return (
-          <View key={cat} style={styles.categoryCard}>
-            <View style={styles.catHeader}>
-              <Text style={styles.catName}>{cat}</Text>
-              {budget > 0 && (
-                <Pressable onPress={() => handleRemoveBudget(cat)}>
-                  <Ionicons
-                    name="close-circle"
-                    size={18}
-                    color={Colors.text.disabled}
-                  />
-                </Pressable>
-              )}
-            </View>
-
-            {isEditing ? (
-              <View style={styles.editRow}>
-                <TextInput
-                  style={styles.editInput}
-                  value={editValue}
-                  onChangeText={setEditValue}
-                  keyboardType="numeric"
-                  placeholder="Monto en USD"
-                  placeholderTextColor={Colors.text.disabled}
-                  autoFocus
-                />
-                <Pressable
-                  onPress={() => handleSaveBudget(cat)}
-                  style={styles.saveBtn}
-                >
-                  <Ionicons name="checkmark" size={20} color="#fff" />
-                </Pressable>
-                <Pressable
-                  onPress={() => setEditingCategory(null)}
-                  style={styles.cancelBtn}
-                >
-                  <Ionicons name="close" size={20} color={Colors.text.muted} />
-                </Pressable>
-              </View>
-            ) : budget > 0 ? (
-              <Pressable
-                onPress={() => {
-                  setEditValue(budget.toString());
-                  setEditingCategory(cat);
-                }}
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === tab.id && styles.segmentTextActive,
+                ]}
               >
-                <View style={styles.catValues}>
-                  <Text style={styles.catSpent}>
-                    ${formatCurrency(spent)}
-                  </Text>
-                  <Text style={styles.catBudget}>
-                    / ${formatCurrency(budget)}
-                  </Text>
-                </View>
-                <ProgressBar
-                  progress={catProgress}
-                  color={Colors.segments.gastos_variables.color}
-                />
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => {
-                  setEditValue("");
-                  setEditingCategory(cat);
-                }}
-                style={styles.setBudgetBtn}
-              >
-                <Ionicons
-                  name="add-circle-outline"
-                  size={20}
-                  color={Colors.brand.DEFAULT}
-                />
-                <Text style={styles.setBudgetText}>
-                  Establecer presupuesto
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        );
-      })}
-
-      {activeTab === "ahorro" && totalSavingsGoal > 0 && (
-        <View style={[styles.overallCard, { borderColor: "rgba(96,165,250,0.2)" }]}>
-          <View style={styles.overallHeader}>
-            <Text style={styles.overallLabel}>Progreso Total</Text>
-            <Text style={[styles.overallPercent, { color: overallSavingsProgress >= 100 ? "#34d399" : overallSavingsProgress >= 70 ? "#eab308" : "#60a5fa" }]}>
-              {overallSavingsProgress.toFixed(0)}%
-            </Text>
-          </View>
-          <ProgressBar progress={overallSavingsProgress} color="#60a5fa" inverted />
-          <View style={styles.overallFooter}>
-            <Text style={styles.overallSpent}>
-              Ahorrado: ${formatCurrency(totalSaved)}
-            </Text>
-            <Text style={styles.overallBudget}>
-              Meta: ${formatCurrency(totalSavingsGoal)}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {activeTab === "ahorro" && ahorroCategories.map((cat) => {
-        const goal = savingsGoals[cat] || 0;
-        const saved = savingsSpending[cat] || 0;
-        const catProgress = goal > 0 ? (saved / goal) * 100 : 0;
-        const isEditing = editingGoal === cat;
-
-        return (
-          <View key={cat} style={styles.categoryCard}>
-            <View style={styles.catHeader}>
-              <Text style={styles.catName}>{cat}</Text>
-              {goal > 0 && (
-                <Pressable onPress={() => handleRemoveGoal(cat)}>
-                  <Ionicons
-                    name="close-circle"
-                    size={18}
-                    color={Colors.text.disabled}
-                  />
-                </Pressable>
-              )}
-            </View>
-
-            {isEditing ? (
-              <View style={styles.editRow}>
-                <TextInput
-                  style={[styles.editInput, { borderColor: "#60a5fa" }]}
-                  value={goalValue}
-                  onChangeText={setGoalValue}
-                  keyboardType="numeric"
-                  placeholder="Meta en USD"
-                  placeholderTextColor={Colors.text.disabled}
-                  autoFocus
-                />
-                <Pressable
-                  onPress={() => handleSaveGoal(cat)}
-                  style={[styles.saveBtn, { backgroundColor: "#60a5fa" }]}
-                >
-                  <Ionicons name="checkmark" size={20} color="#fff" />
-                </Pressable>
-                <Pressable
-                  onPress={() => setEditingGoal(null)}
-                  style={styles.cancelBtn}
-                >
-                  <Ionicons name="close" size={20} color={Colors.text.muted} />
-                </Pressable>
-              </View>
-            ) : goal > 0 ? (
-              <Pressable
-                onPress={() => {
-                  setGoalValue(goal.toString());
-                  setEditingGoal(cat);
-                }}
-              >
-                <View style={styles.catValues}>
-                  <Text style={styles.catSpent}>
-                    ${formatCurrency(saved)}
-                  </Text>
-                  <Text style={styles.catBudget}>
-                    / ${formatCurrency(goal)}
-                  </Text>
-                </View>
-                <ProgressBar
-                  progress={catProgress}
-                  color="#60a5fa"
-                  inverted
-                />
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => {
-                  setGoalValue("");
-                  setEditingGoal(cat);
-                }}
-                style={styles.setBudgetBtn}
-              >
-                <Ionicons
-                  name="add-circle-outline"
-                  size={20}
-                  color="#60a5fa"
-                />
-                <Text style={[styles.setBudgetText, { color: "#60a5fa" }]}>
-                  Establecer meta
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        );
-      })}
-
-      <Modal
-        visible={showGuide}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGuide(false)}
-      >
-        <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
-          <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
-            <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
-            <Text style={guideStyles.sectionDesc}>
-              Controla tus <Text style={guideStyles.bold}>Gastos Variables</Text> definiendo un tope para cada categoria. Cuando te acerques al limite, la barra cambiara de color.
-            </Text>
-
-            <View style={guideStyles.infoBox}>
-              <Text style={guideStyles.infoTitle}>Disponible Flexible</Text>
-              <Text style={guideStyles.infoDesc}>
-                Es el dinero que te queda libre despues de restar Ahorros y Gastos Fijos a tus Ingresos.
+                {tab.label}
               </Text>
-              <View style={guideStyles.formulaRow}>
-                <Text style={guideStyles.formulaText}>INGRESOS</Text>
-                <Text style={guideStyles.formulaOp}> - </Text>
-                <Text style={guideStyles.formulaText}>AHORRO</Text>
-                <Text style={guideStyles.formulaOp}> - </Text>
-                <Text style={guideStyles.formulaText}>FIJOS</Text>
-              </View>
+            </Pressable>
+          ))}
+        </View>
+
+        {activeTab === "presupuestos" && budgetSummary.totalBudget > 0 && !isReordering && (
+          <View style={styles.overallCard}>
+            <View style={styles.overallHeader}>
+              <Text style={styles.overallLabel}>Progreso Total</Text>
+              <Text style={[styles.overallPercent, { color: overallColor }]}>
+                {overallProgress.toFixed(0)}%
+              </Text>
             </View>
+            <ProgressBar progress={overallProgress} color={overallColor} />
+            <View style={styles.overallFooter}>
+              <Text style={styles.overallSpent}>
+                Gastado: ${formatCurrency(budgetSummary.variableTotal)}
+              </Text>
+              <Text style={styles.overallBudget}>
+                Presupuesto: ${formatCurrency(budgetSummary.totalBudget)}
+              </Text>
+            </View>
+          </View>
+        )}
 
-            <Text style={guideStyles.sectionTitle}>Objetivos de Ahorro</Text>
-            <Text style={guideStyles.sectionDesc}>
-              Define metas mensuales para tus categorias de <Text style={guideStyles.bold}>Ahorro</Text>. A medida que registres movimientos de ahorro, veras tu progreso hacia cada meta.
-            </Text>
+        {activeTab === "presupuestos" &&
+          variableCategories.map((cat, idx) => {
+            const budget = budgets[cat] || 0;
+            const spent = budgetSummary.spending[cat] || 0;
+            const catProgress = budget > 0 ? (spent / budget) * 100 : 0;
+            const isEditing = editingCategory === cat;
 
+            return (
+              <DraggableCategoryCard
+                key={cat}
+                category={cat}
+                isReordering={isReordering}
+                isFirst={idx === 0}
+                isLast={idx === variableCategories.length - 1}
+                onMoveUp={() => moveCategory("gastos_variables", idx, idx - 1)}
+                onMoveDown={() => moveCategory("gastos_variables", idx, idx + 1)}
+                onDragStart={() => setIsDragging(true)}
+                onDragEnd={() => setIsDragging(false)}
+              >
+                <View style={styles.catHeader}>
+                  <Text style={styles.catName}>{cat}</Text>
+                  {budget > 0 && !isReordering && (
+                    <Pressable onPress={() => handleRemoveBudget(cat)}>
+                      <Ionicons name="close-circle" size={18} color={Colors.text.disabled} />
+                    </Pressable>
+                  )}
+                </View>
+
+                {isReordering ? (
+                  <View style={styles.reorderHint}>
+                    <Ionicons name="move" size={14} color={Colors.text.disabled} />
+                    <Text style={styles.reorderHintText}>Arrastra para reordenar</Text>
+                  </View>
+                ) : isEditing ? (
+                  <View style={styles.editRow}>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editValue}
+                      onChangeText={setEditValue}
+                      keyboardType="decimal-pad"
+                      placeholder="Monto en USD"
+                      placeholderTextColor={Colors.text.disabled}
+                      autoFocus
+                    />
+                    <Pressable
+                      onPress={() => handleSaveBudget(cat)}
+                      style={styles.saveBtn}
+                    >
+                      <Ionicons name="checkmark" size={20} color="#fff" />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setEditingCategory(null)}
+                      style={styles.cancelBtn}
+                    >
+                      <Ionicons name="close" size={20} color={Colors.text.muted} />
+                    </Pressable>
+                  </View>
+                ) : budget > 0 ? (
+                  <Pressable
+                    onPress={() => {
+                      setEditValue(budget.toString());
+                      setEditingCategory(cat);
+                    }}
+                  >
+                    <View style={styles.catValues}>
+                      <Text style={styles.catSpent}>${formatCurrency(spent)}</Text>
+                      <Text style={styles.catBudget}>/ ${formatCurrency(budget)}</Text>
+                    </View>
+                    <ProgressBar
+                      progress={catProgress}
+                      color={Colors.segments.gastos_variables.color}
+                    />
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => {
+                      setEditValue("");
+                      setEditingCategory(cat);
+                    }}
+                    style={styles.setBudgetBtn}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={18}
+                      color={Colors.brand.DEFAULT}
+                    />
+                    <Text style={styles.setBudgetText}>Establecer presupuesto</Text>
+                  </Pressable>
+                )}
+              </DraggableCategoryCard>
+            );
+          })}
+
+        {activeTab === "ahorro" && totalSavingsGoal > 0 && !isReordering && (
+          <View
+            style={[styles.overallCard, { borderColor: "rgba(96,165,250,0.15)" }]}
+          >
+            <View style={styles.overallHeader}>
+              <Text style={styles.overallLabel}>Progreso Total</Text>
+              <Text
+                style={[
+                  styles.overallPercent,
+                  {
+                    color:
+                      overallSavingsProgress >= 100
+                        ? "#34d399"
+                        : overallSavingsProgress >= 70
+                          ? "#eab308"
+                          : "#60a5fa",
+                  },
+                ]}
+              >
+                {overallSavingsProgress.toFixed(0)}%
+              </Text>
+            </View>
+            <ProgressBar progress={overallSavingsProgress} color="#60a5fa" inverted />
+            <View style={styles.overallFooter}>
+              <Text style={styles.overallSpent}>
+                Ahorrado: ${formatCurrency(totalSaved)}
+              </Text>
+              <Text style={styles.overallBudget}>
+                Meta: ${formatCurrency(totalSavingsGoal)}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {activeTab === "ahorro" &&
+          ahorroCategories.map((cat, idx) => {
+            const goal = savingsGoals[cat] || 0;
+            const saved = savingsSpending[cat] || 0;
+            const catProgress = goal > 0 ? (saved / goal) * 100 : 0;
+            const isEditing = editingGoal === cat;
+
+            return (
+              <DraggableCategoryCard
+                key={cat}
+                category={cat}
+                isReordering={isReordering}
+                isFirst={idx === 0}
+                isLast={idx === ahorroCategories.length - 1}
+                onMoveUp={() => moveCategory("ahorro", idx, idx - 1)}
+                onMoveDown={() => moveCategory("ahorro", idx, idx + 1)}
+                onDragStart={() => setIsDragging(true)}
+                onDragEnd={() => setIsDragging(false)}
+              >
+                <View style={styles.catHeader}>
+                  <Text style={styles.catName}>{cat}</Text>
+                  {goal > 0 && !isReordering && (
+                    <Pressable onPress={() => handleRemoveGoal(cat)}>
+                      <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={Colors.text.disabled}
+                      />
+                    </Pressable>
+                  )}
+                </View>
+
+                {isReordering ? (
+                  <View style={styles.reorderHint}>
+                    <Ionicons name="move" size={14} color={Colors.text.disabled} />
+                    <Text style={styles.reorderHintText}>Arrastra para reordenar</Text>
+                  </View>
+                ) : isEditing ? (
+                  <View style={styles.editRow}>
+                    <TextInput
+                      style={[styles.editInput, { borderColor: "#60a5fa" }]}
+                      value={goalValue}
+                      onChangeText={setGoalValue}
+                      keyboardType="decimal-pad"
+                      placeholder="Meta en USD"
+                      placeholderTextColor={Colors.text.disabled}
+                      autoFocus
+                    />
+                    <Pressable
+                      onPress={() => handleSaveGoal(cat)}
+                      style={[styles.saveBtn, { backgroundColor: "#60a5fa" }]}
+                    >
+                      <Ionicons name="checkmark" size={20} color="#fff" />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setEditingGoal(null)}
+                      style={styles.cancelBtn}
+                    >
+                      <Ionicons name="close" size={20} color={Colors.text.muted} />
+                    </Pressable>
+                  </View>
+                ) : goal > 0 ? (
+                  <Pressable
+                    onPress={() => {
+                      setGoalValue(goal.toString());
+                      setEditingGoal(cat);
+                    }}
+                  >
+                    <View style={styles.catValues}>
+                      <Text style={styles.catSpent}>${formatCurrency(saved)}</Text>
+                      <Text style={styles.catBudget}>/ ${formatCurrency(goal)}</Text>
+                    </View>
+                    <ProgressBar progress={catProgress} color="#60a5fa" inverted />
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => {
+                      setGoalValue("");
+                      setEditingGoal(cat);
+                    }}
+                    style={styles.setBudgetBtn}
+                  >
+                    <Ionicons name="add-circle-outline" size={18} color="#60a5fa" />
+                    <Text style={[styles.setBudgetText, { color: "#60a5fa" }]}>
+                      Establecer meta
+                    </Text>
+                  </Pressable>
+                )}
+              </DraggableCategoryCard>
+            );
+          })}
+
+        <Modal
+          visible={showGuide}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowGuide(false)}
+        >
+          <Pressable
+            style={guideStyles.overlay}
+            onPress={() => setShowGuide(false)}
+          >
             <Pressable
-              onPress={() => setShowGuide(false)}
-              style={guideStyles.dismissBtn}
+              style={guideStyles.card}
+              onPress={(e) => e.stopPropagation()}
             >
-              <Text style={guideStyles.dismissText}>Entendido</Text>
+              <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
+              <Text style={guideStyles.sectionDesc}>
+                Controla tus{" "}
+                <Text style={guideStyles.bold}>Gastos Variables</Text> definiendo
+                un tope para cada categoria. Cuando te acerques al limite, la
+                barra cambiara de color.
+              </Text>
+
+              <View style={guideStyles.infoBox}>
+                <Text style={guideStyles.infoTitle}>Disponible Flexible</Text>
+                <Text style={guideStyles.infoDesc}>
+                  Es el dinero que te queda libre despues de restar Ahorros y
+                  Gastos Fijos a tus Ingresos.
+                </Text>
+                <View style={guideStyles.formulaRow}>
+                  <Text style={guideStyles.formulaText}>INGRESOS</Text>
+                  <Text style={guideStyles.formulaOp}> - </Text>
+                  <Text style={guideStyles.formulaText}>AHORRO</Text>
+                  <Text style={guideStyles.formulaOp}> - </Text>
+                  <Text style={guideStyles.formulaText}>FIJOS</Text>
+                </View>
+              </View>
+
+              <Text style={guideStyles.sectionTitle}>Objetivos de Ahorro</Text>
+              <Text style={guideStyles.sectionDesc}>
+                Define metas mensuales para tus categorias de{" "}
+                <Text style={guideStyles.bold}>Ahorro</Text>. A medida que
+                registres movimientos de ahorro, veras tu progreso hacia cada
+                meta.
+              </Text>
+
+              <Text style={guideStyles.sectionTitle}>Reordenar</Text>
+              <Text style={guideStyles.sectionDesc}>
+                Toca el icono de flechas en la esquina superior para activar el
+                modo de reorden. Arrastra las categorias para cambiar su
+                prioridad.
+              </Text>
+
+              <Pressable
+                onPress={() => setShowGuide(false)}
+                style={guideStyles.dismissBtn}
+              >
+                <Text style={guideStyles.dismissText}>Entendido</Text>
+              </Pressable>
             </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -479,33 +696,6 @@ const guideStyles = StyleSheet.create({
     maxWidth: 360,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-  },
-  iconRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 12,
-    marginBottom: 16,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(167,139,250,0.15)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  cardTitle: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 18,
-    color: Colors.text.primary,
-    flex: 1,
-  },
-  intro: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginBottom: 16,
-    lineHeight: 20,
   },
   bold: {
     fontFamily: "Outfit_700Bold",
@@ -591,6 +781,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-start" as const,
     marginBottom: 20,
   },
+  headerActions: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    paddingTop: 4,
+  },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
   title: {
     fontFamily: "Outfit_900Black",
     fontSize: 22,
@@ -603,16 +807,12 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     marginTop: 4,
   },
-  helpBtn: {
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
   segmentControl: {
     flexDirection: "row" as const,
     backgroundColor: Colors.dark.surface,
     borderRadius: 16,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   segmentButton: {
     flex: 1,
@@ -625,7 +825,7 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.text.muted,
   },
   segmentTextActive: {
@@ -670,12 +870,28 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
   },
   categoryCard: {
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: Colors.dark.surface,
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
     borderColor: Colors.dark.border,
     marginBottom: 10,
+    overflow: "hidden" as const,
+  },
+  cardInner: {
+    flexDirection: "row" as const,
+    alignItems: "stretch" as const,
+  },
+  dragHandle: {
+    width: 40,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRightWidth: 1,
+    borderRightColor: Colors.dark.borderSubtle,
+  },
+  cardContent: {
+    flex: 1,
+    padding: 16,
   },
   catHeader: {
     flexDirection: "row" as const,
@@ -706,7 +922,7 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: 6,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: 3,
     overflow: "hidden" as const,
   },
@@ -721,16 +937,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: Colors.dark.borderSubtle,
     borderStyle: "dashed" as const,
-    marginTop: 4,
   },
   setBudgetText: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.brand.DEFAULT,
   },
   editRow: {
@@ -740,7 +955,7 @@ const styles = StyleSheet.create({
   },
   editInput: {
     flex: 1,
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -765,5 +980,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
+  },
+  reorderHint: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    opacity: 0.5,
+  },
+  reorderHintText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 12,
+    color: Colors.text.disabled,
   },
 });
