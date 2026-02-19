@@ -897,11 +897,13 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     marginBottom: 16,
     paddingVertical: 8,
+    width: "100%" as any,
   },
   amountRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "center" as const,
+    width: "100%" as any,
   },
   amountDoneBtn: {
     marginLeft: 8,
@@ -917,8 +919,10 @@ const styles = StyleSheet.create({
     fontSize: 44,
     letterSpacing: -1.5,
     minWidth: 100,
+    maxWidth: "70%" as any,
     height: 56,
     paddingVertical: 0,
+    textAlign: "center" as const,
   },
   currencyFullLabel: {
     fontFamily: "Outfit_700Bold",
