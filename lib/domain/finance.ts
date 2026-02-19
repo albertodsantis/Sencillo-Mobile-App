@@ -23,8 +23,11 @@ export function convertToUSD(
   if (currency === 'USD') return amount;
 
   if (currency === 'EUR') {
-    const eurRateInBs = rateType === 'manual' && customRate ? customRate : (rates.eur || 0);
-    const usdRateInBs = rates.bcv || 1;
+    if (rateType === 'manual' && customRate) {
+      return amount * customRate;
+    }
+    const eurRateInBs = rates.eur || 0;
+    const usdRateInBs = rateType === 'parallel' ? (rates.parallel || 1) : (rates.bcv || 1);
     if (eurRateInBs === 0 || usdRateInBs === 0) return 0;
     const amountInBs = amount * eurRateInBs;
     return amountInBs / usdRateInBs;
@@ -54,7 +57,10 @@ export function getFinalRate(
         : (customRate || 0);
   }
   if (currency === 'EUR') {
-    return rateType === 'manual' && customRate ? customRate : (rates.eur || 0);
+    if (rateType === 'manual') return customRate || 0;
+    const eurBs = rates.eur || 0;
+    const usdBs = rateType === 'parallel' ? (rates.parallel || 1) : (rates.bcv || 1);
+    return usdBs > 0 ? eurBs / usdBs : 0;
   }
   return 1;
 }
