@@ -13,7 +13,10 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/lib/context/AuthContext";
 
@@ -29,20 +32,24 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const nameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
   const handleSubmit = async () => {
     setError("");
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web")
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLoading(true);
     try {
-      const result = mode === "login"
-        ? await signInWithEmail(email, password)
-        : await signUpWithEmail(name, email, password);
+      const result =
+        mode === "login"
+          ? await signInWithEmail(email, password)
+          : await signUpWithEmail(name, email, password);
       if (!result.success && result.error) {
         setError(result.error);
-        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (Platform.OS !== "web")
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch {
       setError("Algo salio mal. Intenta de nuevo.");
@@ -53,12 +60,24 @@ function LoginContent() {
 
   const handleGooglePress = async () => {
     setError("");
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setError("Google Sign-In requiere configuracion adicional. Usa email y contrasena por ahora.");
+    if (Platform.OS !== "web")
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setError(
+      "Google Sign-In requiere configuracion adicional. Usa email y contrasena por ahora.",
+    );
+  };
+
+  const handleApplePress = async () => {
+    setError("");
+    if (Platform.OS !== "web")
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setError(
+      "Apple Sign-In requiere configuracion adicional. Usa email y contrasena por ahora.",
+    );
   };
 
   const toggleMode = () => {
-    setMode(m => m === "login" ? "signup" : "login");
+    setMode((m) => (m === "login" ? "signup" : "login"));
     setError("");
     setName("");
     setEmail("");
@@ -99,36 +118,54 @@ function LoginContent() {
               />
               <Text style={styles.logoText}>S</Text>
             </View>
-            <Text style={styles.appName}>Sencillo</Text>
-            <Text style={styles.tagline}>Tus finanzas, simplificadas</Text>
+            <Text style={styles.welcomeTitle}>
+              {mode === "login" ? "Bienvenido" : "Crear Cuenta"}
+            </Text>
+            <Text style={styles.welcomeSubtitle}>
+              {mode === "login"
+                ? "Ingresa tus datos para continuar"
+                : "Completa los datos para registrarte"}
+            </Text>
           </View>
 
-          <View style={styles.formCard}>
-            <View style={styles.modeToggle}>
-              <Pressable
-                style={[styles.modeButton, mode === "login" && styles.modeButtonActive]}
-                onPress={() => mode !== "login" && toggleMode()}
-              >
-                <Text style={[styles.modeButtonText, mode === "login" && styles.modeButtonTextActive]}>
-                  Iniciar Sesion
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modeButton, mode === "signup" && styles.modeButtonActive]}
-                onPress={() => mode !== "signup" && toggleMode()}
-              >
-                <Text style={[styles.modeButtonText, mode === "signup" && styles.modeButtonTextActive]}>
-                  Registrarse
-                </Text>
-              </Pressable>
-            </View>
+          <View style={styles.socialRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.socialButton,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={handleApplePress}
+              disabled={loading}
+            >
+              <Ionicons name="logo-apple" size={22} color={Colors.text.primary} />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.socialButton,
+                styles.socialButtonWide,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={handleGooglePress}
+              disabled={loading}
+            >
+              <Text style={styles.googleG}>G</Text>
+            </Pressable>
+          </View>
 
-            {mode === "signup" && (
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>O</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {mode === "signup" && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Nombre</Text>
               <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={18} color={Colors.text.muted} style={styles.inputIcon} />
                 <TextInput
+                  ref={nameRef}
                   style={styles.input}
-                  placeholder="Nombre completo"
+                  placeholder="Tu nombre completo"
                   placeholderTextColor={Colors.text.disabled}
                   value={name}
                   onChangeText={setName}
@@ -137,14 +174,16 @@ function LoginContent() {
                   onSubmitEditing={() => emailRef.current?.focus()}
                 />
               </View>
-            )}
+            </View>
+          )}
 
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>E-Mail</Text>
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={18} color={Colors.text.muted} style={styles.inputIcon} />
               <TextInput
                 ref={emailRef}
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Ingresa tu email..."
                 placeholderTextColor={Colors.text.disabled}
                 value={email}
                 onChangeText={setEmail}
@@ -155,13 +194,15 @@ function LoginContent() {
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
             </View>
+          </View>
 
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Contrasena</Text>
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={18} color={Colors.text.muted} style={styles.inputIcon} />
               <TextInput
                 ref={passwordRef}
                 style={[styles.input, { flex: 1 }]}
-                placeholder="Contrasena"
+                placeholder="••••••••"
                 placeholderTextColor={Colors.text.disabled}
                 value={password}
                 onChangeText={setPassword}
@@ -169,63 +210,59 @@ function LoginContent() {
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
               />
-              <Pressable onPress={() => setShowPassword(p => !p)} hitSlop={12}>
+              <Pressable
+                onPress={() => setShowPassword((p) => !p)}
+                hitSlop={12}
+                style={styles.eyeButton}
+              >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={18}
+                  size={20}
                   color={Colors.text.muted}
                 />
               </Pressable>
             </View>
-
-            {!!error && (
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={14} color={Colors.status.danger} />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <Pressable
-              style={({ pressed }) => [styles.submitButton, pressed && { opacity: 0.85 }]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              <LinearGradient
-                colors={[Colors.brand.DEFAULT, Colors.brand.dark]}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              />
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.submitText}>
-                  {mode === "login" ? "Iniciar Sesion" : "Crear Cuenta"}
-                </Text>
-              )}
-            </Pressable>
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>o continua con</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <Pressable
-              style={({ pressed }) => [styles.googleButton, pressed && { opacity: 0.85 }]}
-              onPress={handleGooglePress}
-              disabled={loading}
-            >
-              <View style={styles.googleIconCircle}>
-                <Text style={styles.googleG}>G</Text>
-              </View>
-              <Text style={styles.googleText}>Google</Text>
-            </Pressable>
           </View>
+
+          {!!error && (
+            <View style={styles.errorContainer}>
+              <Ionicons
+                name="alert-circle"
+                size={14}
+                color={Colors.status.danger}
+              />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.submitButton,
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <LinearGradient
+              colors={[Colors.brand.DEFAULT, Colors.brand.dark]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.submitText}>
+                {mode === "login" ? "Iniciar Sesion" : "Crear Cuenta"}
+              </Text>
+            )}
+          </Pressable>
 
           <Pressable onPress={toggleMode} style={styles.switchMode}>
             <Text style={styles.switchModeText}>
-              {mode === "login" ? "No tienes cuenta? " : "Ya tienes cuenta? "}
+              {mode === "login"
+                ? "No tienes cuenta? "
+                : "Ya tienes cuenta? "}
               <Text style={styles.switchModeLink}>
                 {mode === "login" ? "Registrate" : "Inicia Sesion"}
               </Text>
@@ -252,12 +289,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     justifyContent: "center",
   },
   logoSection: {
     alignItems: "center",
-    marginBottom: 36,
+    marginBottom: 32,
   },
   logoCircle: {
     width: 72,
@@ -266,7 +303,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   logoText: {
     fontFamily: "Outfit_800ExtraBold",
@@ -274,68 +311,84 @@ const styles = StyleSheet.create({
     color: "#fff",
     zIndex: 1,
   },
-  appName: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 32,
+  welcomeTitle: {
+    fontFamily: "Outfit_800ExtraBold",
+    fontSize: 26,
     color: Colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  tagline: {
+  welcomeSubtitle: {
     fontFamily: "Outfit_400Regular",
-    fontSize: 15,
-    color: Colors.text.muted,
-  },
-  formCard: {
-    backgroundColor: "rgba(15, 23, 42, 0.7)",
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  modeToggle: {
-    flexDirection: "row",
-    backgroundColor: Colors.dark.base,
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 20,
-  },
-  modeButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 10,
-  },
-  modeButtonActive: {
-    backgroundColor: Colors.dark.card,
-  },
-  modeButtonText: {
-    fontFamily: "Outfit_500Medium",
     fontSize: 14,
     color: Colors.text.muted,
   },
-  modeButtonTextActive: {
+  socialRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
+  },
+  socialButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.dark.surface,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  socialButtonWide: {
+    flex: 1.5,
+  },
+  googleG: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 20,
+    color: "#4285F4",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.dark.border,
+  },
+  dividerText: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 13,
+    color: Colors.text.disabled,
+    marginHorizontal: 16,
+  },
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 14,
     color: Colors.text.primary,
+    marginBottom: 8,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.dark.base,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    marginBottom: 12,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: Colors.dark.borderSubtle,
-    height: 50,
-  },
-  inputIcon: {
-    marginRight: 10,
+    borderColor: Colors.dark.border,
+    height: 52,
   },
   input: {
     flex: 1,
     fontFamily: "Outfit_400Regular",
     fontSize: 15,
     color: Colors.text.primary,
-    height: 50,
+    height: 52,
+  },
+  eyeButton: {
+    paddingLeft: 8,
   },
   errorContainer: {
     flexDirection: "row",
@@ -348,68 +401,24 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_400Regular",
     fontSize: 13,
     color: Colors.status.danger,
+    flex: 1,
   },
   submitButton: {
-    height: 50,
-    borderRadius: 12,
+    height: 54,
+    borderRadius: 14,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 8,
   },
   submitText: {
-    fontFamily: "Outfit_600SemiBold",
+    fontFamily: "Outfit_700Bold",
     fontSize: 16,
     color: "#fff",
     zIndex: 1,
   },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 18,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.dark.border,
-  },
-  dividerText: {
-    fontFamily: "Outfit_400Regular",
-    fontSize: 12,
-    color: Colors.text.disabled,
-    marginHorizontal: 12,
-  },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: Colors.dark.base,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    gap: 10,
-  },
-  googleIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleG: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 14,
-    color: "#4285F4",
-  },
-  googleText: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 15,
-    color: Colors.text.primary,
-  },
   switchMode: {
-    marginTop: 24,
+    marginTop: 28,
     alignItems: "center",
   },
   switchModeText: {
@@ -418,7 +427,7 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
   },
   switchModeLink: {
-    fontFamily: "Outfit_600SemiBold",
+    fontFamily: "Outfit_700Bold",
     color: Colors.brand.DEFAULT,
   },
 });
