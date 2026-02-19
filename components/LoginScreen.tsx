@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Path } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import {
   SafeAreaProvider,
@@ -135,13 +136,17 @@ function LoginContent() {
             <Pressable
               style={({ pressed }) => [
                 styles.socialButton,
-                styles.socialButtonWide,
                 pressed && { opacity: 0.7 },
               ]}
               onPress={handleGooglePress}
               disabled={loading}
             >
-              <Text style={styles.googleG}>G</Text>
+              <Svg width={20} height={20} viewBox="0 0 48 48">
+                <Path d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z" fill="#FFC107" />
+                <Path d="M3.2 14.1l7 5.1C12.1 15.1 17.5 11 24 11c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 14.9 2 7.1 7 3.2 14.1z" fill="#FF3D00" />
+                <Path d="M24 46c5.4 0 10.3-1.8 14.1-5l-6.5-5.5C29.6 37 27 37.8 24 37.8c-6 0-11.1-3.7-13.2-9l-7 5.4C7 41.2 14.8 46 24 46z" fill="#4CAF50" />
+                <Path d="M44.5 20H24v8.5h11.8c-1 3-3 5.5-5.6 7l6.5 5.5C42 36.2 46 30.7 46 24c0-1.3-.2-2.7-.5-4z" fill="#1976D2" />
+              </Svg>
             </Pressable>
           </View>
 
@@ -326,14 +331,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.surface,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-  },
-  socialButtonWide: {
-    flex: 1.5,
-  },
-  googleG: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 20,
-    color: "#4285F4",
   },
   divider: {
     flexDirection: "row",
