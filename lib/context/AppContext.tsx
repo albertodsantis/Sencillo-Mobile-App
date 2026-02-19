@@ -32,6 +32,7 @@ interface AppContextValue {
   currentYear: number;
   dashboardData: DashboardData;
   budgetSummary: BudgetSummary;
+  ratesTimestamp: number | null;
   isLoading: boolean;
   isRefreshingRates: boolean;
   historyFilter: string;
@@ -68,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingRates, setIsRefreshingRates] = useState(false);
+  const [ratesTimestamp, setRatesTimestamp] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [historyFilter, setHistoryFilter] = useState('all');
 
@@ -92,6 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setBudgets(bdg);
         setSavingsGoals(sg);
         setProfile(prof);
+        setRatesTimestamp(await RatesRepository.getTimestamp());
 
         const age = await RatesRepository.getAge();
         if (age > 3600000 || !savedRates) {
@@ -99,6 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (fresh) {
             setRates(fresh);
             await RatesRepository.save(fresh);
+            setRatesTimestamp(await RatesRepository.getTimestamp());
           }
         }
       } catch (e) {
@@ -116,6 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (fresh) {
         setRates(fresh);
         await RatesRepository.save(fresh);
+        setRatesTimestamp(await RatesRepository.getTimestamp());
       }
     } finally {
       setIsRefreshingRates(false);
@@ -178,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ]);
     setTransactions([]);
     setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
+    setRatesTimestamp(null);
     setPnlStructure(DEFAULT_PNL);
     setBudgets({});
     setSavingsGoals({});
@@ -205,6 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentYear,
       dashboardData,
       budgetSummary,
+      ratesTimestamp,
       isLoading,
       isRefreshingRates,
       historyFilter,
@@ -228,7 +235,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }),
     [
       transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
-      currentMonth, currentYear, dashboardData, budgetSummary,
+      currentMonth, currentYear, dashboardData, budgetSummary, ratesTimestamp,
       isLoading, isRefreshingRates, historyFilter, profile,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,

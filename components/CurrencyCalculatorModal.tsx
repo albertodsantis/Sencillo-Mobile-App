@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/constants/colors";
 
 interface Rates {
@@ -41,9 +40,10 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   rates: Rates;
+  ratesTimestamp: number | null;
 }
 
-export default function CurrencyCalculatorModal({ visible, onClose, rates }: Props) {
+export default function CurrencyCalculatorModal({ visible, onClose, rates, ratesTimestamp }: Props) {
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyKey>("USD");
@@ -52,19 +52,20 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
   const webTopInset = Platform.OS === "web" ? 67 : 0;
 
   useEffect(() => {
-    if (visible) {
-      AsyncStorage.getItem("@sencillo/rates_timestamp").then((ts) => {
-        if (ts) {
-          const d = new Date(parseInt(ts, 10));
-          const day = d.getDate().toString().padStart(2, "0");
-          const month = d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
-          const hours = d.getHours().toString().padStart(2, "0");
-          const mins = d.getMinutes().toString().padStart(2, "0");
-          setRatesDate(`${day} ${month} ${hours}:${mins}`);
-        }
-      });
+    if (!visible) return;
+
+    if (!ratesTimestamp) {
+      setRatesDate("");
+      return;
     }
-  }, [visible]);
+
+    const d = new Date(ratesTimestamp);
+    const day = d.getDate().toString().padStart(2, "0");
+    const month = d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
+    const hours = d.getHours().toString().padStart(2, "0");
+    const mins = d.getMinutes().toString().padStart(2, "0");
+    setRatesDate(`${day} ${month} ${hours}:${mins}`);
+  }, [visible, ratesTimestamp]);
 
   const conversions = useMemo(() => {
     const val = parseFloat(amount.replace(",", ".")) || 0;
