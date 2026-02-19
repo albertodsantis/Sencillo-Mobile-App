@@ -318,7 +318,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerRight}>
           <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
-            <MaterialCommunityIcons name="currency-usd" size={26} color={Colors.text.muted} />
+            <Ionicons name="calculator-outline" size={24} color={Colors.text.muted} />
           </Pressable>
           <Pressable onPress={() => setHiddenBalances(!hiddenBalances)} hitSlop={8}>
             <Ionicons name={hiddenBalances ? "eye-off-outline" : "eye-outline"} size={26} color={Colors.text.muted} />
