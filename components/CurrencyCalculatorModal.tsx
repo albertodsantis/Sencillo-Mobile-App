@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/constants/colors";
 
 interface Rates {
@@ -44,8 +45,24 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyKey>("USD");
+  const [ratesDate, setRatesDate] = useState("");
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
+
+  useEffect(() => {
+    if (visible) {
+      AsyncStorage.getItem("@sencillo/rates_timestamp").then((ts) => {
+        if (ts) {
+          const d = new Date(parseInt(ts, 10));
+          const day = d.getDate().toString().padStart(2, "0");
+          const month = d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
+          const hours = d.getHours().toString().padStart(2, "0");
+          const mins = d.getMinutes().toString().padStart(2, "0");
+          setRatesDate(`${day} ${month} ${hours}:${mins}`);
+        }
+      });
+    }
+  }, [visible]);
 
   const conversions = useMemo(() => {
     const val = parseFloat(amount.replace(",", ".")) || 0;
@@ -82,13 +99,12 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
   };
 
   const rateItems = [
-    { label: "BCV", sub: "Tasa oficial", value: rates.bcv, unit: "Bs/$" },
-    { label: "Paralelo", sub: "USDC / P2P", value: rates.parallel, unit: "Bs/$" },
-    { label: "BCV EUR", sub: "Euro oficial", value: rates.eur, unit: "Bs/\u20AC" },
-    { label: "EUR/USD", sub: "Cruce", value: rates.eurCross, unit: "$/\u20AC" },
+    { label: "BCV", value: rates.bcv, unit: "Bs/$" },
+    { label: "Paralelo", value: rates.parallel, unit: "Bs/$" },
+    { label: "BCV EUR", value: rates.eur, unit: "Bs/\u20AC" },
+    { label: "EUR/USD", value: rates.eurCross, unit: "$/\u20AC" },
     {
       label: "Brecha",
-      sub: "Par. vs BCV",
       value: rates.bcv && rates.parallel ? ((rates.parallel - rates.bcv) / rates.bcv) * 100 : 0,
       unit: "%",
     },
@@ -100,23 +116,34 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates }: Pro
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.handleBar} />
 
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Tasas y Convertidor</Text>
-            <Pressable onPress={handleClose} hitSlop={12}>
-              <Ionicons name="close" size={24} color={Colors.text.secondary} />
-            </Pressable>
-          </View>
+          <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
+            <Ionicons name="close" size={24} color={Colors.text.secondary} />
+          </Pressable>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
-            <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
-            <View style={styles.ratesGrid}>
-              {rateItems.map((r) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
+              {ratesDate ? <Text style={styles.sectionDate}>{ratesDate}</Text> : null}
+            </View>
+            <View style={styles.ratesRow}>
+              {rateItems.slice(0, 3).map((r) => (
                 <View key={r.label} style={styles.rateItem}>
                   <Text style={styles.rateValue}>
                     {r.unit === "%" ? `${r.value.toFixed(1)}%` : r.value.toFixed(2)}
                   </Text>
                   <Text style={styles.rateLabel}>{r.label}</Text>
-                  <Text style={styles.rateSub}>{r.unit !== "%" ? r.unit : r.sub}</Text>
+                  <Text style={styles.rateSub}>{r.unit}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.ratesRow}>
+              {rateItems.slice(3).map((r) => (
+                <View key={r.label} style={styles.rateItem}>
+                  <Text style={styles.rateValue}>
+                    {r.unit === "%" ? `${r.value.toFixed(1)}%` : r.value.toFixed(2)}
+                  </Text>
+                  <Text style={styles.rateLabel}>{r.label}</Text>
+                  <Text style={styles.rateSub}>{r.unit === "%" ? "Par. vs BCV" : r.unit}</Text>
                 </View>
               ))}
             </View>
@@ -202,54 +229,51 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)",
     alignSelf: "center" as const,
     marginTop: 10,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  sheetHeader: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
+  closeBtn: {
+    alignSelf: "flex-end" as const,
     paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderSubtle,
-  },
-  sheetTitle: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 18,
-    color: Colors.text.primary,
+    paddingVertical: 8,
   },
   scrollContent: {
     paddingHorizontal: 24,
+  },
+  sectionHeader: {
+    flexDirection: "row" as const,
+    alignItems: "baseline" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 10,
   },
   sectionLabel: {
     fontFamily: "Outfit_700Bold",
     fontSize: 10,
     color: Colors.text.muted,
     letterSpacing: 1.5,
-    marginBottom: 12,
-    marginTop: 20,
   },
-  ratesGrid: {
+  sectionDate: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 10,
+    color: Colors.text.disabled,
+  },
+  ratesRow: {
     flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 0,
   },
   rateItem: {
-    width: "50%" as any,
-    paddingVertical: 10,
-    paddingRight: 8,
+    flex: 1,
+    paddingVertical: 6,
   },
   rateValue: {
     fontFamily: "Outfit_800ExtraBold",
-    fontSize: 20,
+    fontSize: 18,
     color: Colors.text.primary,
     letterSpacing: -0.5,
   },
   rateLabel: {
     fontFamily: "Outfit_700Bold",
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.text.secondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   rateSub: {
     fontFamily: "Outfit_400Regular",
@@ -259,11 +283,13 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: Colors.dark.borderSubtle,
-    marginTop: 16,
+    marginTop: 12,
+    marginBottom: 4,
   },
   currencyPicker: {
     flexDirection: "row" as const,
     gap: 8,
+    marginTop: 10,
     marginBottom: 14,
   },
   currencyChip: {
