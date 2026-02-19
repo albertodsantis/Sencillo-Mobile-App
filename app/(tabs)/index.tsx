@@ -436,7 +436,11 @@ export default function HomeScreen() {
               />
             </Pressable>
             <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
-              <Ionicons name="help-circle-outline" size={26} color={Colors.text.muted} />
+              <Ionicons
+                name="help-circle-outline"
+                size={28}
+                color={Colors.text.muted}
+              />
             </Pressable>
           </View>
         </View>
