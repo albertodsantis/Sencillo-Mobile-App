@@ -1,29 +1,59 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../utils/supabase';
 import { type Rates } from '../domain/types';
 
-const KEY_RATES = '@sencillo/rates';
-const KEY_TIMESTAMP = '@sencillo/rates_timestamp';
+type RatesRow = {
+  bcv: number | string;
+  parallel: number | string;
+  eur: number | string;
+  eur_cross: number | string;
+  rates_timestamp: string;
+};
 
 export const RatesRepository = {
   async get(): Promise<Rates | null> {
     try {
-      const data = await AsyncStorage.getItem(KEY_RATES);
-      return data ? JSON.parse(data) : null;
+      const { data, error } = await supabase
+        .from('rates')
+        .select('bcv, parallel, eur, eur_cross, rates_timestamp')
+        .maybeSingle();
+
+      if (error || !data) return null;
+
+      const row = data as RatesRow;
+      return {
+        bcv: Number(row.bcv),
+        parallel: Number(row.parallel),
+        eur: Number(row.eur),
+        eurCross: Number(row.eur_cross),
+      };
     } catch {
       return null;
     }
   },
 
   async save(rates: Rates): Promise<void> {
-    await AsyncStorage.setItem(KEY_RATES, JSON.stringify(rates));
-    await AsyncStorage.setItem(KEY_TIMESTAMP, Date.now().toString());
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+    if (!userId) return;
+
+    await supabase.from('rates').upsert(
+      {
+        user_id: userId,
+        bcv: rates.bcv,
+        parallel: rates.parallel,
+        eur: rates.eur,
+        eur_cross: rates.eurCross,
+        rates_timestamp: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    );
   },
 
   async getAge(): Promise<number> {
     try {
-      const ts = await AsyncStorage.getItem(KEY_TIMESTAMP);
-      if (!ts) return Infinity;
-      return Date.now() - parseInt(ts, 10);
+      const timestamp = await this.getTimestamp();
+      if (!timestamp) return Infinity;
+      return Date.now() - timestamp;
     } catch {
       return Infinity;
     }
@@ -31,9 +61,10 @@ export const RatesRepository = {
 
   async getTimestamp(): Promise<number | null> {
     try {
-      const ts = await AsyncStorage.getItem(KEY_TIMESTAMP);
-      if (!ts) return null;
-      const parsed = parseInt(ts, 10);
+      const { data, error } = await supabase.from('rates').select('rates_timestamp').maybeSingle();
+      if (error || !data?.rates_timestamp) return null;
+
+      const parsed = Date.parse(data.rates_timestamp as string);
       return Number.isNaN(parsed) ? null : parsed;
     } catch {
       return null;
@@ -41,6 +72,9 @@ export const RatesRepository = {
   },
 
   async clear(): Promise<void> {
-    await AsyncStorage.multiRemove([KEY_RATES, KEY_TIMESTAMP]);
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+    if (!userId) return;
+    await supabase.from('rates').delete().eq('user_id', userId);
   },
 };

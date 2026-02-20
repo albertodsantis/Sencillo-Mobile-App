@@ -1,23 +1,48 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../utils/supabase';
 import { type Budgets } from '../domain/types';
 
-const KEY = '@sencillo/budgets';
+type BudgetRow = { category: string; amount: number | string };
+
+async function getCurrentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
 
 export const BudgetRepository = {
   async get(): Promise<Budgets> {
     try {
-      const data = await AsyncStorage.getItem(KEY);
-      return data ? JSON.parse(data) : {};
+      const { data, error } = await supabase.from('budgets').select('category, amount');
+      if (error || !data) return {};
+
+      return (data as BudgetRow[]).reduce<Budgets>((acc, row) => {
+        acc[row.category] = Number(row.amount);
+        return acc;
+      }, {});
     } catch {
       return {};
     }
   },
 
   async save(budgets: Budgets): Promise<void> {
-    await AsyncStorage.setItem(KEY, JSON.stringify(budgets));
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    await supabase.from('budgets').delete().eq('user_id', userId);
+    const entries = Object.entries(budgets);
+    if (entries.length === 0) return;
+
+    await supabase.from('budgets').insert(
+      entries.map(([category, amount]) => ({
+        user_id: userId,
+        category,
+        amount,
+      })),
+    );
   },
 
   async clear(): Promise<void> {
-    await AsyncStorage.removeItem(KEY);
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+    await supabase.from('budgets').delete().eq('user_id', userId);
   },
 };
