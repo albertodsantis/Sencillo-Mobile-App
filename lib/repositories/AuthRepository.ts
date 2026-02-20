@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../utils/supabase';
 import type { User } from '@supabase/supabase-js';
+import { ProfileRepository } from './ProfileRepository';
+import type { UserProfile } from '../domain/types';
 
 const SESSION_KEY = '@sencillo/auth_user';
 
@@ -20,6 +22,35 @@ function mapSupabaseUserToAuthUser(user: User): AuthUser {
     email: user.email ?? '',
     avatar: user.user_metadata?.avatar_url as string | undefined,
     provider: 'local',
+  };
+}
+
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) return { firstName: '', lastName: '' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+  };
+}
+
+function buildProfileFromRegistration(name: string, email: string, password: string): UserProfile {
+  const normalizedName = name.trim();
+  const { firstName, lastName } = splitName(normalizedName);
+
+  return {
+    firstName,
+    lastName,
+    phonePrefix: '+58',
+    phoneNumber: '',
+    email,
+    password,
   };
 }
 
@@ -84,6 +115,14 @@ export const AuthRepository = {
 
     const user = mapSupabaseUserToAuthUser(data.user);
     await this.persistSession(user);
+
+    try {
+      const profile = buildProfileFromRegistration(normalizedName, normalizedEmail, password);
+      await ProfileRepository.save(profile);
+    } catch (profileError) {
+      console.warn('No se pudo guardar el perfil inicial en Supabase:', profileError);
+    }
+
     return { success: true, user };
   },
 
