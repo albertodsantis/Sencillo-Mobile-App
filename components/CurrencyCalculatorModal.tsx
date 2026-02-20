@@ -67,8 +67,17 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     setRatesDate(`${day} ${month} ${hours}:${mins}`);
   }, [visible, ratesTimestamp]);
 
+  const handleAmountChange = (text: string) => {
+    const normalized = text.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+    const [intPart, ...rest] = normalized.split(".");
+    const sanitized = rest.length > 0 ? `${intPart}.${rest.join("")}` : intPart;
+
+    setAmount(sanitized);
+  };
+
   const conversions = useMemo(() => {
-    const val = parseFloat(amount.replace(",", ".")) || 0;
+    const parsedValue = Number.parseFloat(amount);
+    const val = Number.isFinite(parsedValue) ? parsedValue : 0;
     const results: { key: string; label: string; symbol: string; value: number }[] = [];
 
     if (selectedCurrency === "USD") {
@@ -103,7 +112,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
   const brechaValue = rates.bcv && rates.parallel
     ? ((rates.parallel - rates.bcv) / rates.bcv) * 100
     : 0;
-  const brechaPositive = brechaValue > 0;
+  const safeBrechaValue = Number.isFinite(brechaValue) ? brechaValue : 0;
+  const brechaPositive = safeBrechaValue > 0;
 
   const slideAnim = useRef(new Animated.Value(-Dimensions.get("window").height)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
@@ -125,7 +135,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [overlayAnim, slideAnim, visible]);
 
   const animateClose = () => {
     Animated.parallel([
@@ -205,7 +215,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                 Brecha cambiaria
               </Text>
               <Text style={[styles.brechaValue, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
-                {brechaPositive ? "+" : ""}{brechaValue.toFixed(1)}%
+                {brechaPositive ? "+" : ""}{safeBrechaValue.toFixed(1)}%
               </Text>
             </View>
 
@@ -242,7 +252,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
               <TextInput
                 style={styles.amountInput}
                 value={amount}
-                onChangeText={setAmount}
+                onChangeText={handleAmountChange}
                 placeholder="0.00"
                 placeholderTextColor={Colors.text.disabled}
                 keyboardType="decimal-pad"

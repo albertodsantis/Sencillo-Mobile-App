@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
-import { type Segment, SEGMENT_CONFIG } from "@/lib/domain/types";
+import { type Segment, type PnlStructure, SEGMENT_CONFIG } from "@/lib/domain/types";
 
 const SEGMENTS: Segment[] = [
   "ingresos",
@@ -35,8 +35,8 @@ function CategoryRow({
   cat: string;
   segment: Segment;
   segColor: string;
-  pnlStructure: Record<string, string[]>;
-  updatePnlStructure: (s: Record<string, string[]>) => Promise<void>;
+  pnlStructure: PnlStructure;
+  updatePnlStructure: (s: PnlStructure) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(cat);
