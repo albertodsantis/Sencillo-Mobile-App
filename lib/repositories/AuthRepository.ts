@@ -75,6 +75,13 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo crear la cuenta' };
     }
 
+    if (!data.session) {
+      return {
+        success: false,
+        error: 'Tu cuenta fue creada. Verifica tu correo y luego inicia sesion para guardar transacciones.',
+      };
+    }
+
     const user = mapSupabaseUserToAuthUser(data.user);
     await this.persistSession(user);
     return { success: true, user };
