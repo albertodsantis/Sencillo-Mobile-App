@@ -4,7 +4,7 @@
     "slug": "sencillo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon_app.png",
     "scheme": "sencillo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
