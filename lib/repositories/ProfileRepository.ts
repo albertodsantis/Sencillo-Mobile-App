@@ -29,9 +29,13 @@ function mapProfile(row: ProfileRow): UserProfile {
 export const ProfileRepository = {
   async get(): Promise<UserProfile> {
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) return DEFAULT_PROFILE;
+
       const { data, error } = await supabase
         .from('profiles')
         .select('first_name, last_name, phone_prefix, phone_number, email, password')
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error || !data) return DEFAULT_PROFILE;
