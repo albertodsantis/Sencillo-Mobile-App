@@ -410,19 +410,29 @@ export default function TransactionModal() {
       category,
       description,
       date: new Date(date + "T12:00:00").toISOString(),
-      profileId: "default",
+      profileId: "",
     };
 
-    if (editingTx) {
-      await updateTx({ ...editingTx, ...txData });
-    } else {
-      if (recurrence !== "none") {
-        const recDates = generateRecurrences(txData.date, recurrence);
-        const allTxs = [txData, ...recDates.map((d) => ({ ...txData, date: d }))];
-        await addMultipleTx(allTxs);
+    try {
+      if (editingTx) {
+        await updateTx({ ...editingTx, ...txData });
       } else {
-        await addTx(txData);
+        if (recurrence !== "none") {
+          const recDates = generateRecurrences(txData.date, recurrence);
+          const allTxs = [txData, ...recDates.map((d) => ({ ...txData, date: d }))];
+          await addMultipleTx(allTxs);
+        } else {
+          await addTx(txData);
+        }
       }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "No se pudo guardar la transaccion";
+      if (Platform.OS === "web") {
+        alert(msg);
+      } else {
+        Alert.alert("Error", msg);
+      }
+      return;
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
