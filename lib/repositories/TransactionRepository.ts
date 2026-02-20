@@ -82,7 +82,7 @@ export const TransactionRepository = {
       return { ...tx, id: '' };
     }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('transactions')
       .insert({
         user_id: userId,
@@ -100,8 +100,12 @@ export const TransactionRepository = {
       .select('id, type, segment, amount, currency, original_rate, amount_usd, category, description, date, profile_id')
       .single();
 
+    if (error) {
+      throw new Error(error.message || 'No se pudo guardar la transaccion');
+    }
+
     if (!data) {
-      return { ...tx, id: '' };
+      throw new Error('No se pudo guardar la transaccion');
     }
 
     return mapTransactionRow(data as TransactionRow);
@@ -130,7 +134,14 @@ export const TransactionRepository = {
       .insert(payload)
       .select('id, type, segment, amount, currency, original_rate, amount_usd, category, description, date, profile_id');
 
-    if (error || !data) return [];
+    if (error) {
+      throw new Error(error.message || 'No se pudieron guardar las transacciones');
+    }
+
+    if (!data) {
+      throw new Error('No se pudieron guardar las transacciones');
+    }
+
     return (data as TransactionRow[]).map(mapTransactionRow);
   },
 
