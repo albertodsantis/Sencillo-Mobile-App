@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   ScrollView,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,7 +27,7 @@ type Mode = "login" | "signup";
 
 function LoginContent() {
   const insets = useSafeAreaInsets();
-  const { signInWithEmail, signUpWithEmail } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -62,11 +63,27 @@ function LoginContent() {
 
   const handleGooglePress = async () => {
     setError("");
-    if (Platform.OS !== "web")
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setError(
-      "Google Sign-In requiere configuracion adicional. Usa email y contrasena por ahora.",
-    );
+    }
+
+    setLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (!result.success && result.error) {
+        setError(result.error);
+        Alert.alert("Google Sign-In", result.error);
+        if (Platform.OS !== "web") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+      }
+    } catch {
+      const genericError = "Algo salio mal con Google Sign-In. Intenta de nuevo.";
+      setError(genericError);
+      Alert.alert("Google Sign-In", genericError);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApplePress = async () => {

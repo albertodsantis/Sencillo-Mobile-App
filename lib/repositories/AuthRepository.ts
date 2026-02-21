@@ -1,10 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../utils/supabase';
 import type { User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import { ProfileRepository } from './ProfileRepository';
 import type { UserProfile } from '../domain/types';
 
 const SESSION_KEY = '@sencillo/auth_user';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export interface AuthUser {
   id: string;
@@ -16,12 +21,14 @@ export interface AuthUser {
 
 function mapSupabaseUserToAuthUser(user: User): AuthUser {
   const fallbackName = user.email ? user.email.split('@')[0] : 'Usuario';
+  const provider = user.app_metadata?.provider === 'google' ? 'google' : 'local';
+
   return {
     id: user.id,
     name: (user.user_metadata?.name as string | undefined)?.trim() || fallbackName,
     email: user.email ?? '',
     avatar: user.user_metadata?.avatar_url as string | undefined,
-    provider: 'local',
+    provider,
   };
 }
 
@@ -156,20 +163,57 @@ export const AuthRepository = {
     return { success: true, user };
   },
 
-  async loginWithGoogle(googleUser: {
-    name: string;
-    email: string;
-    avatar?: string;
-  }): Promise<AuthUser> {
-    const user: AuthUser = {
-      id: 'google_' + googleUser.email,
-      name: googleUser.name,
-      email: googleUser.email,
-      avatar: googleUser.avatar,
+  async loginWithGoogle(): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    const redirectTo = makeRedirectUri({
+      scheme: 'sencillo',
+      path: 'auth/callback',
+    });
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-    };
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+      },
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (!data?.url) {
+      return { success: false, error: 'No se pudo iniciar Google Sign-In' };
+    }
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+    if (result.type !== 'success' || !result.url) {
+      if (result.type === 'dismiss' || result.type === 'cancel') {
+        return { success: false, error: 'Inicio de sesion cancelado' };
+      }
+      return { success: false, error: 'No se pudo completar Google Sign-In' };
+    }
+
+    const { queryParams } = Linking.parse(result.url);
+    const code = queryParams?.code;
+
+    if (typeof code !== 'string' || !code) {
+      return { success: false, error: 'No se recibio codigo de autenticacion de Google' };
+    }
+
+    const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (exchangeError) {
+      return { success: false, error: exchangeError.message };
+    }
+
+    if (!sessionData.user) {
+      return { success: false, error: 'No se pudo iniciar sesion con Google' };
+    }
+
+    const user = mapSupabaseUserToAuthUser(sessionData.user);
     await this.persistSession(user);
-    return user;
+    return { success: true, user };
   },
 
   async logout(): Promise<void> {
