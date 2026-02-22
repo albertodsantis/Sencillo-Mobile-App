@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../utils/supabase';
 import type { User } from '@supabase/supabase-js';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { ProfileRepository } from './ProfileRepository';
@@ -170,6 +169,7 @@ export const AuthRepository = {
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
+        skipBrowserRedirect: true,
       },
     });
 
@@ -181,26 +181,22 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo iniciar Google Sign-In' };
     }
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
-    if (result.type !== 'success' || !result.url) {
-      if (result.type === 'dismiss' || result.type === 'cancel') {
+    if (res.type !== 'success' || !res.url) {
+      if (res.type === 'dismiss' || res.type === 'cancel') {
         return { success: false, error: 'Inicio de sesion cancelado' };
       }
       return { success: false, error: 'No se pudo completar Google Sign-In' };
     }
 
-    const { queryParams } = Linking.parse(result.url);
-    const code = queryParams?.code;
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSessionFromUrl({
+      storeSession: true,
+      url: res.url,
+    });
 
-    if (typeof code !== 'string' || !code) {
-      return { success: false, error: 'No se recibio codigo de autenticacion de Google' };
-    }
-
-    const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (exchangeError) {
-      return { success: false, error: exchangeError.message };
+    if (sessionError) {
+      return { success: false, error: sessionError.message };
     }
 
     if (!sessionData.user) {
