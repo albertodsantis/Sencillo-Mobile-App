@@ -164,16 +164,12 @@ export const AuthRepository = {
   },
 
   async loginWithGoogle(): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-    const redirectTo = makeRedirectUri({
-      scheme: 'sencillo',
-      path: 'auth/callback',
-    });
+    const redirectUrl = makeRedirectUri();
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
-        skipBrowserRedirect: true,
+        redirectTo: redirectUrl,
       },
     });
 
@@ -185,7 +181,7 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo iniciar Google Sign-In' };
     }
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
     if (result.type !== 'success' || !result.url) {
       if (result.type === 'dismiss' || result.type === 'cancel') {
