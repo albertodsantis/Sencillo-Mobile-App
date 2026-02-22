@@ -8,7 +8,7 @@ interface AuthContextValue {
   isLoading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: (googleUser: { name: string; email: string; avatar?: string }) => Promise<void>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -46,9 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: result.success, error: result.error };
   }, []);
 
-  const signInWithGoogle = useCallback(async (googleUser: { name: string; email: string; avatar?: string }) => {
-    const authUser = await AuthRepository.loginWithGoogle(googleUser);
-    setUser(authUser);
+  const signInWithGoogle = useCallback(async () => {
+    const result = await AuthRepository.loginWithGoogle();
+    if (result.success && result.user) {
+      setUser(result.user);
+    }
+    return { success: result.success, error: result.error };
   }, []);
 
   const signOut = useCallback(async () => {
