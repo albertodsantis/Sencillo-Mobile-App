@@ -83,11 +83,11 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     if (selectedCurrency === "USD") {
       results.push({ key: "VES_BCV", label: "Bs (BCV)", symbol: "Bs", value: val * rates.bcv });
       results.push({ key: "VES_PAR", label: "Bs (Paralelo)", symbol: "Bs", value: val * rates.parallel });
-      results.push({ key: "EUR", label: "Euro", symbol: "\u20AC", value: rates.eurCross > 0 ? val / rates.eurCross : 0 });
+      results.push({ key: "EUR", label: "Euro", symbol: "€", value: rates.eurCross > 0 ? val / rates.eurCross : 0 });
     } else if (selectedCurrency === "VES") {
       results.push({ key: "USD_BCV", label: "USD (BCV)", symbol: "$", value: rates.bcv > 0 ? val / rates.bcv : 0 });
       results.push({ key: "USD_PAR", label: "USD (Paralelo)", symbol: "$", value: rates.parallel > 0 ? val / rates.parallel : 0 });
-      results.push({ key: "EUR", label: "Euro", symbol: "\u20AC", value: rates.eur > 0 ? val / rates.eur : 0 });
+      results.push({ key: "EUR", label: "Euro", symbol: "€", value: rates.eur > 0 ? val / rates.eur : 0 });
     } else {
       results.push({ key: "USD", label: "Dolar", symbol: "$", value: val * (rates.eurCross || 0) });
       results.push({ key: "VES_BCV", label: "Bs (BCV)", symbol: "Bs", value: val * rates.eur });
@@ -205,7 +205,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text style={styles.rateCardFlag}>FX</Text>
                 </View>
                 <Text style={styles.rateCardValue}>{rates.eurCross.toFixed(2)}</Text>
-                <Text style={styles.rateCardUnit}>$/\u20AC</Text>
+                <Text style={styles.rateCardUnit}>$/€</Text>
               </View>
             </View>
 
