@@ -7,6 +7,7 @@ import { ProfileRepository } from './ProfileRepository';
 import type { UserProfile } from '../domain/types';
 
 const SESSION_KEY = '@sencillo/auth_user';
+const GOOGLE_AUTH_REDIRECT_PATH = 'auth/callback';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -163,7 +164,10 @@ export const AuthRepository = {
   },
 
   async loginWithGoogle(): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-    const redirectUrl = makeRedirectUri();
+    const redirectUrl = makeRedirectUri({
+      scheme: 'sencillo',
+      path: GOOGLE_AUTH_REDIRECT_PATH,
+    });
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
