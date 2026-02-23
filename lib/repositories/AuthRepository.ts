@@ -60,6 +60,34 @@ function buildProfileFromRegistration(name: string, email: string, password: str
   };
 }
 
+async function ensureInitialProfile(user: User, password = ''): Promise<void> {
+  const { data: existingProfile, error: profileCheckError } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (profileCheckError || existingProfile) {
+    return;
+  }
+
+  const normalizedEmail = user.email?.toLowerCase().trim() ?? '';
+  const displayName = (user.user_metadata?.name as string | undefined)?.trim() ||
+    normalizedEmail.split('@')[0] ||
+    'Usuario';
+  const { firstName, lastName } = splitName(displayName);
+
+  await supabase.from('profiles').insert({
+    user_id: user.id,
+    first_name: firstName,
+    last_name: lastName,
+    phone_prefix: '+58',
+    phone_number: '',
+    email: normalizedEmail,
+    password,
+  });
+}
+
 export const AuthRepository = {
   async getSession(): Promise<AuthUser | null> {
     try {
@@ -159,6 +187,13 @@ export const AuthRepository = {
 
     const user: AuthUser = mapSupabaseUserToAuthUser(data.user);
     await this.persistSession(user);
+
+    try {
+      await ensureInitialProfile(data.user, password);
+    } catch (profileError) {
+      console.warn('No se pudo asegurar el perfil para este usuario:', profileError);
+    }
+
     return { success: true, user };
   },
 
@@ -217,6 +252,13 @@ export const AuthRepository = {
 
     const user = mapSupabaseUserToAuthUser(sessionData.user);
     await this.persistSession(user);
+
+    try {
+      await ensureInitialProfile(sessionData.user);
+    } catch (profileError) {
+      console.warn('No se pudo asegurar el perfil para usuario de Google:', profileError);
+    }
+
     return { success: true, user };
   },
 
