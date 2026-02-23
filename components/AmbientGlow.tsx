@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
-import Svg, { Defs, RadialGradient, Stop, Rect, Ellipse } from "react-native-svg";
+import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg";
 import Colors from "@/constants/colors";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
