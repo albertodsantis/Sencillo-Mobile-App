@@ -113,7 +113,6 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     ? ((rates.parallel - rates.bcv) / rates.bcv) * 100
     : 0;
   const safeBrechaValue = Number.isFinite(brechaValue) ? brechaValue : 0;
-  const brechaPositive = safeBrechaValue > 0;
 
   const slideAnim = useRef(new Animated.Value(-Dimensions.get("window").height)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
@@ -211,11 +210,11 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
             </View>
 
             <View style={styles.brechaRow}>
-              <Text style={[styles.brechaLabel, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
+              <Text style={styles.brechaLabel}>
                 Brecha cambiaria
               </Text>
-              <Text style={[styles.brechaValue, { color: brechaPositive ? "#fb923c" : "#60a5fa" }]}>
-                {brechaPositive ? "+" : ""}{safeBrechaValue.toFixed(1)}%
+              <Text style={styles.brechaValue}>
+                {safeBrechaValue > 0 ? "+" : ""}{safeBrechaValue.toFixed(1)}%
               </Text>
             </View>
 
@@ -385,11 +384,13 @@ const styles = StyleSheet.create({
   brechaLabel: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 12,
+    color: Colors.text.muted,
   },
   brechaValue: {
     fontFamily: "Outfit_700Bold",
     fontSize: 14,
     letterSpacing: -0.3,
+    color: Colors.text.secondary,
   },
   divider: {
     height: 1,
