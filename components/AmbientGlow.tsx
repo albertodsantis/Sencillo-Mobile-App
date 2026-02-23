@@ -18,7 +18,7 @@ interface AmbientGlowProps {
 
 export default function AmbientGlow({
   color = Colors.brand.DEFAULT,
-  intensity = 0.24,
+  intensity = 0.20,
 }: AmbientGlowProps) {
   const clampOpacity = (value: number) => Math.min(Math.max(value, 0), 0.8);
 
