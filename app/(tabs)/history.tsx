@@ -318,12 +318,10 @@ const styles = StyleSheet.create({
   filterBar: {
     flexDirection: "row" as const,
     marginHorizontal: 24,
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: "rgba(15, 23, 42, 0.55)",
     borderRadius: 14,
     padding: 4,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.dark.borderSubtle,
   },
   filterBtn: {
     flex: 1,
