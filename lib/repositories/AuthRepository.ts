@@ -3,6 +3,7 @@ import { supabase } from '../../utils/supabase';
 import type { User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import { ProfileRepository } from './ProfileRepository';
 import type { UserProfile } from '../domain/types';
 
@@ -194,9 +195,21 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo completar Google Sign-In' };
     }
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSessionFromUrl({
-      storeSession: true,
-      url: res.url,
+    const { params, errorCode } = QueryParams.getQueryParams(res.url);
+
+    if (errorCode) {
+      throw new Error(errorCode);
+    }
+
+    const { access_token, refresh_token } = params;
+
+    if (!access_token) {
+      return { success: false, error: 'No se pudo obtener el token de acceso de Google' };
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token,
     });
 
     if (sessionError) {
