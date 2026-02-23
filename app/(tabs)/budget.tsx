@@ -768,10 +768,12 @@ const styles = StyleSheet.create({
   },
   segmentControl: {
     flexDirection: "row" as const,
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: "rgba(15, 23, 42, 0.55)",
     borderRadius: 16,
     padding: 4,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   segmentButton: {
     flex: 1,
