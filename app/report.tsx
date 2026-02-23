@@ -20,7 +20,6 @@ import {
 import {
   computePnLReport,
   getLocalDateString,
-  formatCurrency,
 } from "@/lib/domain/finance";
 
 const GRANULARITIES: { id: Granularity; label: string }[] = [

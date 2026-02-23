@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -24,9 +24,8 @@ import { useApp } from "@/lib/context/AppContext";
 import {
   type ViewMode,
   type Segment,
-  type Transaction,
 } from "@/lib/domain/types";
-import { formatCurrency, formatCompact } from "@/lib/domain/finance";
+import { formatCurrency } from "@/lib/domain/finance";
 
 const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: "month", label: "Mes" },
@@ -263,9 +262,6 @@ export default function HomeScreen() {
   const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
-
-  const totalExpenses =
-    dashboardData.gastosFijos + dashboardData.gastosVariables;
 
   const filteredByPeriod = useMemo(() => {
     return transactions.filter((t) => {
