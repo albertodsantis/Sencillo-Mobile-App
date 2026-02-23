@@ -165,9 +165,8 @@ export const AuthRepository = {
 
   async loginWithGoogle(): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     const redirectUrl = makeRedirectUri({
-      path: GOOGLE_AUTH_REDIRECT_PATH,
       scheme: 'sencillo',
-      native: `sencillo://${GOOGLE_AUTH_REDIRECT_PATH}`,
+      path: GOOGLE_AUTH_REDIRECT_PATH,
     });
 
     const { data, error } = await supabase.auth.signInWithOAuth({
