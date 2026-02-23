@@ -23,6 +23,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.brand.DEFAULT,
         tabBarInactiveTintColor: Colors.text.muted,
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute" as const,
           backgroundColor: Platform.select({
@@ -44,11 +45,6 @@ export default function TabLayout() {
               style={StyleSheet.absoluteFill}
             />
           ) : null,
-        tabBarLabelStyle: {
-          fontFamily: "Outfit_600SemiBold",
-          fontSize: 10,
-          marginTop: 2,
-        },
       }}
     >
       <Tabs.Screen
