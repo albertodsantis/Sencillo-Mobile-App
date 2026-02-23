@@ -33,7 +33,7 @@ interface CurrencyOption {
 const CURRENCIES: CurrencyOption[] = [
   { key: "USD", label: "Dolar", symbol: "$" },
   { key: "VES", label: "Bolivares", symbol: "Bs" },
-  { key: "EUR", label: "Euro", symbol: "\u20AC" },
+  { key: "EUR", label: "Euro", symbol: "€" },
 ];
 
 interface Props {
