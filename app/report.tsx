@@ -20,6 +20,8 @@ import {
 import {
   computePnLReport,
   getLocalDateString,
+  convertUSDToDisplayCurrency,
+  getDisplayCurrencySymbol,
 } from "@/lib/domain/finance";
 
 const GRANULARITIES: { id: Granularity; label: string }[] = [
@@ -32,7 +34,7 @@ const GRANULARITIES: { id: Granularity; label: string }[] = [
 export default function ReportScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { transactions, rates } = useApp();
+  const { transactions, rates, displayCurrency } = useApp();
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -104,6 +106,10 @@ export default function ReportScreen() {
     [transactions, periods, granularity, startDate, endDate, rates]
   );
 
+  const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
+  const toDisplayRounded = (value: number) =>
+    Math.round(convertUSDToDisplayCurrency(value, displayCurrency, rates)).toLocaleString();
+
   const segmentOrder: Segment[] = [
     "ingresos",
     "ahorro",
@@ -122,7 +128,7 @@ export default function ReportScreen() {
           />
         </Pressable>
         <Text style={styles.title}>Reporte P&L</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.currencyBadge}>{displayCurrency}</Text>
       </View>
 
       <View style={styles.granularityRow}>
@@ -207,7 +213,7 @@ export default function ReportScreen() {
                             <Text style={styles.cellText}>
                               {values[p.id] === 0
                                 ? "-"
-                                : Math.round(values[p.id]).toLocaleString()}
+                                : `${currencySymbol}${toDisplayRounded(values[p.id])}`}
                             </Text>
                           </View>
                         ))}
@@ -224,9 +230,7 @@ export default function ReportScreen() {
                     {periods.map((p) => (
                       <View key={p.id} style={styles.periodCol}>
                         <Text style={styles.totalCellText}>
-                          {Math.round(
-                            totals[p.id] || 0
-                          ).toLocaleString()}
+                          {`${currencySymbol}${toDisplayRounded(totals[p.id] || 0)}`}
                         </Text>
                       </View>
                     ))}
@@ -242,9 +246,7 @@ export default function ReportScreen() {
                       {periods.map((p) => (
                         <View key={p.id} style={styles.periodCol}>
                           <Text style={styles.availableCellText}>
-                            {Math.round(
-                              reportData.available?.[p.id] || 0
-                            ).toLocaleString()}
+                            {`${currencySymbol}${toDisplayRounded(reportData.available?.[p.id] || 0)}`}
                           </Text>
                         </View>
                       ))}
@@ -261,9 +263,7 @@ export default function ReportScreen() {
                       {periods.map((p) => (
                         <View key={p.id} style={styles.periodCol}>
                           <Text style={styles.flexCellText}>
-                            {Math.round(
-                              reportData.flexibleAvailable?.[p.id] || 0
-                            ).toLocaleString()}
+                            {`${currencySymbol}${toDisplayRounded(reportData.flexibleAvailable?.[p.id] || 0)}`}
                           </Text>
                         </View>
                       ))}
@@ -287,7 +287,7 @@ export default function ReportScreen() {
                         { color: val >= 0 ? Colors.brand.light : "#ef4444" },
                       ]}
                     >
-                      {Math.round(val).toLocaleString()}
+                      {`${currencySymbol}${toDisplayRounded(val)}`}
                     </Text>
                   </View>
                 );
@@ -325,6 +325,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: Colors.text.primary,
     letterSpacing: -0.5,
+  },
+  currencyBadge: {
+    minWidth: 40,
+    textAlign: "center" as const,
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: Colors.text.muted,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    backgroundColor: Colors.dark.surface,
   },
   granularityRow: {
     flexDirection: "row" as const,

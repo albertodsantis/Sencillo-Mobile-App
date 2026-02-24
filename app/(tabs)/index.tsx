@@ -24,8 +24,10 @@ import { useApp } from "@/lib/context/AppContext";
 import {
   type ViewMode,
   type Segment,
+  type DisplayCurrency,
+  type Rates,
 } from "@/lib/domain/types";
-import { formatCurrency } from "@/lib/domain/finance";
+import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol } from "@/lib/domain/finance";
 
 const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: "month", label: "Mes" },
@@ -99,6 +101,8 @@ function KpiCard({
   categories,
   onPress,
   hidden,
+  displayCurrency,
+  rates,
 }: {
   label: string;
   total: number;
@@ -111,8 +115,13 @@ function KpiCard({
   categories: CategoryStat[];
   onPress?: () => void;
   hidden?: boolean;
+  displayCurrency: DisplayCurrency;
+  rates: Rates;
 }) {
   const palette = SEGMENT_PALETTES[segment] || SEGMENT_PALETTES.ingresos;
+  const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
+  const totalDisplay = convertUSDToDisplayCurrency(total, displayCurrency, rates);
+  const hardDisplay = convertUSDToDisplayCurrency(hardAmount, displayCurrency, rates);
 
   return (
     <Pressable
@@ -135,8 +144,8 @@ function KpiCard({
         <View>
           <Text style={[styles.kpiCardTotal, { color }]} numberOfLines={1}>
             {hidden
-              ? "$ ••••"
-              : `$${Math.round(total).toLocaleString("en-US")}`}
+              ? `${currencySymbol} ••••`
+              : `${currencySymbol}${Math.round(totalDisplay).toLocaleString("en-US")}`}
           </Text>
         </View>
       </View>
@@ -144,12 +153,12 @@ function KpiCard({
       <View style={styles.kpiCurrencyRow}>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
           <Text style={[styles.kpiCurrencySymbol, { color: color + "90" }]}>
-            USD
+            {displayCurrency}
           </Text>
           <Text style={styles.kpiCurrencyVal}>
             {hidden
               ? "••••"
-              : `$${Math.round(hardAmount).toLocaleString("en-US")}`}
+              : `${currencySymbol}${Math.round(hardDisplay).toLocaleString("en-US")}`}
           </Text>
         </View>
         <View style={[styles.kpiCurrencyPill, { borderColor: color + "30" }]}>
@@ -219,8 +228,8 @@ function KpiCard({
                     </Text>
                     <Text style={styles.kpiAvgVal}>
                       {hidden
-                        ? "$ ••••"
-                        : `$${Math.round(cat.total / cat.count).toLocaleString("en-US")}`}
+                        ? `${currencySymbol} ••••`
+                        : `${currencySymbol}${Math.round(convertUSDToDisplayCurrency(cat.total / cat.count, displayCurrency, rates)).toLocaleString("en-US")}`}
                     </Text>
                     <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
                   </View>
@@ -256,6 +265,8 @@ export default function HomeScreen() {
     refreshRates,
     setHistoryFilter,
     profile,
+    displayCurrency,
+    setDisplayCurrency,
   } = useApp();
 
   const [showGuide, setShowGuide] = useState(false);
@@ -383,6 +394,13 @@ export default function HomeScreen() {
         ? "BALANCE ANUAL"
         : "BALANCE NETO";
 
+  const balanceDisplay = formatCurrency(
+    convertUSDToDisplayCurrency(dashboardData.balance, displayCurrency, rates),
+    2
+  );
+  const [balanceWhole = "0", balanceFraction = "00"] =
+    balanceDisplay.split(".");
+
   return (
     <View style={styles.container}>
       <AmbientGlow />
@@ -415,7 +433,20 @@ export default function HomeScreen() {
             <Text style={styles.headerTitle}>{displayName}</Text>
           </View>
           <View style={styles.headerRight}>
-            <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
+              hitSlop={8}
+              style={[styles.headerIconBtn, styles.currencyToggleBtn]}
+            >
+              <Text style={styles.currencyToggleText}>
+                {displayCurrency === "USD" ? "$" : "€"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setShowCalc(true)}
+              hitSlop={8}
+              style={styles.headerIconBtn}
+            >
               <Ionicons
                 name="calculator-outline"
                 size={24}
@@ -425,6 +456,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setHiddenBalances(!hiddenBalances)}
               hitSlop={8}
+              style={styles.headerIconBtn}
             >
               <Ionicons
                 name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
@@ -432,7 +464,11 @@ export default function HomeScreen() {
                 color={Colors.text.muted}
               />
             </Pressable>
-            <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setShowGuide(true)}
+              hitSlop={8}
+              style={styles.headerIconBtn}
+            >
               <Ionicons
                 name="help-circle-outline"
                 size={28}
@@ -490,15 +526,16 @@ export default function HomeScreen() {
         >
           <Text style={styles.balanceLabel}>{balanceLabel}</Text>
           {hiddenBalances ? (
-            <Text style={styles.balanceValue}>$ ••••••</Text>
+            <Text style={styles.balanceValue}>{`${getDisplayCurrencySymbol(displayCurrency)} ••••••`}</Text>
           ) : (
             <View style={styles.balanceRow}>
               <Text style={styles.balanceValue}>
-                ${formatCurrency(dashboardData.balance, 2).split(".")[0]}
+                {getDisplayCurrencySymbol(displayCurrency)}
+                {balanceWhole}
               </Text>
               <Text style={styles.balanceDecimals}>
                 .
-                {formatCurrency(dashboardData.balance, 2).split(".")[1] || "00"}
+                {balanceFraction}
               </Text>
             </View>
           )}
@@ -536,6 +573,8 @@ export default function HomeScreen() {
             categories={ingresosStats.categories}
             onPress={() => navigateToHistory("ingresos")}
             hidden={hiddenBalances}
+            displayCurrency={displayCurrency}
+            rates={rates}
           />
           <KpiCard
             label="Gastos Fijos"
@@ -555,6 +594,8 @@ export default function HomeScreen() {
             categories={fijoStats.categories}
             onPress={() => navigateToHistory("gastos")}
             hidden={hiddenBalances}
+            displayCurrency={displayCurrency}
+            rates={rates}
           />
           <KpiCard
             label="Gastos Variables"
@@ -574,6 +615,8 @@ export default function HomeScreen() {
             categories={varStats.categories}
             onPress={() => navigateToHistory("gastos")}
             hidden={hiddenBalances}
+            displayCurrency={displayCurrency}
+            rates={rates}
           />
           <KpiCard
             label="Ahorro"
@@ -593,6 +636,8 @@ export default function HomeScreen() {
             categories={ahorroStats.categories}
             onPress={() => navigateToHistory("ahorro")}
             hidden={hiddenBalances}
+            displayCurrency={displayCurrency}
+            rates={rates}
           />
         </ScrollView>
 
@@ -809,7 +854,26 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 20,
+    gap: 12,
+  },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  currencyToggleText: {
+    color: Colors.text.muted,
+    fontFamily: "Outfit_700Bold",
+    fontSize: 20,
+    lineHeight: 20,
+    verticalAlign: "middle" as const,
+  },
+  currencyToggleBtn: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: Colors.dark.borderSubtle,
   },
   helpBtn: {
     width: 40,

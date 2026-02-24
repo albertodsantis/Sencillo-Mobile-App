@@ -15,7 +15,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
-import { formatCurrency } from "@/lib/domain/finance";
+import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol } from "@/lib/domain/finance";
 import dayjs from "dayjs";
 
 function ProgressBar({
@@ -125,6 +125,8 @@ export default function BudgetScreen() {
     savingsGoals,
     updateSavingsGoals,
     transactions,
+    rates,
+    displayCurrency,
   } = useApp();
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -138,6 +140,8 @@ export default function BudgetScreen() {
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
+  const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
+  const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
 
   const variableCategories = pnlStructure.gastos_variables;
   const ahorroCategories = pnlStructure.ahorro;
@@ -331,10 +335,10 @@ export default function BudgetScreen() {
               <ProgressBar progress={overallProgress} color={overallColor} />
               <View style={styles.overallFooter}>
                 <Text style={styles.overallSpent}>
-                  Gastado: ${formatCurrency(budgetSummary.variableTotal)}
+                  Gastado: {currencySymbol}{formatCurrency(toDisplay(budgetSummary.variableTotal))}
                 </Text>
                 <Text style={styles.overallBudget}>
-                  Presupuesto: ${formatCurrency(budgetSummary.totalBudget)}
+                  Presupuesto: {currencySymbol}{formatCurrency(toDisplay(budgetSummary.totalBudget))}
                 </Text>
               </View>
             </View>
@@ -378,7 +382,7 @@ export default function BudgetScreen() {
                       value={editValue}
                       onChangeText={setEditValue}
                       keyboardType="decimal-pad"
-                      placeholder="Monto en USD"
+                      placeholder={`Monto en ${displayCurrency}`}
                       placeholderTextColor={Colors.text.disabled}
                       autoFocus
                     />
@@ -408,10 +412,10 @@ export default function BudgetScreen() {
                   >
                     <View style={styles.catValues}>
                       <Text style={styles.catSpent}>
-                        ${formatCurrency(spent)}
+                        {currencySymbol}{formatCurrency(toDisplay(spent))}
                       </Text>
                       <Text style={styles.catBudget}>
-                        / ${formatCurrency(budget)}
+                        / {currencySymbol}{formatCurrency(toDisplay(budget))}
                       </Text>
                     </View>
                     <ProgressBar
@@ -473,10 +477,10 @@ export default function BudgetScreen() {
             />
             <View style={styles.overallFooter}>
               <Text style={styles.overallSpent}>
-                Ahorrado: ${formatCurrency(totalSaved)}
+                Ahorrado: {currencySymbol}{formatCurrency(toDisplay(totalSaved))}
               </Text>
               <Text style={styles.overallBudget}>
-                Meta: ${formatCurrency(totalSavingsGoal)}
+                Meta: {currencySymbol}{formatCurrency(toDisplay(totalSavingsGoal))}
               </Text>
             </View>
           </View>
@@ -518,7 +522,7 @@ export default function BudgetScreen() {
                       value={goalValue}
                       onChangeText={setGoalValue}
                       keyboardType="decimal-pad"
-                      placeholder="Meta en USD"
+                      placeholder={`Meta en ${displayCurrency}`}
                       placeholderTextColor={Colors.text.disabled}
                       autoFocus
                     />
@@ -548,10 +552,10 @@ export default function BudgetScreen() {
                   >
                     <View style={styles.catValues}>
                       <Text style={styles.catSpent}>
-                        ${formatCurrency(saved)}
+                        {currencySymbol}{formatCurrency(toDisplay(saved))}
                       </Text>
                       <Text style={styles.catBudget}>
-                        / ${formatCurrency(goal)}
+                        / {currencySymbol}{formatCurrency(toDisplay(goal))}
                       </Text>
                     </View>
                     <ProgressBar

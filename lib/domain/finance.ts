@@ -3,6 +3,7 @@ import {
   type Transaction,
   type Rates,
   type Currency,
+  type DisplayCurrency,
   type RateType,
   type Segment,
   type ViewMode,
@@ -326,6 +327,20 @@ export function formatCurrency(value: number, decimals: number = 2): string {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+}
+
+export function convertUSDToDisplayCurrency(
+  valueUSD: number,
+  displayCurrency: DisplayCurrency,
+  rates: Rates,
+): number {
+  if (displayCurrency === 'USD') return valueUSD;
+  if (!rates.eurCross || rates.eurCross <= 0) return valueUSD;
+  return valueUSD / rates.eurCross;
+}
+
+export function getDisplayCurrencySymbol(displayCurrency: DisplayCurrency): string {
+  return displayCurrency === 'EUR' ? '€' : '$';
 }
 
 export function formatCompact(value: number): string {

@@ -33,6 +33,8 @@ import {
   generateRecurrences,
   getLocalDateString,
   formatCurrency,
+  convertUSDToDisplayCurrency,
+  getDisplayCurrencySymbol,
 } from "@/lib/domain/finance";
 
 const CURRENCIES: { id: Currency; label: string; symbol: string; fullLabel: string }[] = [
@@ -317,6 +319,7 @@ export default function TransactionModal() {
     addMultipleTx,
     updateTx,
     deleteTx,
+    displayCurrency,
   } = useApp();
 
   const editingTx = useMemo(
@@ -385,6 +388,12 @@ export default function TransactionModal() {
       customRate ? parseFloat(customRate) : undefined
     );
   }, [amount, currency, rates, rateType, customRate]);
+
+  const displayAmount = useMemo(
+    () => convertUSDToDisplayCurrency(amountUSD, displayCurrency, rates),
+    [amountUSD, displayCurrency, rates]
+  );
+  const displaySymbol = getDisplayCurrencySymbol(displayCurrency);
 
   const handleSave = useCallback(async () => {
     const amt = parseFloat(amount);
@@ -627,10 +636,10 @@ export default function TransactionModal() {
               onPress={() => setShowCategorySheet(true)}
               style={[
                 styles.inlineValueBox,
-                category ? {
+                {
                   borderColor: segColor,
                   backgroundColor: `${segColor}12`,
-                } : undefined,
+                },
               ]}
             >
               <View style={styles.inlineValueInner}>
@@ -735,9 +744,9 @@ export default function TransactionModal() {
         />
 
         <View style={styles.usdRefRow}>
-          <Text style={styles.usdRefLabel}>Ref. USD Reporte:</Text>
+          <Text style={styles.usdRefLabel}>Ref. {displayCurrency} Reporte:</Text>
           <Text style={[styles.usdRefValue, { color: segColor }]}>
-            ${formatCurrency(amountUSD)}
+            {displaySymbol}{formatCurrency(displayAmount)}
           </Text>
         </View>
 
@@ -961,8 +970,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.border,
   },
   currencyPillActive: {
-    backgroundColor: Colors.brand.DEFAULT + "18",
-    borderColor: Colors.brand.DEFAULT + "50",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: Colors.dark.highlight,
   },
   currencyPillText: {
     fontFamily: "Outfit_600SemiBold",
@@ -970,7 +979,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   currencyPillTextActive: {
-    color: Colors.brand.DEFAULT,
+    color: Colors.text.primary,
   },
   inlineRow: {
     flexDirection: "row" as const,
@@ -989,6 +998,8 @@ const styles = StyleSheet.create({
   },
   inlineValueBox: {
     backgroundColor: "#0f1729",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -1017,6 +1028,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
     backgroundColor: "#0f1729",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -1039,12 +1052,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 16,
     backgroundColor: "#0f1729",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
     minHeight: 56,
   },
   rateButtonActive: {
-    backgroundColor: Colors.brand.DEFAULT + "18",
-    borderWidth: 1,
-    borderColor: Colors.brand.DEFAULT + "50",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: Colors.dark.highlight,
   },
   rateButtonLabel: {
     fontFamily: "Outfit_700Bold",
@@ -1052,7 +1066,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   rateButtonLabelActive: {
-    color: Colors.brand.DEFAULT,
+    color: Colors.text.primary,
   },
   rateButtonValue: {
     fontFamily: "Outfit_600SemiBold",
@@ -1061,7 +1075,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rateButtonValueActive: {
-    color: Colors.brand.DEFAULT,
+    color: Colors.text.primary,
   },
   eurRateInfo: {
     fontFamily: "Outfit_500Medium",
@@ -1090,6 +1104,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontFamily: "Outfit_500Medium",
     fontSize: 14,
+    letterSpacing: 0.2,
+    lineHeight: 20,
     color: Colors.text.primary,
     marginBottom: 20,
   },

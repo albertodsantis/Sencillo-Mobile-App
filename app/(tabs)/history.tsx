@@ -15,8 +15,8 @@ import "dayjs/locale/es";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
-import { formatCurrency } from "@/lib/domain/finance";
-import type { Transaction } from "@/lib/domain/types";
+import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol } from "@/lib/domain/finance";
+import type { Transaction, DisplayCurrency, Rates } from "@/lib/domain/types";
 
 const FILTERS = [
   { id: "all", label: "Todos" },
@@ -29,10 +29,12 @@ function TransactionRow({
   item,
   rates,
   onPress,
+  displayCurrency,
 }: {
   item: Transaction;
-  rates: { bcv: number };
+  rates: Rates;
   onPress: () => void;
+  displayCurrency: DisplayCurrency;
 }) {
   const isVesSaving =
     item.segment === "ahorro" && item.currency === "VES";
@@ -42,6 +44,8 @@ function TransactionRow({
   }
   const isIncome = item.type === "income";
   const dateLabel = dayjs(item.date).locale("es").format("ddd D MMM");
+  const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
+  const displayAmount = convertUSDToDisplayCurrency(item.amountUSD || 0, displayCurrency, rates);
 
   return (
     <Pressable
@@ -103,7 +107,7 @@ function TransactionRow({
             { color: isIncome ? Colors.brand.light : Colors.text.primary },
           ]}
         >
-          {isIncome ? "+" : "-"}${formatCurrency(item.amountUSD)}
+          {isIncome ? "+" : "-"}{currencySymbol}{formatCurrency(displayAmount)}
         </Text>
         <View style={styles.currencyBadge}>
           <Text style={styles.currencyText}>
@@ -122,7 +126,7 @@ function TransactionRow({
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { transactions, rates, historyFilter, setHistoryFilter } = useApp();
+  const { transactions, rates, historyFilter, setHistoryFilter, displayCurrency } = useApp();
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
@@ -200,9 +204,10 @@ export default function HistoryScreen() {
         item={item}
         rates={rates}
         onPress={() => handleEditTx(item)}
+        displayCurrency={displayCurrency}
       />
     ),
-    [rates, handleEditTx]
+    [rates, handleEditTx, displayCurrency]
   );
 
   return (
