@@ -442,26 +442,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.monthNav}>
-          <Pressable onPress={prevMonth} style={styles.navButton}>
-            <Ionicons
-              name="chevron-back"
-              size={26}
-              color={Colors.text.secondary}
-            />
-          </Pressable>
-          <Text style={styles.monthLabel}>
-            {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
-          </Text>
-          <Pressable onPress={nextMonth} style={styles.navButton}>
-            <Ionicons
-              name="chevron-forward"
-              size={26}
-              color={Colors.text.secondary}
-            />
-          </Pressable>
-        </View>
-
         <View style={styles.segmentControl}>
           {VIEW_MODES.map((mode) => (
             <Pressable
@@ -482,6 +462,26 @@ export default function HomeScreen() {
               </Text>
             </Pressable>
           ))}
+        </View>
+
+        <View style={styles.monthNav}>
+          <Pressable onPress={prevMonth} style={styles.navButton}>
+            <Ionicons
+              name="chevron-back"
+              size={26}
+              color={Colors.text.secondary}
+            />
+          </Pressable>
+          <Text style={styles.monthLabel}>
+            {viewMode === "year" ? `${currentYear}` : capitalizedMonth}
+          </Text>
+          <Pressable onPress={nextMonth} style={styles.navButton}>
+            <Ionicons
+              name="chevron-forward"
+              size={26}
+              color={Colors.text.secondary}
+            />
+          </Pressable>
         </View>
 
         <Pressable
