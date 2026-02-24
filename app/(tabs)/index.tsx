@@ -1165,7 +1165,7 @@ const styles = StyleSheet.create({
   },
   workspaceBadge: {
     fontFamily: "Outfit_600SemiBold",
-    color: Colors.brand.DEFAULT,
+    color: Colors.text.muted,
     fontSize: 13,
   },
 });
