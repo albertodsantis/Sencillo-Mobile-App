@@ -357,6 +357,7 @@ export default function TransactionModal() {
       : getLocalDateString()
   );
   const [recurrence, setRecurrence] = useState<RecurrenceType>("none");
+  const [registerAsSavings, setRegisterAsSavings] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [showRecurrenceSheet, setShowRecurrenceSheet] = useState(false);
   const [showDateSheet, setShowDateSheet] = useState(false);
@@ -409,6 +410,7 @@ export default function TransactionModal() {
       return;
     }
 
+    const txDate = new Date(date + "T12:00:00").toISOString();
     const txData = {
       type: segmentType,
       segment,
@@ -418,7 +420,7 @@ export default function TransactionModal() {
       amountUSD,
       category,
       description,
-      date: new Date(date + "T12:00:00").toISOString(),
+      date: txDate,
       profileId: "",
     };
 
@@ -426,10 +428,26 @@ export default function TransactionModal() {
       if (editingTx) {
         await updateTx({ ...editingTx, ...txData });
       } else {
-        if (recurrence !== "none") {
-          const recDates = generateRecurrences(txData.date, recurrence);
-          const allTxs = [txData, ...recDates.map((d) => ({ ...txData, date: d }))];
+        const baseDates = recurrence !== "none"
+          ? [txDate, ...generateRecurrences(txDate, recurrence)]
+          : [txDate];
+
+        if (segment === "ingresos" && registerAsSavings) {
+          const savingsCategory = pnlStructure.ahorro[0] || "Ahorro General";
+          const allTxs = baseDates.flatMap((txd) => {
+            const incomeTx = { ...txData, date: txd };
+            const savingsTx = {
+              ...txData,
+              date: txd,
+              type: SEGMENT_CONFIG.ahorro.type,
+              segment: "ahorro" as const,
+              category: savingsCategory,
+            };
+            return [incomeTx, savingsTx];
+          });
           await addMultipleTx(allTxs);
+        } else if (baseDates.length > 1) {
+          await addMultipleTx(baseDates.map((txd) => ({ ...txData, date: txd })));
         } else {
           await addTx(txData);
         }
@@ -449,7 +467,7 @@ export default function TransactionModal() {
   }, [
     amount, category, segmentType, segment, currency,
     currentRate, amountUSD, description, date, recurrence,
-    editingTx, addTx, addMultipleTx, updateTx, router,
+    editingTx, addTx, addMultipleTx, updateTx, registerAsSavings, pnlStructure.ahorro, router,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -493,7 +511,7 @@ export default function TransactionModal() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>
-            {editingTx ? "Editar Movimiento" : "Nuevo Movimiento"}
+            {editingTx ? "Editar Movimiento" : "Registrar Movimiento"}
           </Text>
           <Pressable onPress={() => router.back()} style={styles.closeBtn}>
             <Ionicons name="close" size={22} color={Colors.text.secondary} />
@@ -664,16 +682,34 @@ export default function TransactionModal() {
         </View>
 
         {!editingTx && (
-          <>
-            <Text style={styles.fieldLabel}>REPETIR</Text>
+          <View style={styles.repeatRow}>
             <Pressable
               onPress={() => setShowRecurrenceSheet(true)}
-              style={styles.dropdownBtn}
+              style={[styles.dropdownBtn, styles.repeatField]}
             >
               <Text style={styles.dropdownBtnText}>{recurrenceLabel}</Text>
               <Ionicons name="chevron-down" size={18} color={Colors.text.muted} />
             </Pressable>
-          </>
+
+            {segment === "ingresos" && (
+              <Pressable
+                onPress={() => setRegisterAsSavings((prev) => !prev)}
+                style={[
+                  styles.savingsChip,
+                  registerAsSavings && styles.savingsChipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.savingsChipText,
+                    registerAsSavings && styles.savingsChipTextActive,
+                  ]}
+                >
+                  Registrar como Ahorro
+                </Text>
+              </Pressable>
+            )}
+          </View>
         )}
 
         {currency === "EUR" && (
@@ -1015,14 +1051,6 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     flex: 1,
   },
-  fieldLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 10,
-    color: Colors.text.muted,
-    letterSpacing: 1,
-    marginBottom: 6,
-    marginTop: 4,
-  },
   dropdownBtn: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
@@ -1033,7 +1061,38 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  repeatRow: {
+    flexDirection: "row" as const,
+    gap: 10,
     marginBottom: 16,
+  },
+  repeatField: {
+    flex: 1,
+  },
+  savingsChip: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    backgroundColor: "#0f1729",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  savingsChipActive: {
+    borderColor: Colors.segments.ahorro.color,
+    backgroundColor: Colors.segments.ahorro.bg,
+  },
+  savingsChipText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 13,
+    color: Colors.text.secondary,
+    textAlign: "center" as const,
+  },
+  savingsChipTextActive: {
+    color: Colors.segments.ahorro.color,
   },
   dropdownBtnText: {
     fontFamily: "Outfit_600SemiBold",
