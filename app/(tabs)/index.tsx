@@ -38,6 +38,12 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_WIDTH = SCREEN_WIDTH - 56;
 const CARD_GAP = 12;
+const KPI_CARD_COLORS = [
+  Colors.segments.ingresos.color,
+  Colors.segments.gastos_fijos.color,
+  Colors.segments.gastos_variables.color,
+  Colors.segments.ahorro.color,
+];
 
 const SEGMENT_PALETTES: Record<string, string[]> = {
   ingresos: [
@@ -652,6 +658,7 @@ export default function HomeScreen() {
               style={[
                 styles.kpiDot,
                 i === activeCardIdx && styles.kpiDotActive,
+                i === activeCardIdx && { backgroundColor: KPI_CARD_COLORS[i] },
               ]}
             />
           ))}
@@ -1135,7 +1142,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.12)",
   },
   kpiDotActive: {
-    backgroundColor: Colors.brand.DEFAULT,
     width: 18,
     borderRadius: 4,
   },
