@@ -21,14 +21,18 @@ import Colors from "@/constants/colors";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useApp } from "@/lib/context/AppContext";
 import {
-  scheduleDailyReminder,
-  cancelDailyReminder,
-  isReminderEnabled,
+  getNotificationPreferences,
+  saveNotificationPreferences,
+  applyNotificationPreferences,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  type NotificationPreferences,
 } from "@/lib/notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PHONE_PREFIXES = [
   "+58", "+1", "+34", "+57", "+52", "+56", "+51", "+55", "+44", "+33",
 ];
+const FACE_ID_KEY = "@sencillo/face_id_enabled";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -48,8 +52,12 @@ export default function ProfileScreen() {
   const [showPrefixPicker, setShowPrefixPicker] = useState(false);
 
   const [hasChanges, setHasChanges] = useState(false);
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderLoading, setReminderLoading] = useState(true);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(
+    DEFAULT_NOTIFICATION_PREFERENCES
+  );
+  const [notificationLoading, setNotificationLoading] = useState(true);
+  const [faceIdEnabled, setFaceIdEnabled] = useState(false);
+  const [faceIdLoading, setFaceIdLoading] = useState(true);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -65,38 +73,49 @@ export default function ProfileScreen() {
   }, [firstName, lastName, phonePrefix, phoneNumber, email, profile]);
 
   useEffect(() => {
-    isReminderEnabled().then((val) => {
-      setReminderEnabled(val);
-      setReminderLoading(false);
-    });
+    const loadSettings = async () => {
+      const prefs = await getNotificationPreferences();
+      setNotificationPrefs(prefs);
+      setNotificationLoading(false);
+
+      const isFaceIdEnabled = (await AsyncStorage.getItem(FACE_ID_KEY)) === "true";
+      setFaceIdEnabled(isFaceIdEnabled);
+      setFaceIdLoading(false);
+    };
+
+    loadSettings();
   }, []);
 
-  const handleToggleReminder = useCallback(async (value: boolean) => {
-    setReminderLoading(true);
+  const handleToggleNotifications = useCallback(async (nextPrefs: NotificationPreferences) => {
+    setNotificationLoading(true);
     try {
-      if (value) {
-        const success = await scheduleDailyReminder();
-        if (!success) {
-          const msg = "No se pudieron activar las notificaciones. Verifica los permisos en Ajustes.";
-          if (Platform.OS === "web") alert(msg);
-          else Alert.alert("Permiso denegado", msg);
-          setReminderLoading(false);
-          return;
-        }
-        setReminderEnabled(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else {
-        await cancelDailyReminder();
-        setReminderEnabled(false);
-        Haptics.selectionAsync();
+      const success = await applyNotificationPreferences(nextPrefs);
+      if (!success) {
+        const msg = "No se pudieron activar las notificaciones. Verifica los permisos en Ajustes.";
+        if (Platform.OS === "web") alert(msg);
+        else Alert.alert("Permiso denegado", msg);
+        setNotificationLoading(false);
+        return;
       }
+
+      await saveNotificationPreferences(nextPrefs);
+      setNotificationPrefs(nextPrefs);
+      Haptics.selectionAsync();
     } catch {
       const msg = "Ocurrio un error con las notificaciones";
       if (Platform.OS === "web") alert(msg);
       else Alert.alert("Error", msg);
     } finally {
-      setReminderLoading(false);
+      setNotificationLoading(false);
     }
+  }, []);
+
+  const handleToggleFaceId = useCallback(async (value: boolean) => {
+    setFaceIdLoading(true);
+    await AsyncStorage.setItem(FACE_ID_KEY, value ? "true" : "false");
+    setFaceIdEnabled(value);
+    Haptics.selectionAsync();
+    setFaceIdLoading(false);
   }, []);
 
   const handleSaveProfile = useCallback(async () => {
@@ -296,32 +315,139 @@ export default function ProfileScreen() {
           </Pressable>
         )}
 
-        <Text style={styles.sectionLabel}>CUENTA Y SEGURIDAD</Text>
+        <Text style={styles.sectionLabel}>NOTIFICACIONES</Text>
 
         <View style={styles.card}>
           <View style={styles.rowItem}>
             <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: "rgba(167,139,250,0.12)" }]}>
-                <Ionicons name="notifications" size={18} color="#a78bfa" />
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(16,185,129,0.12)" }]}>
+                <Ionicons name="notifications" size={18} color="#10b981" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>Recordatorio diario</Text>
-                <Text style={styles.rowSub}>
-                  {reminderEnabled ? "Activo - 8:00 PM" : "Recibe un aviso cada dia"}
-                </Text>
+                <Text style={styles.rowLabel}>Activar todas las notificaciones</Text>
+                <Text style={styles.rowSub}>Enciende o apaga todos los avisos de la app</Text>
               </View>
             </View>
-            {reminderLoading ? (
+            {notificationLoading ? (
               <ActivityIndicator size="small" color={Colors.brand.DEFAULT} />
             ) : (
               <Switch
-                value={reminderEnabled}
-                onValueChange={handleToggleReminder}
+                value={notificationPrefs.allEnabled}
+                onValueChange={(value) =>
+                  handleToggleNotifications({
+                    allEnabled: value,
+                    dailyReminder: value,
+                    budgetAlerts: value,
+                    weeklySummary: value,
+                    fixedExpenseReminders: value,
+                  })
+                }
                 trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
-                thumbColor={reminderEnabled ? Colors.brand.DEFAULT : "#555"}
+                thumbColor={notificationPrefs.allEnabled ? Colors.brand.DEFAULT : "#555"}
               />
             )}
           </View>
+
+          <View style={styles.rowItem}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(167,139,250,0.12)" }]}>
+                <Ionicons name="time" size={18} color="#a78bfa" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Recordatorio diario</Text>
+                <Text style={styles.rowSub}>Notificacion diaria a las 8:00 PM</Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationPrefs.dailyReminder}
+              disabled={notificationLoading || !notificationPrefs.allEnabled}
+              onValueChange={(value) =>
+                handleToggleNotifications({
+                  ...notificationPrefs,
+                  dailyReminder: value,
+                })
+              }
+              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
+              thumbColor={notificationPrefs.dailyReminder ? Colors.brand.DEFAULT : "#555"}
+            />
+          </View>
+
+          <View style={styles.rowItem}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(251,146,60,0.12)" }]}>
+                <Ionicons name="wallet" size={18} color="#fb923c" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Alertas de presupuesto</Text>
+                <Text style={styles.rowSub}>Avisos cuando estes cerca de tus limites</Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationPrefs.budgetAlerts}
+              disabled={notificationLoading || !notificationPrefs.allEnabled}
+              onValueChange={(value) =>
+                handleToggleNotifications({
+                  ...notificationPrefs,
+                  budgetAlerts: value,
+                })
+              }
+              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
+              thumbColor={notificationPrefs.budgetAlerts ? Colors.brand.DEFAULT : "#555"}
+            />
+          </View>
+
+          <View style={styles.rowItem}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(96,165,250,0.12)" }]}>
+                <Ionicons name="calendar" size={18} color="#60a5fa" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Recordatorios de gastos fijos</Text>
+                <Text style={styles.rowSub}>No olvides tus compromisos recurrentes</Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationPrefs.fixedExpenseReminders}
+              disabled={notificationLoading || !notificationPrefs.allEnabled}
+              onValueChange={(value) =>
+                handleToggleNotifications({
+                  ...notificationPrefs,
+                  fixedExpenseReminders: value,
+                })
+              }
+              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
+              thumbColor={notificationPrefs.fixedExpenseReminders ? Colors.brand.DEFAULT : "#555"}
+            />
+          </View>
+
+          <View style={styles.rowItemNoBorder}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(244,114,182,0.12)" }]}>
+                <Ionicons name="stats-chart" size={18} color="#f472b6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Resumen semanal</Text>
+                <Text style={styles.rowSub}>Recibe un resumen del avance de tus finanzas</Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationPrefs.weeklySummary}
+              disabled={notificationLoading || !notificationPrefs.allEnabled}
+              onValueChange={(value) =>
+                handleToggleNotifications({
+                  ...notificationPrefs,
+                  weeklySummary: value,
+                })
+              }
+              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
+              thumbColor={notificationPrefs.weeklySummary ? Colors.brand.DEFAULT : "#555"}
+            />
+          </View>
+        </View>
+
+        <Text style={styles.sectionLabel}>CUENTA Y SEGURIDAD</Text>
+
+        <View style={styles.card}>
 
           <Pressable
             onPress={() => setShowPasswordChange(!showPasswordChange)}
@@ -344,6 +470,30 @@ export default function ProfileScreen() {
               color={Colors.text.disabled}
             />
           </Pressable>
+
+          <View style={styles.rowItem}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: "rgba(45,212,191,0.14)" }]}>
+                <MaterialCommunityIcons name="face-recognition" size={18} color="#2dd4bf" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Face ID</Text>
+                <Text style={styles.rowSub}>
+                  {faceIdEnabled ? "Proteccion biometrica activada" : "Activa desbloqueo rapido en este dispositivo"}
+                </Text>
+              </View>
+            </View>
+            {faceIdLoading ? (
+              <ActivityIndicator size="small" color={Colors.brand.DEFAULT} />
+            ) : (
+              <Switch
+                value={faceIdEnabled}
+                onValueChange={handleToggleFaceId}
+                trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
+                thumbColor={faceIdEnabled ? Colors.brand.DEFAULT : "#555"}
+              />
+            )}
+          </View>
 
           {showPasswordChange && (
             <View style={styles.passwordArea}>
@@ -629,6 +779,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.borderSubtle,
+  },
+  rowItemNoBorder: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   rowLeft: {
     flexDirection: "row" as const,

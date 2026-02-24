@@ -3,6 +3,23 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const REMINDER_KEY = "@sencillo/daily_reminder";
+const NOTIFICATION_PREFS_KEY = "@sencillo/notification_preferences";
+
+export interface NotificationPreferences {
+  allEnabled: boolean;
+  dailyReminder: boolean;
+  budgetAlerts: boolean;
+  weeklySummary: boolean;
+  fixedExpenseReminders: boolean;
+}
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  allEnabled: true,
+  dailyReminder: true,
+  budgetAlerts: true,
+  weeklySummary: false,
+  fixedExpenseReminders: true,
+};
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -59,4 +76,38 @@ export async function isReminderEnabled(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function getNotificationPreferences(): Promise<NotificationPreferences> {
+  try {
+    const rawPrefs = await AsyncStorage.getItem(NOTIFICATION_PREFS_KEY);
+    if (!rawPrefs) return DEFAULT_NOTIFICATION_PREFERENCES;
+
+    const parsedPrefs = JSON.parse(rawPrefs) as Partial<NotificationPreferences>;
+    return {
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      ...parsedPrefs,
+    };
+  } catch {
+    return DEFAULT_NOTIFICATION_PREFERENCES;
+  }
+}
+
+export async function saveNotificationPreferences(
+  preferences: NotificationPreferences
+): Promise<void> {
+  await AsyncStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(preferences));
+}
+
+export async function applyNotificationPreferences(
+  preferences: NotificationPreferences
+): Promise<boolean> {
+  const shouldEnableDailyReminder = preferences.allEnabled && preferences.dailyReminder;
+
+  if (shouldEnableDailyReminder) {
+    return scheduleDailyReminder();
+  }
+
+  await cancelDailyReminder();
+  return true;
 }
