@@ -438,9 +438,11 @@ export default function HomeScreen() {
               hitSlop={8}
               style={[styles.headerIconBtn, styles.currencyToggleBtn]}
             >
-              <Text style={styles.currencyToggleText}>
-                {displayCurrency === "USD" ? "$" : "€"}
-              </Text>
+              <MaterialCommunityIcons
+                name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
+                size={22}
+                color={Colors.text.muted}
+              />
             </Pressable>
             <Pressable
               onPress={() => setShowCalc(true)}
@@ -862,13 +864,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-  currencyToggleText: {
-    color: Colors.text.muted,
-    fontFamily: "Outfit_700Bold",
-    fontSize: 20,
-    lineHeight: 20,
-    verticalAlign: "middle" as const,
   },
   currencyToggleBtn: {
     backgroundColor: "rgba(255,255,255,0.05)",
