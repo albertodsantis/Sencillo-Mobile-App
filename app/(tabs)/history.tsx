@@ -131,7 +131,7 @@ function TransactionRow({
                   color="#f87171"
                 />
                 <Text style={styles.devalText}>
-                  {devaluation.toFixed(0)}% Val.
+                  {devaluation.toFixed(2)}%
                 </Text>
               </View>
             )}
