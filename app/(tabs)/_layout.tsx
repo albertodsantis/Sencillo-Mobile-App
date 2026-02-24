@@ -97,7 +97,7 @@ export default function TabLayout() {
         options={{
           title: "Personalizar",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pencil" size={22} color={color} />
+            <Ionicons name="options-outline" size={22} color={color} />
           ),
         }}
       />
