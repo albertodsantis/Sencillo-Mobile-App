@@ -965,7 +965,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "#0f1729",
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
