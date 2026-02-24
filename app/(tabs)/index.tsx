@@ -274,6 +274,8 @@ export default function HomeScreen() {
     profile,
     displayCurrency,
     setDisplayCurrency,
+    workspaces,
+    activeWorkspaceId,
   } = useApp();
 
   const { width: windowWidth } = useWindowDimensions();
@@ -347,6 +349,7 @@ export default function HomeScreen() {
   );
 
   const displayName = profile.firstName || "Sencillo";
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -434,15 +437,9 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Pressable onPress={() => router.push("/profile")}>
-              <Ionicons
-                name="person-outline"
-                size={26}
-                color={Colors.text.secondary}
-              />
-            </Pressable>
-            <Pressable onPress={() => router.push("/profile")}>
+            <Pressable onPress={() => router.push("/profile")} style={styles.profileLink}>
               <Text style={styles.headerTitle}>{displayName}</Text>
+              <Text style={styles.workspaceBadge}>({activeWorkspace?.name ?? "Personal"})</Text>
             </Pressable>
           </View>
           <View style={styles.headerRight}>
@@ -1154,5 +1151,21 @@ const styles = StyleSheet.create({
   kpiDotActive: {
     width: 18,
     borderRadius: 4,
+  },
+  profileLink: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.borderSubtle,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    flexDirection: "row" as const,
+    alignItems: "baseline" as const,
+    gap: 6,
+  },
+  workspaceBadge: {
+    fontFamily: "Outfit_600SemiBold",
+    color: Colors.brand.DEFAULT,
+    fontSize: 13,
   },
 });

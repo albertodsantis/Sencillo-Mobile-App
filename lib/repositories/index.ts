@@ -7,3 +7,4 @@ export { SavingsRepository } from './SavingsRepository';
 export { AuthRepository } from './AuthRepository';
 
 export { DisplayCurrencyRepository } from './DisplayCurrencyRepository';
+export { WorkspaceRepository } from './WorkspaceRepository';

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   type Transaction,
   type Rates,
@@ -10,6 +11,7 @@ import {
   type BudgetSummary,
   type UserProfile,
   type DisplayCurrency,
+  type Workspace,
   DEFAULT_PNL,
   DEFAULT_PROFILE,
 } from '../domain/types';
@@ -21,7 +23,9 @@ import {
   BudgetRepository,
   SavingsRepository,
   DisplayCurrencyRepository,
+  WorkspaceRepository,
 } from '../repositories';
+import { ACTIVE_WORKSPACE_STORAGE_KEY } from '../repositories/workspaceScope';
 import { fetchRates, computeDashboard, computeBudget } from '../domain/finance';
 
 interface AppContextValue {
@@ -39,12 +43,16 @@ interface AppContextValue {
   isRefreshingRates: boolean;
   historyFilter: string;
   displayCurrency: DisplayCurrency;
+  workspaces: Workspace[];
+  activeWorkspaceId: string | null;
 
   setViewMode: (mode: ViewMode) => void;
   setCurrentMonth: (month: number) => void;
   setCurrentYear: (year: number) => void;
   setHistoryFilter: (filter: string) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => Promise<void>;
+  setActiveWorkspace: (workspaceId: string) => Promise<void>;
+  createWorkspace: (name: string) => Promise<void>;
 
   addTx: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   addMultipleTx: (txList: Omit<Transaction, 'id'>[]) => Promise<void>;
@@ -77,31 +85,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [historyFilter, setHistoryFilter] = useState('all');
   const [displayCurrency, setDisplayCurrencyState] = useState<DisplayCurrency>('USD');
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
 
+  const loadWorkspaceScopedData = useCallback(async () => {
+    const [txs, pnl, bdg, sg] = await Promise.all([
+      TransactionRepository.getAll(),
+      PnlRepository.get(),
+      BudgetRepository.get(),
+      SavingsRepository.get(),
+    ]);
+    setTransactions(txs);
+    setPnlStructure(pnl);
+    setBudgets(bdg);
+    setSavingsGoals(sg);
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
-        const [txs, savedRates, pnl, bdg, sg, prof, displayPref] = await Promise.all([
-          TransactionRepository.getAll(),
+        await WorkspaceRepository.ensureDefault();
+        const workspaceList = await WorkspaceRepository.getAll();
+        setWorkspaces(workspaceList);
+
+        let persistedWorkspaceId = await AsyncStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY);
+        if (!persistedWorkspaceId || !workspaceList.some((w) => w.id === persistedWorkspaceId)) {
+          persistedWorkspaceId = workspaceList[0]?.id ?? null;
+        }
+
+        if (persistedWorkspaceId) {
+          await AsyncStorage.setItem(ACTIVE_WORKSPACE_STORAGE_KEY, persistedWorkspaceId);
+          setActiveWorkspaceId(persistedWorkspaceId);
+        }
+
+        const [savedRates, prof, displayPref] = await Promise.all([
           RatesRepository.get(),
-          PnlRepository.get(),
-          BudgetRepository.get(),
-          SavingsRepository.get(),
           ProfileRepository.get(),
           DisplayCurrencyRepository.get(),
         ]);
-        setTransactions(txs);
+
         if (savedRates) setRates(savedRates);
-        setPnlStructure(pnl);
-        setBudgets(bdg);
-        setSavingsGoals(sg);
         setProfile(prof);
         setDisplayCurrencyState(displayPref);
         setRatesTimestamp(await RatesRepository.getTimestamp());
+
+        if (persistedWorkspaceId) {
+          await loadWorkspaceScopedData();
+        }
 
         const age = await RatesRepository.getAge();
         if (age > 3600000 || !savedRates) {
@@ -118,7 +152,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     })();
+  }, [loadWorkspaceScopedData]);
+
+  useEffect(() => {
+    if (!activeWorkspaceId) return;
+    loadWorkspaceScopedData();
+  }, [activeWorkspaceId, loadWorkspaceScopedData]);
+
+  const setActiveWorkspace = useCallback(async (workspaceId: string) => {
+    await AsyncStorage.setItem(ACTIVE_WORKSPACE_STORAGE_KEY, workspaceId);
+    setActiveWorkspaceId(workspaceId);
   }, []);
+
+  const createWorkspace = useCallback(async (name: string) => {
+    const created = await WorkspaceRepository.create(name);
+    setWorkspaces((prev) => [...prev, created]);
+    await setActiveWorkspace(created.id);
+  }, [setActiveWorkspace]);
 
   const refreshRates = useCallback(async () => {
     setIsRefreshingRates(true);
@@ -232,11 +282,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       displayCurrency,
       profile,
       savingsGoals,
+      workspaces,
+      activeWorkspaceId,
       setViewMode,
       setCurrentMonth,
       setCurrentYear,
       setHistoryFilter,
       setDisplayCurrency,
+      setActiveWorkspace,
+      createWorkspace,
       addTx,
       addMultipleTx,
       updateTx,
@@ -253,9 +307,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
       currentMonth, currentYear, dashboardData, budgetSummary, ratesTimestamp,
       isLoading, isRefreshingRates, historyFilter, displayCurrency, profile,
+      workspaces, activeWorkspaceId,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
-      updateProfile, setDisplayCurrency, clearAccount,
+      updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace, clearAccount,
     ],
   );
 

@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import { ProfileRepository } from './ProfileRepository';
+import { WorkspaceRepository } from './WorkspaceRepository';
 import type { UserProfile } from '../domain/types';
 
 const SESSION_KEY = '@sencillo/auth_user';
@@ -153,6 +154,7 @@ export const AuthRepository = {
     try {
       const profile = buildProfileFromRegistration(normalizedName, normalizedEmail, password);
       await ProfileRepository.save(profile);
+      await WorkspaceRepository.ensureDefault();
     } catch (profileError) {
       console.warn('No se pudo guardar el perfil inicial en Supabase:', profileError);
     }
@@ -190,6 +192,7 @@ export const AuthRepository = {
 
     try {
       await ensureInitialProfile(data.user, password);
+      await WorkspaceRepository.ensureDefault();
     } catch (profileError) {
       console.warn('No se pudo asegurar el perfil para este usuario:', profileError);
     }
@@ -255,6 +258,7 @@ export const AuthRepository = {
 
     try {
       await ensureInitialProfile(sessionData.user);
+      await WorkspaceRepository.ensureDefault();
     } catch (profileError) {
       console.warn('No se pudo asegurar el perfil para usuario de Google:', profileError);
     }

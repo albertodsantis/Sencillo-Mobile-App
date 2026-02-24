@@ -37,7 +37,16 @@ const FACE_ID_KEY = "@sencillo/face_id_enabled";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { profile, updateProfile, deleteAllTx, clearAccount } = useApp();
+  const {
+    profile,
+    updateProfile,
+    deleteAllTx,
+    clearAccount,
+    workspaces,
+    activeWorkspaceId,
+    setActiveWorkspace,
+    createWorkspace,
+  } = useApp();
 
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);
@@ -50,6 +59,9 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPrefixPicker, setShowPrefixPicker] = useState(false);
+  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
+  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState('');
 
   const [hasChanges, setHasChanges] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(
@@ -61,6 +73,9 @@ export default function ProfileScreen() {
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
+
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+
 
   useEffect(() => {
     const changed =
@@ -161,6 +176,28 @@ export default function ProfileScreen() {
     else Alert.alert("Listo", successMsg);
   }, [currentPassword, newPassword, confirmPassword, profile, updateProfile]);
 
+  const handleCreateWorkspace = useCallback(async () => {
+    const name = workspaceName.trim();
+    if (!name) {
+      const msg = 'Ingresa un nombre para el espacio';
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('Nombre requerido', msg);
+      return;
+    }
+
+    try {
+      await createWorkspace(name);
+      setWorkspaceName('');
+      setShowCreateWorkspaceModal(false);
+      setShowWorkspaceMenu(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'No se pudo crear el espacio';
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('Error', msg);
+    }
+  }, [workspaceName, createWorkspace]);
+
   const { signOut } = useAuth();
 
   const handleLogout = useCallback(() => {
@@ -256,6 +293,17 @@ export default function ProfileScreen() {
           ) : (
             <View style={{ width: 40 }} />
           )}
+        </View>
+
+        <View style={styles.workspaceSection}>
+          <Text style={styles.workspaceLabel}>ESPACIO ACTIVO</Text>
+          <Pressable style={styles.workspacePicker} onPress={() => setShowWorkspaceMenu(true)}>
+            <View>
+              <Text style={styles.workspaceName}>{activeWorkspace?.name ?? 'Personal'}</Text>
+              <Text style={styles.workspaceHint}>Toca para cambiar o crear un espacio</Text>
+            </View>
+            <Ionicons name="chevron-down" size={18} color={Colors.text.muted} />
+          </Pressable>
         </View>
 
         <TextInput
@@ -630,6 +678,73 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
       </Modal>
+      <Modal
+        visible={showWorkspaceMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWorkspaceMenu(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowWorkspaceMenu(false)}>
+          <View style={styles.workspaceMenuCard}>
+            {workspaces.map((workspace) => {
+              const selected = workspace.id === activeWorkspaceId;
+              return (
+                <Pressable
+                  key={workspace.id}
+                  style={styles.workspaceMenuItem}
+                  onPress={async () => {
+                    await setActiveWorkspace(workspace.id);
+                    setShowWorkspaceMenu(false);
+                    Haptics.selectionAsync();
+                  }}
+                >
+                  <Text style={[styles.workspaceMenuName, selected && { color: Colors.brand.DEFAULT }]}>{workspace.name}</Text>
+                  {selected ? <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} /> : null}
+                </Pressable>
+              );
+            })}
+            <Pressable
+              style={styles.workspaceCreateBtn}
+              onPress={() => {
+                setShowWorkspaceMenu(false);
+                setShowCreateWorkspaceModal(true);
+              }}
+            >
+              <Ionicons name="add" size={18} color={Colors.brand.DEFAULT} />
+              <Text style={styles.workspaceCreateText}>Crear nuevo espacio</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={showCreateWorkspaceModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateWorkspaceModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.workspaceCreateCard}>
+            <Text style={styles.workspaceCreateTitle}>Nuevo espacio</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={workspaceName}
+              onChangeText={setWorkspaceName}
+              placeholder="Ej. Casa o Negocio"
+              placeholderTextColor={Colors.text.disabled}
+              autoFocus
+            />
+            <View style={styles.workspaceCreateActions}>
+              <Pressable style={styles.workspaceCancelBtn} onPress={() => setShowCreateWorkspaceModal(false)}>
+                <Text style={styles.workspaceCancelText}>Cancelar</Text>
+              </Pressable>
+              <Pressable style={styles.workspaceSaveBtn} onPress={handleCreateWorkspace}>
+                <Text style={styles.workspaceSaveText}>Guardar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -667,6 +782,38 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.DEFAULT,
     alignItems: "center" as const,
     justifyContent: "center" as const,
+  },
+  workspaceSection: {
+    marginBottom: 14,
+  },
+  workspaceLabel: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 12,
+    color: Colors.text.disabled,
+    marginBottom: 8,
+    letterSpacing: 0.6,
+  },
+  workspacePicker: {
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    borderRadius: 14,
+    backgroundColor: Colors.dark.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+  },
+  workspaceName: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 16,
+    color: Colors.text.primary,
+  },
+  workspaceHint: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 12,
+    color: Colors.text.muted,
+    marginTop: 2,
   },
   fieldInput: {
     backgroundColor: Colors.dark.surface,
@@ -849,5 +996,77 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
+  },
+  workspaceMenuCard: {
+    backgroundColor: Colors.dark.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  workspaceMenuItem: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.borderSubtle,
+  },
+  workspaceMenuName: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 15,
+    color: Colors.text.primary,
+  },
+  workspaceCreateBtn: {
+    marginTop: 16,
+    flexDirection: "row" as const,
+    gap: 8,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.brand.DEFAULT,
+  },
+  workspaceCreateText: {
+    fontFamily: "Outfit_600SemiBold",
+    color: Colors.brand.DEFAULT,
+  },
+  workspaceCreateCard: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 20,
+    marginHorizontal: 24,
+    marginTop: 180,
+    padding: 20,
+  },
+  workspaceCreateTitle: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 18,
+    color: Colors.text.primary,
+    marginBottom: 12,
+  },
+  workspaceCreateActions: {
+    flexDirection: "row" as const,
+    justifyContent: "flex-end" as const,
+    gap: 10,
+  },
+  workspaceCancelBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  workspaceCancelText: {
+    fontFamily: "Outfit_600SemiBold",
+    color: Colors.text.muted,
+  },
+  workspaceSaveBtn: {
+    backgroundColor: Colors.brand.DEFAULT,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  workspaceSaveText: {
+    fontFamily: "Outfit_600SemiBold",
+    color: '#fff',
   },
 });
