@@ -12,10 +12,10 @@ export default function TabLayout() {
 
   const tabBarBottomPadding = Platform.select({
     web: 34,
-    default: Math.max(insets.bottom, 12),
+    default: Math.max(insets.bottom, 10),
   });
 
-  const tabBarHeight = 56 + tabBarBottomPadding + 8;
+  const tabBarHeight = 66 + tabBarBottomPadding;
 
   return (
     <Tabs
@@ -26,16 +26,30 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute" as const,
+          left: 12,
+          right: 12,
+          bottom: 8,
+          borderRadius: 24,
+          overflow: "hidden" as const,
           backgroundColor: Platform.select({
             ios: "transparent",
-            android: Colors.dark.base,
-            web: Colors.dark.base,
+            android: "rgba(15, 23, 42, 0.95)",
+            web: "rgba(15, 23, 42, 0.95)",
           }),
-          borderTopWidth: 0,
-          elevation: 0,
+          borderTopWidth: 1,
+          borderTopColor: Colors.dark.border,
+          elevation: 14,
           height: tabBarHeight,
           paddingBottom: tabBarBottomPadding,
-          paddingTop: 8,
+          paddingTop: 10,
+          paddingHorizontal: 10,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.28,
+          shadowRadius: 18,
+        },
+        tabBarItemStyle: {
+          borderRadius: 16,
         },
         tabBarBackground: () =>
           Platform.OS === "ios" ? (
@@ -51,7 +65,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Inicio",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={22} color={color} />
           ),
         }}
@@ -60,7 +74,7 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "Historial",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Ionicons name="time" size={22} color={color} />
           ),
         }}
@@ -87,7 +101,7 @@ export default function TabLayout() {
         name="budget"
         options={{
           title: "Presupuesto",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="chart-donut" size={22} color={color} />
           ),
         }}
@@ -96,7 +110,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Personalizar",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Ionicons name="pencil" size={22} color={color} />
           ),
         }}
@@ -107,17 +121,19 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: Colors.brand.DEFAULT,
+    borderWidth: 3,
+    borderColor: "rgba(2, 6, 23, 0.55)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginTop: -20,
+    marginTop: -28,
     shadowColor: Colors.brand.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 12,
   },
 });
