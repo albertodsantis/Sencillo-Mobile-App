@@ -868,6 +868,7 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_700Bold",
     fontSize: 22,
     lineHeight: 22,
+    verticalAlign: "middle" as const,
   },
   helpBtn: {
     width: 40,
