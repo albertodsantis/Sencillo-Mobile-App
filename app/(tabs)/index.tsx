@@ -394,6 +394,13 @@ export default function HomeScreen() {
         ? "BALANCE ANUAL"
         : "BALANCE NETO";
 
+  const balanceDisplay = formatCurrency(
+    convertUSDToDisplayCurrency(dashboardData.balance, displayCurrency, rates),
+    2
+  );
+  const [balanceWhole = "0", balanceFraction = "00"] =
+    balanceDisplay.split(".");
+
   return (
     <View style={styles.container}>
       <AmbientGlow />
@@ -514,11 +521,12 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.balanceRow}>
               <Text style={styles.balanceValue}>
-                ${formatCurrency(convertUSDToDisplayCurrency(dashboardData.balance, displayCurrency, rates), 2).split(".")[0]}
+                {getDisplayCurrencySymbol(displayCurrency)}
+                {balanceWhole}
               </Text>
               <Text style={styles.balanceDecimals}>
                 .
-                {formatCurrency(convertUSDToDisplayCurrency(dashboardData.balance, displayCurrency, rates), 2).split(".")[1] || "00"}
+                {balanceFraction}
               </Text>
             </View>
           )}
@@ -840,12 +848,9 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   currencyToggleBtn: {
-    minWidth: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    backgroundColor: Colors.dark.surface,
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     paddingHorizontal: 8,
@@ -853,7 +858,8 @@ const styles = StyleSheet.create({
   currencyToggleText: {
     color: Colors.text.muted,
     fontFamily: "Outfit_700Bold",
-    fontSize: 14,
+    fontSize: 18,
+    lineHeight: 18,
   },
   helpBtn: {
     width: 40,
