@@ -998,6 +998,8 @@ const styles = StyleSheet.create({
   },
   inlineValueBox: {
     backgroundColor: "#0f1729",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -1026,6 +1028,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
     backgroundColor: "#0f1729",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
