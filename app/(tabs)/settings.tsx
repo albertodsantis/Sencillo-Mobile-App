@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
@@ -24,6 +24,22 @@ const SEGMENTS: Segment[] = [
   "gastos_variables",
   "ahorro",
 ];
+
+function SegmentIcon({ segment, color }: { segment: Segment; color: string }) {
+  if (segment === "gastos_fijos") {
+    return <MaterialCommunityIcons name="credit-card" size={18} color={color} />;
+  }
+
+  if (segment === "ahorro") {
+    return <MaterialCommunityIcons name="piggy-bank" size={18} color={color} />;
+  }
+
+  if (segment === "gastos_variables") {
+    return <Ionicons name="trending-down" size={18} color={color} />;
+  }
+
+  return <Ionicons name="trending-up" size={18} color={color} />;
+}
 
 function CategoryRow({
   cat,
@@ -209,10 +225,12 @@ export default function SettingsScreen() {
               <View style={styles.segmentHeaderLeft}>
                 <View
                   style={[
-                    styles.segmentDot,
-                    { backgroundColor: config.color },
+                    styles.segmentIconCircle,
+                    { backgroundColor: `${config.color}20` },
                   ]}
-                />
+                >
+                  <SegmentIcon segment={seg} color={config.color} />
+                </View>
                 <Text style={styles.segmentName}>{config.label}</Text>
                 <View style={styles.countBadge}>
                   <Text style={styles.countText}>{cats.length}</Text>
@@ -462,10 +480,12 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     gap: 12,
   },
-  segmentDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  segmentIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   segmentName: {
     fontFamily: "Outfit_700Bold",
