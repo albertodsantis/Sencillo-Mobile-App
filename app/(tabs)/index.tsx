@@ -1,11 +1,10 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   Pressable,
-  Animated,
   ActivityIndicator,
   Platform,
   RefreshControl,
@@ -274,46 +273,6 @@ export default function HomeScreen() {
   const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
-  const reportIconPulse = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(reportIconPulse, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(reportIconPulse, {
-          toValue: 0,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    pulseLoop.start();
-
-    return () => {
-      pulseLoop.stop();
-    };
-  }, [reportIconPulse]);
-
-  const reportIconAnimatedStyle = {
-    opacity: reportIconPulse.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.75, 1],
-    }),
-    transform: [
-      {
-        scale: reportIconPulse.interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 1.08],
-        }),
-      },
-    ],
-  };
-
   const filteredByPeriod = useMemo(() => {
     return transactions.filter((t) => {
       const d = new Date(t.date);
@@ -581,13 +540,13 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-          <Animated.View style={[styles.reportLinkIcon, reportIconAnimatedStyle]}>
+          <View style={styles.reportLinkIcon}>
             <MaterialCommunityIcons
               name="file-table-outline"
               size={20}
               color={Colors.text.secondary}
             />
-          </Animated.View>
+          </View>
         </Pressable>
 
         <ScrollView
@@ -993,15 +952,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   reportLinkIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
     marginTop: 10,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
   },
   kpiScroll: {
     marginBottom: 8,
