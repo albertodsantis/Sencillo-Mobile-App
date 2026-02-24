@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   Animated,
+  Share,
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,7 +49,9 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyKey>("USD");
   const [ratesDate, setRatesDate] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
   const { height: windowHeight } = useWindowDimensions();
+  const modalCaptureRef = useRef<View>(null);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const modalHeight = Math.max(windowHeight, 1);
@@ -162,10 +165,67 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     });
   };
 
+  const handleShare = async () => {
+    if (isSharing) return;
+
+    setIsSharing(true);
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const viewShotModule = require("react-native-view-shot");
+      const captureRef = viewShotModule?.captureRef as
+        | ((view: unknown, options?: { format?: string; quality?: number; result?: string }) => Promise<string>)
+        | undefined;
+
+      if (!captureRef || !modalCaptureRef.current) {
+        throw new Error("CAPTURE_NOT_AVAILABLE");
+      }
+
+      const screenshotUri = await captureRef(modalCaptureRef.current, {
+        format: "png",
+        quality: 1,
+        result: "tmpfile",
+      });
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const sharingModule = require("expo-sharing");
+        if (sharingModule?.isAvailableAsync && sharingModule?.shareAsync) {
+          const canShare = await sharingModule.isAvailableAsync();
+          if (canShare) {
+            await sharingModule.shareAsync(screenshotUri, {
+              dialogTitle: "Compartir tasas de cambio",
+            });
+            return;
+          }
+        }
+      } catch {
+        // Fallback a Share de React Native
+      }
+
+      await Share.share({
+        title: "Tasas de cambio",
+        url: screenshotUri,
+        message: "Tasas de cambio y calculadora",
+      });
+    } catch {
+      await Share.share({
+        title: "Tasas de cambio",
+        message: "No se pudo generar la captura en este dispositivo.",
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
       <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}>
+        <Animated.View
+          ref={modalCaptureRef}
+          collapsable={false}
+          style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}
+        >
           <View style={styles.handleBar} />
 
           <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
@@ -175,7 +235,13 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
-              {ratesDate ? <Text style={styles.sectionDate}>{ratesDate}</Text> : null}
+              <View style={styles.sectionHeaderRight}>
+                <Pressable onPress={handleShare} hitSlop={10} style={styles.shareBtn} disabled={isSharing}>
+                  <Ionicons name="share-social-outline" size={14} color={Colors.text.secondary} />
+                  <Text style={styles.shareBtnText}>{isSharing ? "COMPARTIENDO" : "COMPARTIR"}</Text>
+                </Pressable>
+                {ratesDate ? <Text style={styles.sectionDate}>{ratesDate}</Text> : null}
+              </View>
             </View>
 
             <View style={styles.ratesGrid}>
@@ -329,6 +395,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.text.muted,
     letterSpacing: 1.5,
+  },
+  sectionHeaderRight: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 10,
+  },
+  shareBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  shareBtnText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 9,
+    color: Colors.text.secondary,
+    letterSpacing: 0.5,
   },
   sectionDate: {
     fontFamily: "Outfit_600SemiBold",
