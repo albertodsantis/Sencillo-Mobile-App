@@ -846,6 +846,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 4,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   segmentButton: {
     flex: 1,
