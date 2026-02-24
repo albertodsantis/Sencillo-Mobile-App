@@ -436,7 +436,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
               hitSlop={8}
-              style={[styles.headerIconBtn, styles.currencyToggleBtn]}
+              style={styles.headerIconBtn}
             >
               <MaterialCommunityIcons
                 name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
@@ -864,11 +864,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-  currencyToggleBtn: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    borderColor: Colors.dark.borderSubtle,
   },
   helpBtn: {
     width: 40,
