@@ -46,6 +46,7 @@ export default function ProfileScreen() {
     activeWorkspaceId,
     setActiveWorkspace,
     createWorkspace,
+    deleteWorkspace,
   } = useApp();
 
   const [firstName, setFirstName] = useState(profile.firstName);
@@ -197,6 +198,37 @@ export default function ProfileScreen() {
       else Alert.alert('Error', msg);
     }
   }, [workspaceName, createWorkspace]);
+
+
+
+  const handleDeleteWorkspace = useCallback(async (workspaceId: string, workspaceName: string) => {
+    const doDelete = async () => {
+      try {
+        await deleteWorkspace(workspaceId);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'No se pudo eliminar el espacio';
+        if (Platform.OS === 'web') alert(msg);
+        else Alert.alert('Error', msg);
+      }
+    };
+
+    const confirmMessage = `Se eliminará el espacio "${workspaceName}" y toda su información. Esta acción no se puede deshacer.`;
+
+    if (Platform.OS === 'web') {
+      if (confirm(confirmMessage)) await doDelete();
+      return;
+    }
+
+    Alert.alert(
+      'Eliminar espacio',
+      confirmMessage,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => { void doDelete(); } },
+      ],
+    );
+  }, [deleteWorkspace]);
 
   const closeWorkspaceMenu = useCallback(() => {
     setShowWorkspaceMenu(false);
@@ -699,19 +731,31 @@ export default function ProfileScreen() {
             <View style={styles.workspaceMenuCard}>
               {workspaces.map((workspace) => {
                 const selected = workspace.id === activeWorkspaceId;
+                const canDelete = !workspace.isDefault;
+
                 return (
-                  <Pressable
-                    key={workspace.id}
-                    style={styles.workspaceMenuItem}
-                    onPress={async () => {
-                      await setActiveWorkspace(workspace.id);
-                      closeWorkspaceMenu();
-                      Haptics.selectionAsync();
-                    }}
-                  >
-                    <Text style={[styles.workspaceMenuName, selected && { color: Colors.brand.DEFAULT }]}>{workspace.name}</Text>
-                    {selected ? <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} /> : null}
-                  </Pressable>
+                  <View key={workspace.id} style={styles.workspaceMenuItem}>
+                    <Pressable
+                      style={styles.workspaceMenuMainAction}
+                      onPress={async () => {
+                        await setActiveWorkspace(workspace.id);
+                        closeWorkspaceMenu();
+                        Haptics.selectionAsync();
+                      }}
+                    >
+                      <Text style={[styles.workspaceMenuName, selected && { color: Colors.brand.DEFAULT }]}>{workspace.name}</Text>
+                      {selected ? <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} /> : null}
+                    </Pressable>
+                    {canDelete ? (
+                      <Pressable
+                        hitSlop={8}
+                        style={styles.workspaceDeleteBtn}
+                        onPress={() => handleDeleteWorkspace(workspace.id, workspace.name)}
+                      >
+                        <Feather name="trash-2" size={16} color={Colors.status.danger} />
+                      </Pressable>
+                    ) : null}
+                  </View>
                 );
               })}
               <Pressable
@@ -1029,11 +1073,25 @@ const styles = StyleSheet.create({
   },
   workspaceMenuItem: {
     flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
     alignItems: "center" as const,
+    gap: 8,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.borderSubtle,
+  },
+  workspaceMenuMainAction: {
+    flex: 1,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+  },
+  workspaceDeleteBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: "rgba(239,68,68,0.12)",
   },
   workspaceMenuName: {
     fontFamily: "Outfit_600SemiBold",
