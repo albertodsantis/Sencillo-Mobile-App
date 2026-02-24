@@ -53,6 +53,7 @@ interface AppContextValue {
   setDisplayCurrency: (currency: DisplayCurrency) => Promise<void>;
   setActiveWorkspace: (workspaceId: string) => Promise<void>;
   createWorkspace: (name: string) => Promise<void>;
+  deleteWorkspace: (workspaceId: string) => Promise<void>;
 
   addTx: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   addMultipleTx: (txList: Omit<Transaction, 'id'>[]) => Promise<void>;
@@ -169,6 +170,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setWorkspaces((prev) => [...prev, created]);
     await setActiveWorkspace(created.id);
   }, [setActiveWorkspace]);
+
+  const deleteWorkspace = useCallback(async (workspaceId: string) => {
+    await WorkspaceRepository.remove(workspaceId);
+
+    const nextWorkspaces = workspaces.filter((workspace) => workspace.id !== workspaceId);
+    setWorkspaces(nextWorkspaces);
+
+    if (activeWorkspaceId !== workspaceId) return;
+
+    const nextActiveWorkspaceId = nextWorkspaces[0]?.id ?? null;
+    if (nextActiveWorkspaceId) {
+      await setActiveWorkspace(nextActiveWorkspaceId);
+      return;
+    }
+
+    await AsyncStorage.removeItem(ACTIVE_WORKSPACE_STORAGE_KEY);
+    setActiveWorkspaceId(null);
+  }, [activeWorkspaceId, setActiveWorkspace, workspaces]);
 
   const refreshRates = useCallback(async () => {
     setIsRefreshingRates(true);
@@ -291,6 +310,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setDisplayCurrency,
       setActiveWorkspace,
       createWorkspace,
+      deleteWorkspace,
       addTx,
       addMultipleTx,
       updateTx,
@@ -311,6 +331,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
       updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace, clearAccount,
+      deleteWorkspace,
     ],
   );
 

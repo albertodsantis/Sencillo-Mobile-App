@@ -90,6 +90,36 @@ export const WorkspaceRepository = {
     return mapWorkspace(data as WorkspaceRow);
   },
 
+  async remove(workspaceId: string): Promise<void> {
+    const userId = await getCurrentUserId();
+    if (!userId) throw new Error('No autenticado');
+
+    const { data: workspace, error: fetchError } = await supabase
+      .from('workspaces')
+      .select('id, is_default')
+      .eq('id', workspaceId)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError || !workspace) {
+      throw new Error('No se encontro el espacio');
+    }
+
+    if (workspace.is_default) {
+      throw new Error('No puedes eliminar el espacio personal');
+    }
+
+    const { error } = await supabase
+      .from('workspaces')
+      .delete()
+      .eq('id', workspaceId)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudo eliminar el espacio');
+    }
+  },
+
   async ensureDefault(): Promise<void> {
     const userId = await getCurrentUserId();
     if (!userId) return;
