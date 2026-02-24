@@ -436,7 +436,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
               hitSlop={8}
-              style={styles.headerIconBtn}
+              style={[styles.headerIconBtn, styles.currencyToggleBtn]}
             >
               <Text style={styles.currencyToggleText}>
                 {displayCurrency === "USD" ? "$" : "€"}
@@ -866,9 +866,14 @@ const styles = StyleSheet.create({
   currencyToggleText: {
     color: Colors.text.muted,
     fontFamily: "Outfit_700Bold",
-    fontSize: 22,
-    lineHeight: 22,
+    fontSize: 20,
+    lineHeight: 20,
     verticalAlign: "middle" as const,
+  },
+  currencyToggleBtn: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: Colors.dark.borderSubtle,
   },
   helpBtn: {
     width: 40,
