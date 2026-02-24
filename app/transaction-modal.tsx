@@ -997,9 +997,11 @@ const styles = StyleSheet.create({
     alignSelf: "center" as const,
   },
   currencyPill: {
-    flex: 1,
     alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingHorizontal: 16,
     paddingVertical: 10,
+    minWidth: 68,
     borderRadius: 12,
     backgroundColor: "#0f1729",
     borderWidth: 1,
