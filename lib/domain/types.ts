@@ -106,7 +106,7 @@ export const RECURRENCE_OPTIONS: { id: RecurrenceType; label: string }[] = [
   { id: 'none', label: 'No repetir' },
   { id: 'weekly', label: 'Semanalmente' },
   { id: 'monthly', label: 'Mensualmente' },
-  { id: 'quarterly', label: 'Trimestral (c/3 meses)' },
-  { id: 'quadrimester', label: 'Cuatrimestral (c/4 meses)' },
-  { id: 'biannual', label: 'Semestral (c/6 meses)' },
+  { id: 'quarterly', label: 'Trimestral' },
+  { id: 'quadrimester', label: 'Cuatrimestral' },
+  { id: 'biannual', label: 'Semestral' },
 ];
