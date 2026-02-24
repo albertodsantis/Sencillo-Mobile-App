@@ -9,7 +9,7 @@ import {
   ScrollView,
   Platform,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -48,8 +48,10 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyKey>("USD");
   const [ratesDate, setRatesDate] = useState("");
+  const { height: windowHeight } = useWindowDimensions();
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
+  const modalHeight = Math.max(windowHeight, 1);
 
   useEffect(() => {
     if (!visible) return;
@@ -114,10 +116,15 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     : 0;
   const safeBrechaValue = Number.isFinite(brechaValue) ? brechaValue : 0;
 
-  const slideAnim = useRef(new Animated.Value(-Dimensions.get("window").height)).current;
+  const slideAnim = useRef(new Animated.Value(-modalHeight)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (!visible) {
+      slideAnim.setValue(-modalHeight);
+      return;
+    }
+
     if (visible) {
       Animated.parallel([
         Animated.timing(overlayAnim, {
@@ -134,7 +141,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
         }),
       ]).start();
     }
-  }, [overlayAnim, slideAnim, visible]);
+  }, [modalHeight, overlayAnim, slideAnim, visible]);
 
   const animateClose = () => {
     Animated.parallel([
@@ -144,13 +151,13 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
-        toValue: -Dimensions.get("window").height,
+        toValue: -modalHeight,
         duration: 250,
         useNativeDriver: true,
       }),
     ]).start(() => {
       handleClose();
-      slideAnim.setValue(-Dimensions.get("window").height);
+      slideAnim.setValue(-modalHeight);
       overlayAnim.setValue(0);
     });
   };

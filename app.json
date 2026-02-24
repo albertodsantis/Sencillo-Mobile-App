@@ -3,7 +3,7 @@
     "name": "Sencillo",
     "slug": "sencillo",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon_app.png",
     "scheme": "sencillo",
     "userInterfaceStyle": "automatic",
@@ -14,7 +14,7 @@
       "backgroundColor": "#020617"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.sencillo.app"
     },
     "android": {

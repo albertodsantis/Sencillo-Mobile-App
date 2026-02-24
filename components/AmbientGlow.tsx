@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Dimensions } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, {
   Defs,
   LinearGradient,
@@ -7,8 +7,6 @@ import Svg, {
   Rect,
 } from "react-native-svg";
 import Colors from "@/constants/colors";
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 interface AmbientGlowProps {
   color?: string;
@@ -19,11 +17,12 @@ export default function AmbientGlow({
   color = Colors.brand.DEFAULT,
   intensity = 0.16,
 }: AmbientGlowProps) {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const clampOpacity = (value: number) => Math.min(Math.max(value, 0), 0.8);
 
   return (
     <View style={styles.container} pointerEvents="none">
-      <Svg width={SCREEN_W} height={SCREEN_H} style={StyleSheet.absoluteFill}>
+      <Svg width={screenWidth} height={screenHeight} style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id="gBase" x1="0%" y1="0%" x2="100%" y2="100%">
             <Stop offset="0" stopColor="#0b1220" stopOpacity="0.06" />
