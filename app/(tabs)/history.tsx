@@ -322,6 +322,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 4,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   filterBtn: {
     flex: 1,
