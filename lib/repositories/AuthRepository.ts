@@ -62,31 +62,42 @@ function buildProfileFromRegistration(name: string, email: string, password: str
 }
 
 async function ensureInitialProfile(user: User, password = ''): Promise<void> {
-  const { data: existingProfile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (profileCheckError || existingProfile) {
-    return;
-  }
-
   const normalizedEmail = user.email?.toLowerCase().trim() ?? '';
   const displayName = (user.user_metadata?.name as string | undefined)?.trim() ||
     normalizedEmail.split('@')[0] ||
     'Usuario';
   const { firstName, lastName } = splitName(displayName);
 
-  await supabase.from('profiles').insert({
-    user_id: user.id,
-    first_name: firstName,
-    last_name: lastName,
-    phone_prefix: '+58',
-    phone_number: '',
-    email: normalizedEmail,
-    password,
-  });
+  const { error } = await supabase.from('profiles').upsert(
+    {
+      user_id: user.id,
+      first_name: firstName,
+      last_name: lastName,
+      phone_prefix: '+58',
+      phone_number: '',
+      email: normalizedEmail,
+      password,
+    },
+    { onConflict: 'user_id' },
+  );
+
+  if (error) {
+    throw new Error(error.message || 'No se pudo asegurar el perfil');
+  }
+}
+
+async function syncAuthenticatedUser(user: User): Promise<AuthUser> {
+  const mapped = mapSupabaseUserToAuthUser(user);
+  await AuthRepository.persistSession(mapped);
+
+  try {
+    await ensureInitialProfile(user);
+    await WorkspaceRepository.ensureDefault();
+  } catch (bootstrapError) {
+    console.warn('No se pudo bootstrapear perfil/workspace para usuario autenticado:', bootstrapError);
+  }
+
+  return mapped;
 }
 
 export const AuthRepository = {
@@ -98,17 +109,7 @@ export const AuthRepository = {
         return null;
       }
 
-      const user = mapSupabaseUserToAuthUser(data.user);
-      await this.persistSession(user);
-
-      try {
-        await ensureInitialProfile(data.user);
-        await WorkspaceRepository.ensureDefault();
-      } catch (bootstrapError) {
-        console.warn('No se pudo bootstrapear perfil/workspace al restaurar sesion:', bootstrapError);
-      }
-
-      return user;
+      return await syncAuthenticatedUser(data.user);
     } catch {
       await this.clearSession();
       return null;
@@ -121,6 +122,10 @@ export const AuthRepository = {
 
   async clearSession(): Promise<void> {
     await AsyncStorage.removeItem(SESSION_KEY);
+  },
+
+  async syncFromSupabaseSessionUser(user: User): Promise<AuthUser> {
+    return await syncAuthenticatedUser(user);
   },
 
   async register(
@@ -164,15 +169,15 @@ export const AuthRepository = {
       };
     }
 
-    const user = mapSupabaseUserToAuthUser(data.user);
-    await this.persistSession(user);
+    let user: AuthUser = mapSupabaseUserToAuthUser(data.user);
 
     try {
       const profile = buildProfileFromRegistration(normalizedName, normalizedEmail, password);
       await ProfileRepository.save(profile);
-      await WorkspaceRepository.ensureDefault();
+      user = await syncAuthenticatedUser(data.user);
     } catch (profileError) {
       console.warn('No se pudo guardar el perfil inicial en Supabase:', profileError);
+      await this.persistSession(user);
     }
 
     return { success: true, user };
@@ -203,14 +208,14 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo iniciar sesion' };
     }
 
-    const user: AuthUser = mapSupabaseUserToAuthUser(data.user);
-    await this.persistSession(user);
-
+    let user: AuthUser;
     try {
       await ensureInitialProfile(data.user, password);
-      await WorkspaceRepository.ensureDefault();
+      user = await syncAuthenticatedUser(data.user);
     } catch (profileError) {
       console.warn('No se pudo asegurar el perfil para este usuario:', profileError);
+      user = mapSupabaseUserToAuthUser(data.user);
+      await this.persistSession(user);
     }
 
     return { success: true, user };
@@ -269,14 +274,13 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo iniciar sesion con Google' };
     }
 
-    const user = mapSupabaseUserToAuthUser(sessionData.user);
-    await this.persistSession(user);
-
+    let user: AuthUser;
     try {
-      await ensureInitialProfile(sessionData.user);
-      await WorkspaceRepository.ensureDefault();
+      user = await syncAuthenticatedUser(sessionData.user);
     } catch (profileError) {
       console.warn('No se pudo asegurar el perfil para usuario de Google:', profileError);
+      user = mapSupabaseUserToAuthUser(sessionData.user);
+      await this.persistSession(user);
     }
 
     return { success: true, user };

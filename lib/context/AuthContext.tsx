@@ -33,15 +33,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session?.user) {
-        await AuthRepository.clearSession();
+        AuthRepository.clearSession();
         if (isMounted) setUser(null);
         return;
       }
 
-      const refreshed = await AuthRepository.getSession();
-      if (isMounted) setUser(refreshed);
+      AuthRepository.syncFromSupabaseSessionUser(session.user)
+        .then((syncedUser) => {
+          if (isMounted) setUser(syncedUser);
+        })
+        .catch(() => {
+          if (isMounted) setUser(null);
+        });
     });
 
     return () => {
