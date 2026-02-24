@@ -690,65 +690,71 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={closeWorkspaceMenu}
       >
-        <Pressable style={styles.workspaceMenuOverlay} onPress={() => setShowWorkspaceMenu(false)}>
-          <View style={styles.workspaceMenuCard}>
-            {workspaces.map((workspace) => {
-              const selected = workspace.id === activeWorkspaceId;
-              return (
-                <Pressable
-                  key={workspace.id}
-                  style={styles.workspaceMenuItem}
-                  onPress={async () => {
-                    await setActiveWorkspace(workspace.id);
-                    closeWorkspaceMenu();
-                    Haptics.selectionAsync();
-                  }}
-                >
-                  <Text style={[styles.workspaceMenuName, selected && { color: Colors.brand.DEFAULT }]}>{workspace.name}</Text>
-                  {selected ? <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} /> : null}
-                </Pressable>
-              );
-            })}
-            <Pressable
-              style={styles.workspaceCreateBtn}
-              onPress={() => setShowCreateWorkspaceModal((prev) => !prev)}
-            >
-              <Ionicons
-                name={showCreateWorkspaceModal ? 'remove' : 'add'}
-                size={18}
-                color={Colors.brand.DEFAULT}
-              />
-              <Text style={styles.workspaceCreateText}>Crear nuevo espacio</Text>
-            </Pressable>
-            {showCreateWorkspaceModal ? (
-              <View style={styles.workspaceCreateInlineCard}>
-                <Text style={styles.workspaceCreateTitle}>Nuevo espacio</Text>
-                <TextInput
-                  style={styles.workspaceCreateInput}
-                  value={workspaceName}
-                  onChangeText={setWorkspaceName}
-                  placeholder="Ej. Casa o Negocio"
-                  placeholderTextColor={Colors.text.disabled}
-                  autoFocus
-                />
-                <View style={styles.workspaceCreateActions}>
+        <KeyboardAvoidingView
+          style={styles.workspaceMenuOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Pressable style={styles.workspaceMenuDismissLayer} onPress={closeWorkspaceMenu} />
+          <View style={styles.workspaceMenuContainer}>
+            <View style={styles.workspaceMenuCard}>
+              {workspaces.map((workspace) => {
+                const selected = workspace.id === activeWorkspaceId;
+                return (
                   <Pressable
-                    style={styles.workspaceCancelBtn}
-                    onPress={() => {
-                      setShowCreateWorkspaceModal(false);
-                      setWorkspaceName('');
+                    key={workspace.id}
+                    style={styles.workspaceMenuItem}
+                    onPress={async () => {
+                      await setActiveWorkspace(workspace.id);
+                      closeWorkspaceMenu();
+                      Haptics.selectionAsync();
                     }}
                   >
-                    <Text style={styles.workspaceCancelText}>Cancelar</Text>
+                    <Text style={[styles.workspaceMenuName, selected && { color: Colors.brand.DEFAULT }]}>{workspace.name}</Text>
+                    {selected ? <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} /> : null}
                   </Pressable>
-                  <Pressable style={styles.workspaceSaveBtn} onPress={handleCreateWorkspace}>
-                    <Text style={styles.workspaceSaveText}>Guardar</Text>
-                  </Pressable>
+                );
+              })}
+              <Pressable
+                style={styles.workspaceCreateBtn}
+                onPress={() => setShowCreateWorkspaceModal((prev) => !prev)}
+              >
+                <Ionicons
+                  name={showCreateWorkspaceModal ? 'remove' : 'add'}
+                  size={18}
+                  color={Colors.brand.DEFAULT}
+                />
+                <Text style={styles.workspaceCreateText}>Crear nuevo espacio</Text>
+              </Pressable>
+              {showCreateWorkspaceModal ? (
+                <View style={styles.workspaceCreateInlineCard}>
+                  <Text style={styles.workspaceCreateTitle}>Nuevo espacio</Text>
+                  <TextInput
+                    style={styles.workspaceCreateInput}
+                    value={workspaceName}
+                    onChangeText={setWorkspaceName}
+                    placeholder="Ej. Casa o Negocio"
+                    placeholderTextColor={Colors.text.disabled}
+                    autoFocus
+                  />
+                  <View style={styles.workspaceCreateActions}>
+                    <Pressable
+                      style={styles.workspaceCancelBtn}
+                      onPress={() => {
+                        setShowCreateWorkspaceModal(false);
+                        setWorkspaceName('');
+                      }}
+                    >
+                      <Text style={styles.workspaceCancelText}>Cancelar</Text>
+                    </Pressable>
+                    <Pressable style={styles.workspaceSaveBtn} onPress={handleCreateWorkspace}>
+                      <Text style={styles.workspaceSaveText}>Guardar</Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
-            ) : null}
+              ) : null}
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </KeyboardAvoidingView>
   );
@@ -1006,7 +1012,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.card,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    marginTop: 120,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,
@@ -1014,6 +1019,12 @@ const styles = StyleSheet.create({
   workspaceMenuOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",
+  },
+  workspaceMenuDismissLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  workspaceMenuContainer: {
+    paddingTop: 120,
     justifyContent: "flex-start" as const,
   },
   workspaceMenuItem: {
