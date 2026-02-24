@@ -435,7 +435,9 @@ export default function HomeScreen() {
                 color={Colors.text.secondary}
               />
             </Pressable>
-            <Text style={styles.headerTitle}>{displayName}</Text>
+            <Pressable onPress={() => router.push("/profile")}>
+              <Text style={styles.headerTitle}>{displayName}</Text>
+            </Pressable>
           </View>
           <View style={styles.headerRight}>
             <Pressable
