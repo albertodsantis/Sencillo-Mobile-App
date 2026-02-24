@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -38,6 +38,8 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_WIDTH = SCREEN_WIDTH - 56;
 const CARD_GAP = 12;
+const KPI_ITEM_SIZE = CARD_WIDTH + CARD_GAP;
+const KPI_LOOP_MULTIPLIER = 5;
 const KPI_CARD_COLORS = [
   Colors.segments.ingresos.color,
   Colors.segments.gastos_fijos.color,
@@ -279,6 +281,7 @@ export default function HomeScreen() {
   const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
+  const kpiScrollRef = useRef<ScrollView>(null);
   const filteredByPeriod = useMemo(() => {
     return transactions.filter((t) => {
       const d = new Date(t.date);
@@ -331,14 +334,140 @@ export default function HomeScreen() {
     [buildCategoryStats],
   );
 
-  const handleKpiScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const x = e.nativeEvent.contentOffset.x;
-      const idx = Math.round(x / (CARD_WIDTH + CARD_GAP));
-      setActiveCardIdx(Math.max(0, Math.min(idx, 3)));
+  const navigateToHistory = useCallback(
+    (filter: string) => {
+      setHistoryFilter(filter);
+      router.push("/(tabs)/history");
     },
-    [],
+    [router, setHistoryFilter],
   );
+
+  const kpiCards = useMemo(
+    () => [
+      {
+        label: "Ingresos",
+        total: dashboardData.ingresos,
+        vesAmount: dashboardData.ingresosVES,
+        hardAmount: dashboardData.ingresosHard,
+        color: Colors.segments.ingresos.color,
+        segment: "ingresos",
+        icon: (
+          <Ionicons
+            name="trending-up"
+            size={18}
+            color={Colors.segments.ingresos.color}
+          />
+        ),
+        count: ingresosStats.count,
+        categories: ingresosStats.categories,
+        onPress: () => navigateToHistory("ingresos"),
+      },
+      {
+        label: "Gastos Fijos",
+        total: dashboardData.gastosFijos,
+        vesAmount: dashboardData.gastosFijosVES,
+        hardAmount: dashboardData.gastosFijosHard,
+        color: Colors.segments.gastos_fijos.color,
+        segment: "gastos_fijos",
+        icon: (
+          <MaterialCommunityIcons
+            name="credit-card"
+            size={18}
+            color={Colors.segments.gastos_fijos.color}
+          />
+        ),
+        count: fijoStats.count,
+        categories: fijoStats.categories,
+        onPress: () => navigateToHistory("gastos"),
+      },
+      {
+        label: "Gastos Variables",
+        total: dashboardData.gastosVariables,
+        vesAmount: dashboardData.gastosVariablesVES,
+        hardAmount: dashboardData.gastosVariablesHard,
+        color: Colors.segments.gastos_variables.color,
+        segment: "gastos_variables",
+        icon: (
+          <Ionicons
+            name="trending-down"
+            size={18}
+            color={Colors.segments.gastos_variables.color}
+          />
+        ),
+        count: varStats.count,
+        categories: varStats.categories,
+        onPress: () => navigateToHistory("gastos"),
+      },
+      {
+        label: "Ahorro",
+        total: dashboardData.ahorro,
+        vesAmount: dashboardData.ahorroVES,
+        hardAmount: dashboardData.ahorroHard,
+        color: Colors.segments.ahorro.color,
+        segment: "ahorro",
+        icon: (
+          <MaterialCommunityIcons
+            name="piggy-bank"
+            size={18}
+            color={Colors.segments.ahorro.color}
+          />
+        ),
+        count: ahorroStats.count,
+        categories: ahorroStats.categories,
+        onPress: () => navigateToHistory("ahorro"),
+      },
+    ],
+    [
+      dashboardData,
+      ingresosStats,
+      fijoStats,
+      varStats,
+      ahorroStats,
+      navigateToHistory,
+    ],
+  );
+
+  const kpiLoopData = useMemo(() => {
+    const cardCount = kpiCards.length;
+    return Array.from({ length: cardCount * KPI_LOOP_MULTIPLIER }, (_, index) => ({
+      ...kpiCards[index % cardCount],
+      baseIndex: index % cardCount,
+      loopIndex: index,
+    }));
+  }, [kpiCards]);
+
+  const handleKpiMomentumEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const cardCount = kpiCards.length;
+      if (!cardCount) return;
+
+      const x = e.nativeEvent.contentOffset.x;
+      const rawIndex = Math.round(x / KPI_ITEM_SIZE);
+      const normalizedIndex = ((rawIndex % cardCount) + cardCount) % cardCount;
+
+      setActiveCardIdx(normalizedIndex);
+
+      const minIndex = cardCount;
+      const maxIndex = cardCount * (KPI_LOOP_MULTIPLIER - 1) - 1;
+      if (rawIndex <= minIndex || rawIndex >= maxIndex) {
+        const centerBlock = Math.floor(KPI_LOOP_MULTIPLIER / 2);
+        const targetIndex = centerBlock * cardCount + normalizedIndex;
+        if (targetIndex !== rawIndex) {
+          kpiScrollRef.current?.scrollTo({
+            x: targetIndex * KPI_ITEM_SIZE,
+            y: 0,
+            animated: false,
+          });
+        }
+      }
+    },
+    [kpiCards],
+  );
+
+  const initialKpiOffset = useMemo(() => {
+    const centerBlock = Math.floor(KPI_LOOP_MULTIPLIER / 2);
+    return centerBlock * kpiCards.length * KPI_ITEM_SIZE;
+  }, [kpiCards.length]);
 
   const displayName = profile.firstName || "Sencillo";
 
@@ -378,11 +507,6 @@ export default function HomeScreen() {
       }
     }
   }, [viewMode, currentMonth, currentYear, setCurrentMonth, setCurrentYear]);
-
-  const navigateToHistory = (filter: string) => {
-    setHistoryFilter(filter);
-    router.push("/(tabs)/history");
-  };
 
   if (isLoading) {
     return (
@@ -556,105 +680,31 @@ export default function HomeScreen() {
         </Pressable>
 
         <ScrollView
+          ref={kpiScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.kpiScroll}
           contentContainerStyle={styles.kpiRow}
-          snapToInterval={CARD_WIDTH + CARD_GAP}
+          contentOffset={{ x: initialKpiOffset, y: 0 }}
+          snapToInterval={KPI_ITEM_SIZE}
           decelerationRate="fast"
-          onScroll={handleKpiScroll}
-          scrollEventThrottle={16}
+          onMomentumScrollEnd={handleKpiMomentumEnd}
         >
-          <KpiCard
-            label="Ingresos"
-            total={dashboardData.ingresos}
-            vesAmount={dashboardData.ingresosVES}
-            hardAmount={dashboardData.ingresosHard}
-            color={Colors.segments.ingresos.color}
-            segment="ingresos"
-            icon={
-              <Ionicons
-                name="trending-up"
-                size={18}
-                color={Colors.segments.ingresos.color}
-              />
-            }
-            count={ingresosStats.count}
-            categories={ingresosStats.categories}
-            onPress={() => navigateToHistory("ingresos")}
-            hidden={hiddenBalances}
-            displayCurrency={displayCurrency}
-            rates={rates}
-          />
-          <KpiCard
-            label="Gastos Fijos"
-            total={dashboardData.gastosFijos}
-            vesAmount={dashboardData.gastosFijosVES}
-            hardAmount={dashboardData.gastosFijosHard}
-            color={Colors.segments.gastos_fijos.color}
-            segment="gastos_fijos"
-            icon={
-              <MaterialCommunityIcons
-                name="credit-card"
-                size={18}
-                color={Colors.segments.gastos_fijos.color}
-              />
-            }
-            count={fijoStats.count}
-            categories={fijoStats.categories}
-            onPress={() => navigateToHistory("gastos")}
-            hidden={hiddenBalances}
-            displayCurrency={displayCurrency}
-            rates={rates}
-          />
-          <KpiCard
-            label="Gastos Variables"
-            total={dashboardData.gastosVariables}
-            vesAmount={dashboardData.gastosVariablesVES}
-            hardAmount={dashboardData.gastosVariablesHard}
-            color={Colors.segments.gastos_variables.color}
-            segment="gastos_variables"
-            icon={
-              <Ionicons
-                name="trending-down"
-                size={18}
-                color={Colors.segments.gastos_variables.color}
-              />
-            }
-            count={varStats.count}
-            categories={varStats.categories}
-            onPress={() => navigateToHistory("gastos")}
-            hidden={hiddenBalances}
-            displayCurrency={displayCurrency}
-            rates={rates}
-          />
-          <KpiCard
-            label="Ahorro"
-            total={dashboardData.ahorro}
-            vesAmount={dashboardData.ahorroVES}
-            hardAmount={dashboardData.ahorroHard}
-            color={Colors.segments.ahorro.color}
-            segment="ahorro"
-            icon={
-              <MaterialCommunityIcons
-                name="piggy-bank"
-                size={18}
-                color={Colors.segments.ahorro.color}
-              />
-            }
-            count={ahorroStats.count}
-            categories={ahorroStats.categories}
-            onPress={() => navigateToHistory("ahorro")}
-            hidden={hiddenBalances}
-            displayCurrency={displayCurrency}
-            rates={rates}
-          />
+          {kpiLoopData.map(({ loopIndex, ...card }) => (
+            <KpiCard
+              key={`${card.segment}-${loopIndex}`}
+              {...card}
+              hidden={hiddenBalances}
+              displayCurrency={displayCurrency}
+              rates={rates}
+            />
+          ))}
         </ScrollView>
 
         <View style={styles.kpiDots}>
-          {[0, 1, 2, 3].map((i) => (
+          {kpiCards.map((card, i) => (
             <View
-              key={i}
+              key={card.segment}
               style={[
                 styles.kpiDot,
                 i === activeCardIdx && styles.kpiDotActive,
