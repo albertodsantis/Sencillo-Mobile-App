@@ -690,8 +690,7 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={closeWorkspaceMenu}
       >
-        <View style={styles.workspaceMenuOverlay}>
-          <Pressable style={styles.workspaceMenuBackdrop} onPress={closeWorkspaceMenu} />
+        <Pressable style={styles.workspaceMenuOverlay} onPress={() => setShowWorkspaceMenu(false)}>
           <View style={styles.workspaceMenuCard}>
             {workspaces.map((workspace) => {
               const selected = workspace.id === activeWorkspaceId;
@@ -1014,11 +1013,8 @@ const styles = StyleSheet.create({
   },
   workspaceMenuOverlay: {
     flex: 1,
-    justifyContent: "flex-start" as const,
-  },
-  workspaceMenuBackdrop: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-start" as const,
   },
   workspaceMenuItem: {
     flexDirection: "row" as const,
