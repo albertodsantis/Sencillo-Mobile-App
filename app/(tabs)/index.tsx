@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   Pressable,
+  Animated,
   ActivityIndicator,
   Platform,
   RefreshControl,
@@ -14,7 +15,7 @@ import {
   NativeScrollEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
@@ -273,6 +274,45 @@ export default function HomeScreen() {
   const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
+  const reportIconPulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(reportIconPulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(reportIconPulse, {
+          toValue: 0,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    pulseLoop.start();
+
+    return () => {
+      pulseLoop.stop();
+    };
+  }, [reportIconPulse]);
+
+  const reportIconAnimatedStyle = {
+    opacity: reportIconPulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.75, 1],
+    }),
+    transform: [
+      {
+        scale: reportIconPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.08],
+        }),
+      },
+    ],
+  };
 
   const filteredByPeriod = useMemo(() => {
     return transactions.filter((t) => {
@@ -541,10 +581,13 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-          <View style={styles.reportLink}>
-            <Text style={styles.reportLinkText}>Ver Reporte</Text>
-            <Feather name="arrow-right" size={12} color={Colors.text.muted} />
-          </View>
+          <Animated.View style={[styles.reportLinkIcon, reportIconAnimatedStyle]}>
+            <MaterialCommunityIcons
+              name="file-table-outline"
+              size={20}
+              color={Colors.text.secondary}
+            />
+          </Animated.View>
         </Pressable>
 
         <ScrollView
@@ -949,18 +992,16 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     letterSpacing: -0.5,
   },
-  reportLink: {
-    flexDirection: "row" as const,
+  reportLinkIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
     alignItems: "center" as const,
-    gap: 6,
+    justifyContent: "center" as const,
     marginTop: 10,
-  },
-  reportLinkText: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 10,
-    color: Colors.text.muted,
-    letterSpacing: 1,
-    textTransform: "uppercase" as const,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   kpiScroll: {
     marginBottom: 8,
