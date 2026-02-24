@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
@@ -16,7 +16,7 @@ import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol } from "@/lib/domain/finance";
-import type { Transaction, DisplayCurrency, Rates } from "@/lib/domain/types";
+import type { Transaction, DisplayCurrency, Rates, Segment } from "@/lib/domain/types";
 
 const FILTERS = [
   { id: "all", label: "Todos" },
@@ -24,6 +24,41 @@ const FILTERS = [
   { id: "gastos", label: "Gastos" },
   { id: "ahorro", label: "Ahorro" },
 ];
+
+const SEGMENT_VISUALS: Record<
+  Segment,
+  {
+    iconLibrary: "ionicons" | "material";
+    iconName: string;
+    color: string;
+    bg: string;
+  }
+> = {
+  ingresos: {
+    iconLibrary: "ionicons",
+    iconName: "trending-up",
+    color: Colors.segments.ingresos.color,
+    bg: Colors.segments.ingresos.bg,
+  },
+  gastos_fijos: {
+    iconLibrary: "material",
+    iconName: "credit-card",
+    color: Colors.segments.gastos_fijos.color,
+    bg: Colors.segments.gastos_fijos.bg,
+  },
+  gastos_variables: {
+    iconLibrary: "ionicons",
+    iconName: "trending-down",
+    color: Colors.segments.gastos_variables.color,
+    bg: Colors.segments.gastos_variables.bg,
+  },
+  ahorro: {
+    iconLibrary: "material",
+    iconName: "piggy-bank",
+    color: Colors.segments.ahorro.color,
+    bg: Colors.segments.ahorro.bg,
+  },
+};
 
 function TransactionRow({
   item,
@@ -43,6 +78,7 @@ function TransactionRow({
     devaluation = ((item.originalRate / rates.bcv) - 1) * 100;
   }
   const isIncome = item.type === "income";
+  const movementVisual = SEGMENT_VISUALS[item.segment];
   const dateLabel = dayjs(item.date).locale("es").format("ddd D MMM");
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const displayAmount = convertUSDToDisplayCurrency(item.amountUSD || 0, displayCurrency, rates);
@@ -61,21 +97,23 @@ function TransactionRow({
           style={[
             styles.txIcon,
             {
-              backgroundColor: isIncome
-                ? Colors.segments.ingresos.bg
-                : Colors.segments.gastos_variables.bg,
+              backgroundColor: movementVisual.bg,
             },
           ]}
         >
-          <Feather
-            name={isIncome ? "arrow-up-right" : "arrow-down-right"}
-            size={16}
-            color={
-              isIncome
-                ? Colors.segments.ingresos.color
-                : Colors.segments.gastos_variables.color
-            }
-          />
+          {movementVisual.iconLibrary === "ionicons" ? (
+            <Ionicons
+              name={movementVisual.iconName as keyof typeof Ionicons.glyphMap}
+              size={16}
+              color={movementVisual.color}
+            />
+          ) : (
+            <MaterialCommunityIcons
+              name={movementVisual.iconName as keyof typeof MaterialCommunityIcons.glyphMap}
+              size={16}
+              color={movementVisual.color}
+            />
+          )}
         </View>
         <View style={styles.txInfo}>
           <Text style={styles.txCategory} numberOfLines={1}>
