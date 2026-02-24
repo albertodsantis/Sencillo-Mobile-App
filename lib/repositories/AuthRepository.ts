@@ -92,9 +92,25 @@ async function ensureInitialProfile(user: User, password = ''): Promise<void> {
 export const AuthRepository = {
   async getSession(): Promise<AuthUser | null> {
     try {
-      const data = await AsyncStorage.getItem(SESSION_KEY);
-      return data ? JSON.parse(data) : null;
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        await this.clearSession();
+        return null;
+      }
+
+      const user = mapSupabaseUserToAuthUser(data.user);
+      await this.persistSession(user);
+
+      try {
+        await ensureInitialProfile(data.user);
+        await WorkspaceRepository.ensureDefault();
+      } catch (bootstrapError) {
+        console.warn('No se pudo bootstrapear perfil/workspace al restaurar sesion:', bootstrapError);
+      }
+
+      return user;
     } catch {
+      await this.clearSession();
       return null;
     }
   },

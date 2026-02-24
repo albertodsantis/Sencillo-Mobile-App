@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { supabase } from "@/utils/supabase";
 import { AuthRepository, type AuthUser } from "../repositories/AuthRepository";
 
 export type { AuthUser } from "../repositories/AuthRepository";
@@ -19,15 +20,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     (async () => {
       try {
         const session = await AuthRepository.getSession();
-        if (session) setUser(session);
+        if (isMounted) setUser(session);
       } catch {
+        if (isMounted) setUser(null);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     })();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        await AuthRepository.clearSession();
+        if (isMounted) setUser(null);
+        return;
+      }
+
+      const refreshed = await AuthRepository.getSession();
+      if (isMounted) setUser(refreshed);
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const signUpWithEmail = useCallback(async (name: string, email: string, password: string) => {
