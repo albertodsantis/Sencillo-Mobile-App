@@ -9,9 +9,9 @@ import {
   Platform,
   RefreshControl,
   Modal,
-  Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -35,8 +35,6 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
   { id: "year", label: "Anual" },
 ];
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-const CARD_WIDTH = SCREEN_WIDTH - 56;
 const CARD_GAP = 12;
 const KPI_CARD_COLORS = [
   Colors.segments.ingresos.color,
@@ -109,6 +107,7 @@ function KpiCard({
   hidden,
   displayCurrency,
   rates,
+  cardWidth,
 }: {
   label: string;
   total: number;
@@ -123,6 +122,7 @@ function KpiCard({
   hidden?: boolean;
   displayCurrency: DisplayCurrency;
   rates: Rates;
+  cardWidth: number;
 }) {
   const palette = SEGMENT_PALETTES[segment] || SEGMENT_PALETTES.ingresos;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
@@ -134,6 +134,7 @@ function KpiCard({
       onPress={onPress}
       style={({ pressed }) => [
         styles.kpiCard,
+        { width: cardWidth },
         pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
       ]}
     >
@@ -275,6 +276,8 @@ export default function HomeScreen() {
     setDisplayCurrency,
   } = useApp();
 
+  const { width: windowWidth } = useWindowDimensions();
+
   const [showGuide, setShowGuide] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
@@ -331,13 +334,16 @@ export default function HomeScreen() {
     [buildCategoryStats],
   );
 
+  const cardWidth = Math.min(Math.max(windowWidth - 56, 280), 460);
+  const kpiRowPaddingRight = 24 + Math.max(windowWidth - cardWidth - 48, 0);
+
   const handleKpiScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const x = e.nativeEvent.contentOffset.x;
-      const idx = Math.round(x / (CARD_WIDTH + CARD_GAP));
+      const idx = Math.round(x / (cardWidth + CARD_GAP));
       setActiveCardIdx(Math.max(0, Math.min(idx, 3)));
     },
-    [],
+    [cardWidth],
   );
 
   const displayName = profile.firstName || "Sencillo";
@@ -561,8 +567,8 @@ export default function HomeScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.kpiScroll}
-          contentContainerStyle={styles.kpiRow}
-          snapToInterval={CARD_WIDTH + CARD_GAP}
+          contentContainerStyle={[styles.kpiRow, { paddingRight: kpiRowPaddingRight }]}
+          snapToInterval={cardWidth + CARD_GAP}
           decelerationRate="fast"
           onScroll={handleKpiScroll}
           scrollEventThrottle={16}
@@ -587,6 +593,7 @@ export default function HomeScreen() {
             hidden={hiddenBalances}
             displayCurrency={displayCurrency}
             rates={rates}
+            cardWidth={cardWidth}
           />
           <KpiCard
             label="Gastos Fijos"
@@ -608,6 +615,7 @@ export default function HomeScreen() {
             hidden={hiddenBalances}
             displayCurrency={displayCurrency}
             rates={rates}
+            cardWidth={cardWidth}
           />
           <KpiCard
             label="Gastos Variables"
@@ -629,6 +637,7 @@ export default function HomeScreen() {
             hidden={hiddenBalances}
             displayCurrency={displayCurrency}
             rates={rates}
+            cardWidth={cardWidth}
           />
           <KpiCard
             label="Ahorro"
@@ -650,6 +659,7 @@ export default function HomeScreen() {
             hidden={hiddenBalances}
             displayCurrency={displayCurrency}
             rates={rates}
+            cardWidth={cardWidth}
           />
         </ScrollView>
 
@@ -971,7 +981,6 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     gap: CARD_GAP,
     paddingHorizontal: 24,
-    paddingRight: 24 + (SCREEN_WIDTH - CARD_WIDTH - 48),
   },
   kpiCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
@@ -980,7 +989,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    width: CARD_WIDTH,
   },
   kpiCardHeader: {
     flexDirection: "row" as const,
