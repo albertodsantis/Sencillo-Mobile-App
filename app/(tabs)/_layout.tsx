@@ -97,7 +97,7 @@ export default function TabLayout() {
         options={{
           title: "Personalizar",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="color-palette" size={22} color={color} />
+            <Ionicons name="pencil" size={22} color={color} />
           ),
         }}
       />
