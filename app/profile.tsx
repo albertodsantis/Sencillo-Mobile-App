@@ -198,6 +198,12 @@ export default function ProfileScreen() {
     }
   }, [workspaceName, createWorkspace]);
 
+  const closeWorkspaceMenu = useCallback(() => {
+    setShowWorkspaceMenu(false);
+    setShowCreateWorkspaceModal(false);
+    setWorkspaceName('');
+  }, []);
+
   const { signOut } = useAuth();
 
   const handleLogout = useCallback(() => {
@@ -682,7 +688,7 @@ export default function ProfileScreen() {
         visible={showWorkspaceMenu}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowWorkspaceMenu(false)}
+        onRequestClose={closeWorkspaceMenu}
       >
         <Pressable style={styles.workspaceMenuOverlay} onPress={() => setShowWorkspaceMenu(false)}>
           <View style={styles.workspaceMenuCard}>
@@ -694,7 +700,7 @@ export default function ProfileScreen() {
                   style={styles.workspaceMenuItem}
                   onPress={async () => {
                     await setActiveWorkspace(workspace.id);
-                    setShowWorkspaceMenu(false);
+                    closeWorkspaceMenu();
                     Haptics.selectionAsync();
                   }}
                 >
@@ -705,43 +711,42 @@ export default function ProfileScreen() {
             })}
             <Pressable
               style={styles.workspaceCreateBtn}
-              onPress={() => {
-                setShowWorkspaceMenu(false);
-                setShowCreateWorkspaceModal(true);
-              }}
+              onPress={() => setShowCreateWorkspaceModal((prev) => !prev)}
             >
-              <Ionicons name="add" size={18} color={Colors.brand.DEFAULT} />
+              <Ionicons
+                name={showCreateWorkspaceModal ? 'remove' : 'add'}
+                size={18}
+                color={Colors.brand.DEFAULT}
+              />
               <Text style={styles.workspaceCreateText}>Crear nuevo espacio</Text>
             </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-
-      <Modal
-        visible={showCreateWorkspaceModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCreateWorkspaceModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.workspaceCreateCard}>
-            <Text style={styles.workspaceCreateTitle}>Nuevo espacio</Text>
-            <TextInput
-              style={styles.fieldInput}
-              value={workspaceName}
-              onChangeText={setWorkspaceName}
-              placeholder="Ej. Casa o Negocio"
-              placeholderTextColor={Colors.text.disabled}
-              autoFocus
-            />
-            <View style={styles.workspaceCreateActions}>
-              <Pressable style={styles.workspaceCancelBtn} onPress={() => setShowCreateWorkspaceModal(false)}>
-                <Text style={styles.workspaceCancelText}>Cancelar</Text>
-              </Pressable>
-              <Pressable style={styles.workspaceSaveBtn} onPress={handleCreateWorkspace}>
-                <Text style={styles.workspaceSaveText}>Guardar</Text>
-              </Pressable>
-            </View>
+            {showCreateWorkspaceModal ? (
+              <View style={styles.workspaceCreateInlineCard}>
+                <Text style={styles.workspaceCreateTitle}>Nuevo espacio</Text>
+                <TextInput
+                  style={styles.workspaceCreateInput}
+                  value={workspaceName}
+                  onChangeText={setWorkspaceName}
+                  placeholder="Ej. Casa o Negocio"
+                  placeholderTextColor={Colors.text.disabled}
+                  autoFocus
+                />
+                <View style={styles.workspaceCreateActions}>
+                  <Pressable
+                    style={styles.workspaceCancelBtn}
+                    onPress={() => {
+                      setShowCreateWorkspaceModal(false);
+                      setWorkspaceName('');
+                    }}
+                  >
+                    <Text style={styles.workspaceCancelText}>Cancelar</Text>
+                  </Pressable>
+                  <Pressable style={styles.workspaceSaveBtn} onPress={handleCreateWorkspace}>
+                    <Text style={styles.workspaceSaveText}>Guardar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
           </View>
         </View>
       </Modal>
@@ -1039,12 +1044,13 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit_600SemiBold",
     color: Colors.brand.DEFAULT,
   },
-  workspaceCreateCard: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: 20,
-    marginHorizontal: 24,
-    marginTop: 180,
-    padding: 20,
+  workspaceCreateInlineCard: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    marginTop: 12,
+    padding: 14,
   },
   workspaceCreateTitle: {
     fontFamily: "Outfit_700Bold",
@@ -1052,14 +1058,27 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: 12,
   },
+  workspaceCreateInput: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: "Outfit_500Medium",
+    fontSize: 14,
+    color: Colors.text.primary,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
   workspaceCreateActions: {
     flexDirection: "row" as const,
     justifyContent: "flex-end" as const,
     gap: 10,
+    marginTop: 10,
   },
   workspaceCancelBtn: {
     paddingHorizontal: 14,
     paddingVertical: 10,
+    borderRadius: 10,
   },
   workspaceCancelText: {
     fontFamily: "Outfit_600SemiBold",
