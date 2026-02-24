@@ -33,6 +33,8 @@ import {
   generateRecurrences,
   getLocalDateString,
   formatCurrency,
+  convertUSDToDisplayCurrency,
+  getDisplayCurrencySymbol,
 } from "@/lib/domain/finance";
 
 const CURRENCIES: { id: Currency; label: string; symbol: string; fullLabel: string }[] = [
@@ -317,6 +319,7 @@ export default function TransactionModal() {
     addMultipleTx,
     updateTx,
     deleteTx,
+    displayCurrency,
   } = useApp();
 
   const editingTx = useMemo(
@@ -385,6 +388,12 @@ export default function TransactionModal() {
       customRate ? parseFloat(customRate) : undefined
     );
   }, [amount, currency, rates, rateType, customRate]);
+
+  const displayAmount = useMemo(
+    () => convertUSDToDisplayCurrency(amountUSD, displayCurrency, rates),
+    [amountUSD, displayCurrency, rates]
+  );
+  const displaySymbol = getDisplayCurrencySymbol(displayCurrency);
 
   const handleSave = useCallback(async () => {
     const amt = parseFloat(amount);
@@ -735,9 +744,9 @@ export default function TransactionModal() {
         />
 
         <View style={styles.usdRefRow}>
-          <Text style={styles.usdRefLabel}>Ref. USD Reporte:</Text>
+          <Text style={styles.usdRefLabel}>Ref. {displayCurrency} Reporte:</Text>
           <Text style={[styles.usdRefValue, { color: segColor }]}>
-            ${formatCurrency(amountUSD)}
+            {displaySymbol}{formatCurrency(displayAmount)}
           </Text>
         </View>
 

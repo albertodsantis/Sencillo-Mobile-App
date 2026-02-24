@@ -9,6 +9,7 @@ import {
   type DashboardData,
   type BudgetSummary,
   type UserProfile,
+  type DisplayCurrency,
   DEFAULT_PNL,
   DEFAULT_PROFILE,
 } from '../domain/types';
@@ -19,6 +20,7 @@ import {
   PnlRepository,
   BudgetRepository,
   SavingsRepository,
+  DisplayCurrencyRepository,
 } from '../repositories';
 import { fetchRates, computeDashboard, computeBudget } from '../domain/finance';
 
@@ -36,11 +38,13 @@ interface AppContextValue {
   isLoading: boolean;
   isRefreshingRates: boolean;
   historyFilter: string;
+  displayCurrency: DisplayCurrency;
 
   setViewMode: (mode: ViewMode) => void;
   setCurrentMonth: (month: number) => void;
   setCurrentYear: (year: number) => void;
   setHistoryFilter: (filter: string) => void;
+  setDisplayCurrency: (currency: DisplayCurrency) => Promise<void>;
 
   addTx: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   addMultipleTx: (txList: Omit<Transaction, 'id'>[]) => Promise<void>;
@@ -72,6 +76,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ratesTimestamp, setRatesTimestamp] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [historyFilter, setHistoryFilter] = useState('all');
+  const [displayCurrency, setDisplayCurrencyState] = useState<DisplayCurrency>('USD');
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
@@ -80,13 +85,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const [txs, savedRates, pnl, bdg, sg, prof] = await Promise.all([
+        const [txs, savedRates, pnl, bdg, sg, prof, displayPref] = await Promise.all([
           TransactionRepository.getAll(),
           RatesRepository.get(),
           PnlRepository.get(),
           BudgetRepository.get(),
           SavingsRepository.get(),
           ProfileRepository.get(),
+          DisplayCurrencyRepository.get(),
         ]);
         setTransactions(txs);
         if (savedRates) setRates(savedRates);
@@ -94,6 +100,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setBudgets(bdg);
         setSavingsGoals(sg);
         setProfile(prof);
+        setDisplayCurrencyState(displayPref);
         setRatesTimestamp(await RatesRepository.getTimestamp());
 
         const age = await RatesRepository.getAge();
@@ -172,6 +179,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await ProfileRepository.save(p);
   }, []);
 
+  const setDisplayCurrency = useCallback(async (currency: DisplayCurrency) => {
+    setDisplayCurrencyState(currency);
+    await DisplayCurrencyRepository.save(currency);
+  }, []);
+
   const clearAccount = useCallback(async () => {
     await Promise.all([
       TransactionRepository.clear(),
@@ -180,6 +192,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       BudgetRepository.clear(),
       SavingsRepository.clear(),
       ProfileRepository.clear(),
+      DisplayCurrencyRepository.clear(),
     ]);
     setTransactions([]);
     setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
@@ -188,6 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBudgets({});
     setSavingsGoals({});
     setProfile(DEFAULT_PROFILE);
+    setDisplayCurrencyState('USD');
   }, []);
 
   const dashboardData = useMemo(
@@ -215,12 +229,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isLoading,
       isRefreshingRates,
       historyFilter,
+      displayCurrency,
       profile,
       savingsGoals,
       setViewMode,
       setCurrentMonth,
       setCurrentYear,
       setHistoryFilter,
+      setDisplayCurrency,
       addTx,
       addMultipleTx,
       updateTx,
@@ -236,10 +252,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [
       transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
       currentMonth, currentYear, dashboardData, budgetSummary, ratesTimestamp,
-      isLoading, isRefreshingRates, historyFilter, profile,
+      isLoading, isRefreshingRates, historyFilter, displayCurrency, profile,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
-      updateProfile, clearAccount,
+      updateProfile, setDisplayCurrency, clearAccount,
     ],
   );
 

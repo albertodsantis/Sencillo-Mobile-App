@@ -1,6 +1,7 @@
 export type Segment = 'ingresos' | 'ahorro' | 'gastos_fijos' | 'gastos_variables';
 export type TransactionType = 'income' | 'expense';
 export type Currency = 'VES' | 'USD' | 'EUR';
+export type DisplayCurrency = 'USD' | 'EUR';
 export type RateType = 'bcv' | 'parallel' | 'manual';
 export type ViewMode = 'month' | 'ytd' | 'year';
 export type Granularity = 'daily' | 'weekly' | 'monthly' | 'yearly';
