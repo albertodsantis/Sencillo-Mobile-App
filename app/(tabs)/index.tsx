@@ -436,13 +436,17 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
               hitSlop={8}
-              style={styles.currencyToggleBtn}
+              style={styles.headerIconBtn}
             >
               <Text style={styles.currencyToggleText}>
                 {displayCurrency === "USD" ? "$" : "€"}
               </Text>
             </Pressable>
-            <Pressable onPress={() => setShowCalc(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setShowCalc(true)}
+              hitSlop={8}
+              style={styles.headerIconBtn}
+            >
               <Ionicons
                 name="calculator-outline"
                 size={24}
@@ -452,6 +456,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => setHiddenBalances(!hiddenBalances)}
               hitSlop={8}
+              style={styles.headerIconBtn}
             >
               <Ionicons
                 name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
@@ -459,7 +464,11 @@ export default function HomeScreen() {
                 color={Colors.text.muted}
               />
             </Pressable>
-            <Pressable onPress={() => setShowGuide(true)} hitSlop={8}>
+            <Pressable
+              onPress={() => setShowGuide(true)}
+              hitSlop={8}
+              style={styles.headerIconBtn}
+            >
               <Ionicons
                 name="help-circle-outline"
                 size={28}
@@ -845,21 +854,20 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 20,
+    gap: 12,
   },
-  currencyToggleBtn: {
-    minWidth: 34,
-    height: 34,
-    borderRadius: 17,
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    paddingHorizontal: 8,
   },
   currencyToggleText: {
     color: Colors.text.muted,
     fontFamily: "Outfit_700Bold",
-    fontSize: 18,
-    lineHeight: 18,
+    fontSize: 22,
+    lineHeight: 22,
   },
   helpBtn: {
     width: 40,
