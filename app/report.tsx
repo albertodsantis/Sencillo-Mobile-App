@@ -25,7 +25,6 @@ import {
 } from "@/lib/domain/finance";
 
 const GRANULARITIES: { id: Granularity; label: string }[] = [
-  { id: "daily", label: "Diario" },
   { id: "weekly", label: "Semanal" },
   { id: "monthly", label: "Mensual" },
   { id: "yearly", label: "Anual" },
