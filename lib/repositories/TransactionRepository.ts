@@ -1,4 +1,5 @@
 import { supabase } from '../../utils/supabase';
+import { getActiveWorkspaceId, getCurrentUserId } from './workspaceScope';
 import { type Transaction } from '../domain/types';
 
 type TransactionRow = {
@@ -14,11 +15,6 @@ type TransactionRow = {
   date: string;
   profile_id: string | null;
 };
-
-async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
-}
 
 function mapTransactionRow(row: TransactionRow): Transaction {
   return {
@@ -38,10 +34,14 @@ function mapTransactionRow(row: TransactionRow): Transaction {
 
 export const TransactionRepository = {
   async getAll(): Promise<Transaction[]> {
+    const workspaceId = await getActiveWorkspaceId();
+    if (!workspaceId) return [];
+
     try {
       const { data, error } = await supabase
         .from('transactions')
         .select('id, type, segment, amount, currency, original_rate, amount_usd, category, description, date, profile_id')
+        .eq('workspace_id', workspaceId)
         .order('date', { ascending: false });
 
       if (error || !data) return [];
@@ -53,14 +53,16 @@ export const TransactionRepository = {
 
   async save(transactions: Transaction[]): Promise<void> {
     const userId = await getCurrentUserId();
-    if (!userId) return;
+    const workspaceId = await getActiveWorkspaceId();
+    if (!userId || !workspaceId) return;
 
-    await supabase.from('transactions').delete().eq('user_id', userId);
+    await supabase.from('transactions').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
     if (transactions.length === 0) return;
 
     const rows = transactions.map((tx) => ({
       id: tx.id,
       user_id: userId,
+      workspace_id: workspaceId,
       type: tx.type,
       segment: tx.segment,
       amount: tx.amount,
@@ -78,14 +80,14 @@ export const TransactionRepository = {
 
   async add(tx: Omit<Transaction, 'id'>): Promise<Transaction> {
     const userId = await getCurrentUserId();
-    if (!userId) {
-      return { ...tx, id: '' };
-    }
+    const workspaceId = await getActiveWorkspaceId();
+    if (!userId || !workspaceId) return { ...tx, id: '' };
 
     const { data, error } = await supabase
       .from('transactions')
       .insert({
         user_id: userId,
+        workspace_id: workspaceId,
         type: tx.type,
         segment: tx.segment,
         amount: tx.amount,
@@ -100,23 +102,18 @@ export const TransactionRepository = {
       .select('id, type, segment, amount, currency, original_rate, amount_usd, category, description, date, profile_id')
       .single();
 
-    if (error) {
-      throw new Error(error.message || 'No se pudo guardar la transaccion');
-    }
-
-    if (!data) {
-      throw new Error('No se pudo guardar la transaccion');
-    }
-
+    if (error || !data) throw new Error(error?.message || 'No se pudo guardar la transaccion');
     return mapTransactionRow(data as TransactionRow);
   },
 
   async addMany(txList: Omit<Transaction, 'id'>[]): Promise<Transaction[]> {
     const userId = await getCurrentUserId();
-    if (!userId || txList.length === 0) return [];
+    const workspaceId = await getActiveWorkspaceId();
+    if (!userId || !workspaceId || txList.length === 0) return [];
 
     const payload = txList.map((tx) => ({
       user_id: userId,
+      workspace_id: workspaceId,
       type: tx.type,
       segment: tx.segment,
       amount: tx.amount,
@@ -134,18 +131,14 @@ export const TransactionRepository = {
       .insert(payload)
       .select('id, type, segment, amount, currency, original_rate, amount_usd, category, description, date, profile_id');
 
-    if (error) {
-      throw new Error(error.message || 'No se pudieron guardar las transacciones');
-    }
-
-    if (!data) {
-      throw new Error('No se pudieron guardar las transacciones');
-    }
-
+    if (error || !data) throw new Error(error?.message || 'No se pudieron guardar las transacciones');
     return (data as TransactionRow[]).map(mapTransactionRow);
   },
 
   async update(tx: Transaction): Promise<void> {
+    const workspaceId = await getActiveWorkspaceId();
+    if (!workspaceId) return;
+
     await supabase
       .from('transactions')
       .update({
@@ -160,17 +153,21 @@ export const TransactionRepository = {
         date: tx.date,
         profile_id: tx.profileId || null,
       })
-      .eq('id', tx.id);
+      .eq('id', tx.id)
+      .eq('workspace_id', workspaceId);
   },
 
   async remove(id: string): Promise<void> {
-    await supabase.from('transactions').delete().eq('id', id);
+    const workspaceId = await getActiveWorkspaceId();
+    if (!workspaceId) return;
+    await supabase.from('transactions').delete().eq('id', id).eq('workspace_id', workspaceId);
   },
 
   async removeAll(): Promise<void> {
     const userId = await getCurrentUserId();
-    if (!userId) return;
-    await supabase.from('transactions').delete().eq('user_id', userId);
+    const workspaceId = await getActiveWorkspaceId();
+    if (!userId || !workspaceId) return;
+    await supabase.from('transactions').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
   },
 
   async clear(): Promise<void> {

@@ -93,6 +93,13 @@ export interface UserProfile {
   password: string;
 }
 
+export interface Workspace {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
 export const DEFAULT_PROFILE: UserProfile = {
   firstName: '',
   lastName: '',
