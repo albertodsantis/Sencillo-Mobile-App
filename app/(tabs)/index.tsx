@@ -700,7 +700,7 @@ export default function HomeScreen() {
               <View style={guideStyles.step}>
                 <View style={guideStyles.iconCircle}>
                   <Ionicons
-                    name="color-palette"
+                    name="options-outline"
                     size={22}
                     color={Colors.text.secondary}
                   />
