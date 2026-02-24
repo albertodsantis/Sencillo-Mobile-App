@@ -248,7 +248,7 @@ export default function ProfileScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={Colors.text.secondary} />
           </Pressable>
-          <Text style={styles.title}>Mi Perfil</Text>
+          <Text style={styles.title}>Perfil</Text>
           {hasChanges ? (
             <Pressable onPress={handleSaveProfile} style={styles.saveHeaderBtn}>
               <Ionicons name="checkmark" size={22} color="#fff" />
@@ -324,7 +324,7 @@ export default function ProfileScreen() {
                 <Ionicons name="notifications" size={18} color="#10b981" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>Activar todas las notificaciones</Text>
+                <Text style={styles.rowLabel}>Activar todas</Text>
                 <Text style={styles.rowSub}>Enciende o apaga todos los avisos de la app</Text>
               </View>
             </View>
