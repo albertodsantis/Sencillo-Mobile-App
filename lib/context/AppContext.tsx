@@ -137,9 +137,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (persistedWorkspaceId) {
           await loadWorkspaceScopedData();
         }
+      } catch (e) {
+        console.error('Error loading data:', e);
+      } finally {
+        setIsLoading(false);
+      }
 
+      try {
         const age = await RatesRepository.getAge();
-        if (age > 3600000 || !savedRates) {
+        if (age > 3600000 || !(await RatesRepository.get())) {
           const fresh = await fetchRates();
           if (fresh) {
             setRates(fresh);
@@ -148,9 +154,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (e) {
-        console.error('Error loading data:', e);
-      } finally {
-        setIsLoading(false);
+        console.warn('Background rates fetch failed:', e);
       }
     })();
   }, [loadWorkspaceScopedData]);

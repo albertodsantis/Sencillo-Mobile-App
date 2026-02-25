@@ -102,18 +102,23 @@ async function syncAuthenticatedUser(user: User): Promise<AuthUser> {
 
 export const AuthRepository = {
   async getSession(): Promise<AuthUser | null> {
-    try {
-      const { data, error } = await supabase.auth.getUser();
+    const cached = await AsyncStorage.getItem(SESSION_KEY);
+    const cachedUser: AuthUser | null = cached ? JSON.parse(cached) : null;
+
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+
+    const supabaseCheck = supabase.auth.getUser().then(async ({ data, error }) => {
       if (error || !data.user) {
-        await this.clearSession();
+        await AsyncStorage.removeItem(SESSION_KEY);
         return null;
       }
+      return syncAuthenticatedUser(data.user);
+    }).catch(() => null);
 
-      return await syncAuthenticatedUser(data.user);
-    } catch {
-      await this.clearSession();
-      return null;
-    }
+    const result = await Promise.race([supabaseCheck, timeout]);
+
+    if (result !== null) return result;
+    return cachedUser;
   },
 
   async persistSession(user: AuthUser): Promise<void> {
