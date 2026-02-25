@@ -666,13 +666,6 @@ export default function BudgetScreen() {
                 meta.
               </Text>
 
-              <Text style={guideStyles.sectionTitle}>Reordenar</Text>
-              <Text style={guideStyles.sectionDesc}>
-                Toca el icono de flechas en la esquina superior para activar el
-                modo de reorden. Arrastra las categorias para cambiar su
-                prioridad.
-              </Text>
-
               <Pressable
                 onPress={closeGuide}
                 style={guideStyles.dismissBtn}
