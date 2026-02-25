@@ -12,11 +12,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { type Segment, type PnlStructure, SEGMENT_CONFIG } from "@/lib/domain/types";
+
+const SETTINGS_GUIDE_DISMISSED_KEY = "guide_dismissed_settings";
 
 const SEGMENTS: Segment[] = [
   "ingresos",
@@ -158,10 +161,37 @@ export default function SettingsScreen() {
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
-  const [showGuide, setShowGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
+  const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
+
+  useEffect(() => {
+    let mounted = true;
+    const loadGuidePreference = async () => {
+      const dismissed = await AsyncStorage.getItem(SETTINGS_GUIDE_DISMISSED_KEY);
+      if (!mounted) return;
+      const isDismissed = dismissed === "true";
+      setDontShowGuideAgain(isDismissed);
+      setShowGuide(!isDismissed);
+    };
+
+    loadGuidePreference();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const closeGuide = useCallback(async () => {
+    if (dontShowGuideAgain) {
+      await AsyncStorage.setItem(SETTINGS_GUIDE_DISMISSED_KEY, "true");
+    } else {
+      await AsyncStorage.removeItem(SETTINGS_GUIDE_DISMISSED_KEY);
+    }
+    setShowGuide(false);
+  }, [dontShowGuideAgain]);
 
   const handleAddCategory = useCallback(
     async (segment: Segment) => {
@@ -315,9 +345,9 @@ export default function SettingsScreen() {
         visible={showGuide}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowGuide(false)}
+        onRequestClose={closeGuide}
       >
-        <Pressable style={guideStyles.overlay} onPress={() => setShowGuide(false)}>
+        <Pressable style={guideStyles.overlay} onPress={closeGuide}>
           <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
             <Text style={guideStyles.sectionTitle}>Segmentos</Text>
             <Text style={guideStyles.sectionDesc}>
@@ -337,10 +367,22 @@ export default function SettingsScreen() {
             </View>
 
             <Pressable
-              onPress={() => setShowGuide(false)}
+              onPress={closeGuide}
               style={guideStyles.dismissBtn}
             >
               <Text style={guideStyles.dismissText}>Entendido</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setDontShowGuideAgain((prev) => !prev)}
+              style={guideStyles.checkboxRow}
+            >
+              <Ionicons
+                name={dontShowGuideAgain ? "checkbox" : "square-outline"}
+                size={20}
+                color={Colors.text.secondary}
+              />
+              <Text style={guideStyles.checkboxText}>No mostrar más</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -434,6 +476,18 @@ const guideStyles = StyleSheet.create({
     fontFamily: "Outfit_700Bold",
     fontSize: 15,
     color: "#fff",
+  },
+  checkboxRow: {
+    marginTop: 14,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    alignSelf: "center" as const,
+  },
+  checkboxText: {
+    fontFamily: "Outfit_400Regular",
+    fontSize: 13,
+    color: Colors.text.muted,
   },
 });
 
