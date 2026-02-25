@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
@@ -36,6 +37,7 @@ const VIEW_MODES: { id: ViewMode; label: string }[] = [
 ];
 
 const CARD_GAP = 12;
+const HOME_GUIDE_DISMISSED_KEY = "guide_dismissed_home";
 const KPI_CARD_COLORS = [
   Colors.segments.ingresos.color,
   Colors.segments.gastos_fijos.color,
@@ -280,10 +282,37 @@ export default function HomeScreen() {
 
   const { width: windowWidth } = useWindowDimensions();
 
-  const [showGuide, setShowGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
+  const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadGuidePreference = async () => {
+      const dismissed = await AsyncStorage.getItem(HOME_GUIDE_DISMISSED_KEY);
+      if (!mounted) return;
+      const isDismissed = dismissed === "true";
+      setDontShowGuideAgain(isDismissed);
+      setShowGuide(!isDismissed);
+    };
+
+    loadGuidePreference();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const closeGuide = useCallback(async () => {
+    if (dontShowGuideAgain) {
+      await AsyncStorage.setItem(HOME_GUIDE_DISMISSED_KEY, "true");
+    } else {
+      await AsyncStorage.removeItem(HOME_GUIDE_DISMISSED_KEY);
+    }
+    setShowGuide(false);
+  }, [dontShowGuideAgain]);
   const filteredByPeriod = useMemo(() => {
     return transactions.filter((t) => {
       const d = new Date(t.date);
@@ -684,11 +713,11 @@ export default function HomeScreen() {
           visible={showGuide}
           transparent
           animationType="fade"
-          onRequestClose={() => setShowGuide(false)}
+          onRequestClose={closeGuide}
         >
           <Pressable
             style={guideStyles.overlay}
-            onPress={() => setShowGuide(false)}
+            onPress={closeGuide}
           >
             <Pressable
               style={guideStyles.card}
@@ -766,10 +795,22 @@ export default function HomeScreen() {
               </View>
 
               <Pressable
-                onPress={() => setShowGuide(false)}
+                onPress={closeGuide}
                 style={guideStyles.dismissBtn}
               >
                 <Text style={guideStyles.dismissText}>Entendido</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setDontShowGuideAgain((prev) => !prev)}
+                style={guideStyles.checkboxRow}
+              >
+                <Ionicons
+                  name={dontShowGuideAgain ? "checkbox" : "square-outline"}
+                  size={20}
+                  color={Colors.text.secondary}
+                />
+                <Text style={guideStyles.checkboxText}>No mostrar más</Text>
               </Pressable>
             </Pressable>
           </Pressable>
@@ -840,6 +881,18 @@ const guideStyles = StyleSheet.create({
     fontFamily: "Outfit_700Bold",
     fontSize: 15,
     color: Colors.text.primary,
+  },
+  checkboxRow: {
+    marginTop: 14,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    alignSelf: "center" as const,
+  },
+  checkboxText: {
+    fontFamily: "Outfit_400Regular",
+    fontSize: 13,
+    color: Colors.text.muted,
   },
 });
 
