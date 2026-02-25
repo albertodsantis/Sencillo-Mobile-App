@@ -271,7 +271,7 @@ export default function BudgetScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Presupuestos y Ahorro</Text>
             <Text style={styles.subtitle}>
-              Control mensual de gastos y metas
+              Control mensual de gastos variables y metas de ahorro
             </Text>
           </View>
           <View style={styles.headerActions}>
