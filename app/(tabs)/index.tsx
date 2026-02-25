@@ -798,7 +798,7 @@ export default function HomeScreen() {
                 onPress={closeGuide}
                 style={guideStyles.dismissBtn}
               >
-                <Text style={guideStyles.dismissText}>Entendido</Text>
+                <Text style={guideStyles.dismissText}>Seguiré estos pasos</Text>
               </Pressable>
 
               <Pressable
