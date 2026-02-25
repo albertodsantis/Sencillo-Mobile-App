@@ -467,15 +467,17 @@ const guideStyles = StyleSheet.create({
     lineHeight: 19,
   },
   dismissBtn: {
-    backgroundColor: Colors.brand.DEFAULT,
-    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
     paddingVertical: 14,
     alignItems: "center" as const,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   dismissText: {
     fontFamily: "Outfit_700Bold",
     fontSize: 15,
-    color: "#fff",
+    color: Colors.text.primary,
   },
   checkboxRow: {
     marginTop: 14,
