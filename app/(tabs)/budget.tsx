@@ -689,7 +689,7 @@ export default function BudgetScreen() {
                   size={20}
                   color={Colors.text.secondary}
                 />
-                <Text style={guideStyles.checkboxText}>No mostrar más</Text>
+                <Text style={guideStyles.checkboxText}>No volver a mostrar</Text>
               </Pressable>
             </Pressable>
           </Pressable>
