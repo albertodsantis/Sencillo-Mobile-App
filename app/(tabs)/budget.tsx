@@ -434,9 +434,14 @@ export default function BudgetScreen() {
                     <Ionicons
                       name="add-circle-outline"
                       size={18}
-                      color={Colors.brand.DEFAULT}
+                      color={Colors.segments.gastos_variables.color}
                     />
-                    <Text style={styles.setBudgetText}>
+                    <Text
+                      style={[
+                        styles.setBudgetText,
+                        { color: Colors.segments.gastos_variables.color },
+                      ]}
+                    >
                       Establecer presupuesto
                     </Text>
                   </Pressable>
