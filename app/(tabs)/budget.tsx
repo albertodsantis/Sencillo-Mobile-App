@@ -635,18 +635,16 @@ export default function BudgetScreen() {
               style={guideStyles.card}
               onPress={(e) => e.stopPropagation()}
             >
-              <Text style={guideStyles.sectionTitle}>Presupuestos</Text>
+              <Text style={guideStyles.sectionTitle}>Presupuestos para tus gastos variables</Text>
               <Text style={guideStyles.sectionDesc}>
-                Controla tus{" "}
-                <Text style={guideStyles.bold}>Gastos Variables</Text>{" "}
-                definiendo un tope para cada categoria. Cuando te acerques al
+                Controla tus gastos variables definiendo un tope para cada categoria. Cuando te acerques al
                 limite, la barra cambiara de color.
               </Text>
 
               <View style={guideStyles.infoBox}>
                 <Text style={guideStyles.infoTitle}>Disponible Flexible</Text>
                 <Text style={guideStyles.infoDesc}>
-                  Es el dinero que te queda libre despues de restar Ahorros y
+                  Así le llamaremos al dinero que te queda para los gastos variables (flexibles) despues de restar Ahorros y
                   Gastos Fijos a tus Ingresos.
                 </Text>
                 <View style={guideStyles.formulaRow}>
