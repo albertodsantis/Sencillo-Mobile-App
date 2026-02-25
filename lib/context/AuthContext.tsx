@@ -34,18 +34,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || !session?.user) {
+      if (event === "SIGNED_OUT") {
         AuthRepository.clearSession();
         if (isMounted) setUser(null);
         return;
       }
+
+      // Only do a full sync on explicit sign-in or user update — not on token refreshes
+      if (event !== "SIGNED_IN" && event !== "USER_UPDATED") return;
+
+      if (!session?.user) return;
 
       AuthRepository.syncFromSupabaseSessionUser(session.user)
         .then((syncedUser) => {
           if (isMounted) setUser(syncedUser);
         })
         .catch(() => {
-          if (isMounted) setUser(null);
+          // Don't clear user on network errors — keep existing session state
         });
     });
 
