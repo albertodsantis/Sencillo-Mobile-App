@@ -335,7 +335,10 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
             </View>
           </ScrollView>
 
-          <View style={[styles.bottomDragHandleWrap, { bottom: insets.bottom + 6 }]} {...panResponder.panHandlers}>
+          <View
+            style={[styles.bottomDragHandleWrap, { bottom: insets.bottom + 6 }]}
+            {...panResponder.panHandlers}
+          >
             <View style={styles.handleBar} />
           </View>
         </Animated.View>
@@ -361,18 +364,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
   },
   handleBar: {
-    width: 48,
-    height: 5,
-    borderRadius: 99,
-    backgroundColor: "rgba(255,255,255,0.22)",
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.dark.highlight,
     alignSelf: "center" as const,
   },
   bottomDragHandleWrap: {
     position: "absolute" as const,
     alignSelf: "center" as const,
-    paddingVertical: 8,
-    width: 120,
+    paddingTop: 6,
+    paddingBottom: 10,
+    width: 220,
     zIndex: 2,
+    alignItems: "center" as const,
   },
   closeBtn: {
     alignSelf: "flex-end" as const,
