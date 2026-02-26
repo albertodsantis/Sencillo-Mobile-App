@@ -20,7 +20,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
-import CurrencyCalculatorModal from "@/components/CurrencyCalculatorModal";
 import { useApp } from "@/lib/context/AppContext";
 import {
   type ViewMode,
@@ -260,7 +259,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const {
     rates,
-    ratesTimestamp,
     dashboardData,
     transactions,
     viewMode,
@@ -284,7 +282,6 @@ export default function HomeScreen() {
 
   const [showGuide, setShowGuide] = useState(true);
   const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
-  const [showCalc, setShowCalc] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
 
@@ -484,7 +481,7 @@ export default function HomeScreen() {
               />
             </Pressable>
             <Pressable
-              onPress={() => setShowCalc(true)}
+              onPress={() => router.push("/currency-calculator-modal")}
               hitSlop={8}
               style={styles.headerIconBtn}
             >
@@ -702,12 +699,6 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <CurrencyCalculatorModal
-          visible={showCalc}
-          onClose={() => setShowCalc(false)}
-          rates={rates}
-          ratesTimestamp={ratesTimestamp}
-        />
 
         <Modal
           visible={showGuide}

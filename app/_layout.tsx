@@ -89,6 +89,14 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="currency-calculator-modal"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
         name="report"
         options={{
           headerShown: false,

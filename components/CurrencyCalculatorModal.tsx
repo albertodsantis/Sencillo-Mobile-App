@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  Modal,
   Pressable,
   TextInput,
   ScrollView,
@@ -35,23 +34,23 @@ const CURRENCIES: CurrencyOption[] = [
 ];
 
 interface Props {
-  visible: boolean;
   onClose: () => void;
   rates: Rates;
   ratesTimestamp: number | null;
 }
 
-export default function CurrencyCalculatorModal({ visible, onClose, rates, ratesTimestamp }: Props) {
+export default function CurrencyCalculatorModal({
+  onClose,
+  rates,
+  ratesTimestamp,
+}: Props) {
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyKey>("USD");
   const [ratesDate, setRatesDate] = useState("");
-
   const webTopInset = Platform.OS === "web" ? 67 : 0;
 
   useEffect(() => {
-    if (!visible) return;
-
     if (!ratesTimestamp) {
       setRatesDate("");
       return;
@@ -59,11 +58,13 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
 
     const d = new Date(ratesTimestamp);
     const day = d.getDate().toString().padStart(2, "0");
-    const month = d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
+    const month = d
+      .toLocaleDateString("es-ES", { month: "short" })
+      .replace(".", "");
     const hours = d.getHours().toString().padStart(2, "0");
     const mins = d.getMinutes().toString().padStart(2, "0");
     setRatesDate(`${day} ${month} ${hours}:${mins}`);
-  }, [visible, ratesTimestamp]);
+  }, [ratesTimestamp]);
 
   const handleAmountChange = (text: string) => {
     const normalized = text.replace(/,/g, ".").replace(/[^0-9.]/g, "");
@@ -76,20 +77,70 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
   const conversions = useMemo(() => {
     const parsedValue = Number.parseFloat(amount);
     const val = Number.isFinite(parsedValue) ? parsedValue : 0;
-    const results: { key: string; label: string; symbol: string; value: number }[] = [];
+    const results: {
+      key: string;
+      label: string;
+      symbol: string;
+      value: number;
+    }[] = [];
 
     if (selectedCurrency === "USD") {
-      results.push({ key: "VES_BCV", label: "Bs (BCV)", symbol: "Bs", value: val * rates.bcv });
-      results.push({ key: "VES_PAR", label: "Bs (Paralelo)", symbol: "Bs", value: val * rates.parallel });
-      results.push({ key: "EUR", label: "Euro", symbol: "€", value: rates.eurCross > 0 ? val / rates.eurCross : 0 });
+      results.push({
+        key: "VES_BCV",
+        label: "Bs (BCV)",
+        symbol: "Bs",
+        value: val * rates.bcv,
+      });
+      results.push({
+        key: "VES_PAR",
+        label: "Bs (Paralelo)",
+        symbol: "Bs",
+        value: val * rates.parallel,
+      });
+      results.push({
+        key: "EUR",
+        label: "Euro",
+        symbol: "€",
+        value: rates.eurCross > 0 ? val / rates.eurCross : 0,
+      });
     } else if (selectedCurrency === "VES") {
-      results.push({ key: "USD_BCV", label: "USD (BCV)", symbol: "$", value: rates.bcv > 0 ? val / rates.bcv : 0 });
-      results.push({ key: "USD_PAR", label: "USD (Paralelo)", symbol: "$", value: rates.parallel > 0 ? val / rates.parallel : 0 });
-      results.push({ key: "EUR", label: "Euro", symbol: "€", value: rates.eur > 0 ? val / rates.eur : 0 });
+      results.push({
+        key: "USD_BCV",
+        label: "USD (BCV)",
+        symbol: "$",
+        value: rates.bcv > 0 ? val / rates.bcv : 0,
+      });
+      results.push({
+        key: "USD_PAR",
+        label: "USD (Paralelo)",
+        symbol: "$",
+        value: rates.parallel > 0 ? val / rates.parallel : 0,
+      });
+      results.push({
+        key: "EUR",
+        label: "Euro",
+        symbol: "€",
+        value: rates.eur > 0 ? val / rates.eur : 0,
+      });
     } else {
-      results.push({ key: "USD", label: "Dolar", symbol: "$", value: val * (rates.eurCross || 0) });
-      results.push({ key: "VES_BCV", label: "Bs (BCV)", symbol: "Bs", value: val * rates.eur });
-      results.push({ key: "VES_PAR", label: "Bs (Paralelo)", symbol: "Bs", value: val * (rates.eurCross || 0) * rates.parallel });
+      results.push({
+        key: "USD",
+        label: "Dolar",
+        symbol: "$",
+        value: val * (rates.eurCross || 0),
+      });
+      results.push({
+        key: "VES_BCV",
+        label: "Bs (BCV)",
+        symbol: "Bs",
+        value: val * rates.eur,
+      });
+      results.push({
+        key: "VES_PAR",
+        label: "Bs (Paralelo)",
+        symbol: "Bs",
+        value: val * (rates.eurCross || 0) * rates.parallel,
+      });
     }
 
     return results;
@@ -97,26 +148,39 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
 
   const formatResult = (val: number): string => {
     if (val === 0) return "0.00";
-    if (val >= 1000) return val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (val >= 1000)
+      return val.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     return val.toFixed(2);
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setAmount("");
     setSelectedCurrency("USD");
     onClose();
-  };
+  }, [onClose]);
 
-  const brechaValue = rates.bcv && rates.parallel
-    ? ((rates.parallel - rates.bcv) / rates.bcv) * 100
-    : 0;
+  const brechaValue =
+    rates.bcv && rates.parallel
+      ? ((rates.parallel - rates.bcv) / rates.bcv) * 100
+      : 0;
   const safeBrechaValue = Number.isFinite(brechaValue) ? brechaValue : 0;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <Pressable style={styles.overlay} onPress={handleClose}>
+    <Pressable style={styles.overlay} onPress={handleClose}>
+      <View
+        style={[
+          styles.sheet,
+          {
+            paddingTop: insets.top + webTopInset + 8,
+            paddingBottom: insets.bottom + 20,
+          },
+        ]}
+      >
         <Pressable
-          style={[styles.sheet, { paddingTop: insets.top + webTopInset + 8, paddingBottom: insets.bottom + 20 }]}
+          style={styles.sheetContent}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={styles.handleBar} />
@@ -124,10 +188,15 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
           </Pressable>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.scrollContent}
+          >
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionLabel}>TASAS DE CAMBIO</Text>
-              {ratesDate ? <Text style={styles.sectionDate}>{ratesDate}</Text> : null}
+              {ratesDate ? (
+                <Text style={styles.sectionDate}>{ratesDate}</Text>
+              ) : null}
             </View>
 
             <View style={styles.ratesGrid}>
@@ -136,7 +205,9 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text style={styles.rateCardTitle}>Dolar BCV</Text>
                 </View>
                 <View style={styles.rateCardValueRow}>
-                  <Text style={styles.rateCardValue}>{rates.bcv.toFixed(2)}</Text>
+                  <Text style={styles.rateCardValue}>
+                    {rates.bcv.toFixed(2)}
+                  </Text>
                   <Text style={styles.rateCardUnit}>Bs</Text>
                 </View>
               </View>
@@ -146,7 +217,9 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text style={styles.rateCardTitle}>Dolar Paralelo</Text>
                 </View>
                 <View style={styles.rateCardValueRow}>
-                  <Text style={styles.rateCardValue}>{rates.parallel.toFixed(2)}</Text>
+                  <Text style={styles.rateCardValue}>
+                    {rates.parallel.toFixed(2)}
+                  </Text>
                   <Text style={styles.rateCardUnit}>Bs</Text>
                 </View>
               </View>
@@ -156,7 +229,9 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text style={styles.rateCardTitle}>Euro BCV</Text>
                 </View>
                 <View style={styles.rateCardValueRow}>
-                  <Text style={styles.rateCardValue}>{rates.eur.toFixed(2)}</Text>
+                  <Text style={styles.rateCardValue}>
+                    {rates.eur.toFixed(2)}
+                  </Text>
                   <Text style={styles.rateCardUnit}>Bs</Text>
                 </View>
               </View>
@@ -166,24 +241,29 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text style={styles.rateCardTitle}>Cruce EUR/USD</Text>
                 </View>
                 <View style={styles.rateCardValueRow}>
-                  <Text style={styles.rateCardValue}>{rates.eurCross.toFixed(2)}</Text>
+                  <Text style={styles.rateCardValue}>
+                    {rates.eurCross.toFixed(2)}
+                  </Text>
                   <Text style={styles.rateCardUnit}>$/€</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.brechaRow}>
-              <Text style={styles.brechaLabel}>
-                Brecha cambiaria
-              </Text>
+              <Text style={styles.brechaLabel}>Brecha cambiaria</Text>
               <Text style={styles.brechaValue}>
-                {safeBrechaValue > 0 ? "+" : ""}{safeBrechaValue.toFixed(1)}%
+                {safeBrechaValue > 0 ? "+" : ""}
+                {safeBrechaValue.toFixed(1)}%
               </Text>
             </View>
 
             <View style={styles.divider} />
 
-            <Text style={[styles.sectionLabel, { marginTop: 16, marginBottom: 12 }]}>CALCULADORA</Text>
+            <Text
+              style={[styles.sectionLabel, { marginTop: 16, marginBottom: 12 }]}
+            >
+              CALCULADORA
+            </Text>
 
             <View style={styles.currencyPicker}>
               {CURRENCIES.map((c) => (
@@ -198,7 +278,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text
                     style={[
                       styles.currencyChipText,
-                      selectedCurrency === c.key && styles.currencyChipTextActive,
+                      selectedCurrency === c.key &&
+                        styles.currencyChipTextActive,
                     ]}
                   >
                     {c.symbol} {c.label}
@@ -228,19 +309,19 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
                   <Text style={styles.resultLabel}>{c.label}</Text>
                   <View style={styles.resultRight}>
                     <Text style={styles.resultSymbol}>{c.symbol} </Text>
-                    <Text style={styles.resultValue}>{formatResult(c.value)}</Text>
+                    <Text style={styles.resultValue}>
+                      {formatResult(c.value)}
+                    </Text>
                   </View>
                 </View>
               ))}
             </View>
           </ScrollView>
-
         </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </Pressable>
   );
 }
-
 
 const styles = StyleSheet.create({
   overlay: {
@@ -256,6 +337,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
     borderBottomWidth: 0,
+  },
+  sheetContent: {
+    flex: 1,
   },
   handleBar: {
     width: 36,
