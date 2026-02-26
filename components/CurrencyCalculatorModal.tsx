@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   Animated,
+  PanResponder,
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -162,11 +163,65 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     });
   };
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => (
+        Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+        && gestureState.dy < -4
+      ),
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy < 0) {
+          slideAnim.setValue(gestureState.dy);
+          overlayAnim.setValue(Math.max(0, 1 + (gestureState.dy / 180)));
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy < -45 || gestureState.vy < -0.7) {
+          animateClose();
+          return;
+        }
+
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 220,
+            mass: 0.9,
+            useNativeDriver: true,
+          }),
+          Animated.timing(overlayAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 220,
+            mass: 0.9,
+            useNativeDriver: true,
+          }),
+          Animated.timing(overlayAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+    }),
+  ).current;
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
       <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
         <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.handleBar} />
+          <View style={styles.dragHandleWrap} {...panResponder.panHandlers}>
+            <View style={styles.handleBar} />
+          </View>
 
           <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
@@ -310,6 +365,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 4,
   },
+  dragHandleWrap: {
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
   closeBtn: {
     alignSelf: "flex-end" as const,
     paddingHorizontal: 24,
@@ -361,11 +420,13 @@ const styles = StyleSheet.create({
   rateCardFlag: {
     fontFamily: "Outfit_700Bold",
     fontSize: 9,
-    color: Colors.text.disabled,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    color: "#d5dbeb",
+    backgroundColor: "rgba(125,155,255,0.22)",
+    borderWidth: 1,
+    borderColor: "rgba(125,155,255,0.35)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
     overflow: "hidden" as const,
     letterSpacing: 0.5,
   },
