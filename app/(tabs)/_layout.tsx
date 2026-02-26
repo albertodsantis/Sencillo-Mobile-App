@@ -20,7 +20,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.brand.DEFAULT,
+        tabBarActiveTintColor: Colors.brand.navigation,
         tabBarInactiveTintColor: Colors.text.muted,
         headerShown: false,
         tabBarShowLabel: false,
@@ -110,11 +110,11 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: Colors.brand.DEFAULT,
+    backgroundColor: Colors.brand.navigation,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     marginTop: -20,
-    shadowColor: Colors.brand.DEFAULT,
+    shadowColor: Colors.brand.navigation,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,

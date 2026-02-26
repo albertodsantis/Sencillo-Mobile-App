@@ -11,6 +11,7 @@ const Colors = {
     light: '#34d399',
     DEFAULT: '#10b981',
     dark: '#047857',
+    navigation: '#0f766e',
   },
   text: {
     primary: '#FFFFFF',
