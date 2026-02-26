@@ -350,21 +350,48 @@ export default function SettingsScreen() {
         <Pressable style={guideStyles.overlay} onPress={closeGuide}>
           <Pressable style={guideStyles.card} onPress={(e) => e.stopPropagation()}>
             <Text style={guideStyles.sectionTitle}>Segmentos</Text>
-            <Text style={guideStyles.sectionDesc}>
-              Tu estructura financiera se divide en 4 segmentos: <Text style={guideStyles.bold}>Ingresos</Text>, <Text style={guideStyles.bold}>Gastos Fijos</Text>, <Text style={guideStyles.bold}>Gastos Variables</Text> y <Text style={guideStyles.bold}>Ahorro</Text>.
-            </Text>
+            <View style={guideStyles.segmentInfoList}>
+              <View style={guideStyles.segmentInfoRow}>
+                <View style={guideStyles.segmentInfoIconWrap}>
+                  <SegmentIcon segment="ingresos" color={SEGMENT_CONFIG.ingresos.color} />
+                </View>
+                <Text style={guideStyles.segmentInfoText}>
+                  <Text style={guideStyles.bold}>Ingresos:</Text> El motor de tus finanzas. Todo el capital que generas y que alimenta tu presupuesto mensual.
+                </Text>
+              </View>
+
+              <View style={guideStyles.segmentInfoRow}>
+                <View style={guideStyles.segmentInfoIconWrap}>
+                  <SegmentIcon segment="ahorro" color={SEGMENT_CONFIG.ahorro.color} />
+                </View>
+                <Text style={guideStyles.segmentInfoText}>
+                  <Text style={guideStyles.bold}>Ahorros:</Text> La parte de tus ingresos que decides pagarte a ti mismo primero. Financieramente, este monto se separa de tu balance general para que no cuentes con el para tus gastos diarios.
+                </Text>
+              </View>
+
+              <View style={guideStyles.segmentInfoRow}>
+                <View style={guideStyles.segmentInfoIconWrap}>
+                  <SegmentIcon segment="gastos_fijos" color={SEGMENT_CONFIG.gastos_fijos.color} />
+                </View>
+                <Text style={guideStyles.segmentInfoText}>
+                  <Text style={guideStyles.bold}>Gastos Fijos:</Text> Los compromisos recurrentes e inevitables (como el alquiler o los servicios). Cuestan casi lo mismo cada mes y tienes poco margen para cambiarlos.
+                </Text>
+              </View>
+
+              <View style={guideStyles.segmentInfoRow}>
+                <View style={guideStyles.segmentInfoIconWrap}>
+                  <SegmentIcon segment="gastos_variables" color={SEGMENT_CONFIG.gastos_variables.color} />
+                </View>
+                <Text style={guideStyles.segmentInfoText}>
+                  <Text style={guideStyles.bold}>Gastos Variables:</Text> Los gastos diarios que poco a poco se van acumulando (ocio, compras, antojos). Como tu decides cuando y en que gastarlos, esta es tu zona de oportunidad: presupuestar y controlarlos es la clave para dominar tu dinero.
+                </Text>
+              </View>
+            </View>
 
             <Text style={guideStyles.sectionTitle}>Categorias</Text>
             <Text style={guideStyles.sectionDesc}>
               Cada segmento tiene sus propias categorias. Puedes <Text style={guideStyles.bold}>agregar</Text>, <Text style={guideStyles.bold}>editar</Text> o <Text style={guideStyles.bold}>eliminar</Text> categorias segun tus necesidades.
             </Text>
-
-            <View style={guideStyles.infoBox}>
-              <Text style={guideStyles.infoTitle}>Consejos</Text>
-              <Text style={guideStyles.infoDesc}>
-                Toca una categoria para editarla. Usa el icono de papelera para eliminarla. Las categorias que uses en transacciones existentes se mantendran en el historial.
-              </Text>
-            </View>
 
             <Pressable
               onPress={closeGuide}
@@ -442,29 +469,30 @@ const guideStyles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: 16,
   },
-  bold: {
-    fontFamily: "Outfit_700Bold",
-    color: Colors.text.primary,
-  },
-  infoBox: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 16,
-    padding: 16,
+  segmentInfoList: {
+    gap: 12,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.dark.borderSubtle,
   },
-  infoTitle: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 14,
-    color: "#a78bfa",
-    marginBottom: 8,
+  segmentInfoRow: {
+    flexDirection: "row" as const,
+    alignItems: "flex-start" as const,
+    gap: 10,
   },
-  infoDesc: {
+  segmentInfoIconWrap: {
+    width: 26,
+    paddingTop: 2,
+    alignItems: "center" as const,
+  },
+  segmentInfoText: {
     fontFamily: "Outfit_500Medium",
     fontSize: 13,
     color: Colors.text.secondary,
     lineHeight: 19,
+    flex: 1,
+  },
+  bold: {
+    fontFamily: "Outfit_700Bold",
+    color: Colors.text.primary,
   },
   dismissBtn: {
     backgroundColor: "rgba(255,255,255,0.08)",
