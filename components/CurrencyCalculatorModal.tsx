@@ -167,7 +167,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => (
         Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
-        && gestureState.dy < -2
+        && gestureState.dy < -4
       ),
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy < 0) {
@@ -219,6 +219,10 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
       <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
         <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.dragHandleWrap} {...panResponder.panHandlers}>
+            <View style={styles.handleBar} />
+          </View>
+
           <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
           </Pressable>
@@ -367,6 +371,10 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     marginHorizontal: 20,
   },
+  dragHandleWrap: {
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
   closeBtn: {
     alignSelf: "flex-end" as const,
     paddingHorizontal: 24,
@@ -420,11 +428,13 @@ const styles = StyleSheet.create({
   rateCardFlag: {
     fontFamily: "Outfit_700Bold",
     fontSize: 9,
-    color: "#bfcdf9",
-    backgroundColor: "rgba(10, 18, 45, 0.45)",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 8,
+    color: "#d5dbeb",
+    backgroundColor: "rgba(125,155,255,0.22)",
+    borderWidth: 1,
+    borderColor: "rgba(125,155,255,0.35)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
     overflow: "hidden" as const,
     letterSpacing: 0.5,
   },
