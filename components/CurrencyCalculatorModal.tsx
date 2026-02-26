@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,9 +8,6 @@ import {
   TextInput,
   ScrollView,
   Platform,
-  Animated,
-  PanResponder,
-  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,10 +46,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyKey>("USD");
   const [ratesDate, setRatesDate] = useState("");
-  const { height: windowHeight } = useWindowDimensions();
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
-  const modalHeight = Math.max(windowHeight, 1);
 
   useEffect(() => {
     if (!visible) return;
@@ -117,110 +112,15 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     : 0;
   const safeBrechaValue = Number.isFinite(brechaValue) ? brechaValue : 0;
 
-  const slideAnim = useRef(new Animated.Value(-modalHeight)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!visible) {
-      slideAnim.setValue(-modalHeight);
-      return;
-    }
-
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(overlayAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          damping: 22,
-          stiffness: 220,
-          mass: 0.9,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [modalHeight, overlayAnim, slideAnim, visible]);
-
-  const animateClose = () => {
-    Animated.parallel([
-      Animated.timing(overlayAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: -modalHeight,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      handleClose();
-      slideAnim.setValue(-modalHeight);
-      overlayAnim.setValue(0);
-    });
-  };
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => (
-        Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
-        && gestureState.dy < -4
-      ),
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy < 0) {
-          slideAnim.setValue(gestureState.dy);
-          overlayAnim.setValue(Math.max(0, 1 + (gestureState.dy / 180)));
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy < -45 || gestureState.vy < -0.7) {
-          animateClose();
-          return;
-        }
-
-        Animated.parallel([
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            damping: 22,
-            stiffness: 220,
-            mass: 0.9,
-            useNativeDriver: true,
-          }),
-          Animated.timing(overlayAnim, {
-            toValue: 1,
-            duration: 180,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      },
-      onPanResponderTerminate: () => {
-        Animated.parallel([
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            damping: 22,
-            stiffness: 220,
-            mass: 0.9,
-            useNativeDriver: true,
-          }),
-          Animated.timing(overlayAnim, {
-            toValue: 1,
-            duration: 180,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      },
-    }),
-  ).current;
-
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
-      <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 28, transform: [{ translateY: slideAnim }] }]}>
-          <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <Pressable style={styles.overlay} onPress={handleClose}>
+        <Pressable
+          style={[styles.sheet, { paddingTop: insets.top + webTopInset + 8, paddingBottom: insets.bottom + 20 }]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={styles.handleBar} />
+          <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
           </Pressable>
 
@@ -335,14 +235,8 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
             </View>
           </ScrollView>
 
-          <View
-            style={[styles.bottomDragHandleWrap, { bottom: insets.bottom + 6 }]}
-            {...panResponder.panHandlers}
-          >
-            <View style={styles.handleBar} />
-          </View>
-        </Animated.View>
-      </Animated.View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -352,16 +246,16 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-start" as const,
+    justifyContent: "flex-end" as const,
   },
   sheet: {
     backgroundColor: Colors.dark.surface,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    maxHeight: "90%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: "92%",
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    borderTopWidth: 0,
+    borderBottomWidth: 0,
   },
   handleBar: {
     width: 36,
@@ -369,15 +263,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.dark.highlight,
     alignSelf: "center" as const,
-  },
-  bottomDragHandleWrap: {
-    position: "absolute" as const,
-    alignSelf: "center" as const,
-    paddingTop: 6,
-    paddingBottom: 10,
-    width: 220,
-    zIndex: 2,
-    alignItems: "center" as const,
   },
   closeBtn: {
     alignSelf: "flex-end" as const,
