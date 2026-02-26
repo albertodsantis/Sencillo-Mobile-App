@@ -35,7 +35,7 @@ function BrandedSplash() {
       />
       <View style={splashStyles.logoCircle}>
         <LinearGradient
-          colors={[Colors.brand.DEFAULT, Colors.brand.dark]}
+          colors={[Colors.light.tabIconSelected, Colors.light.tabIconDefault]}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}

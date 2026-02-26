@@ -126,7 +126,7 @@ function LoginContent() {
           <View style={styles.logoSection}>
             <View style={styles.logoCircle}>
               <LinearGradient
-                colors={[Colors.brand.DEFAULT, Colors.brand.dark]}
+                colors={[Colors.light.tabIconSelected, Colors.light.tabIconDefault]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -256,7 +256,7 @@ function LoginContent() {
             disabled={loading}
           >
             <LinearGradient
-              colors={[Colors.brand.DEFAULT, Colors.brand.dark]}
+              colors={[Colors.light.tabIconSelected, Colors.light.tabIconDefault]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -426,6 +426,6 @@ const styles = StyleSheet.create({
   },
   switchModeLink: {
     fontFamily: "Outfit_700Bold",
-    color: Colors.brand.DEFAULT,
+    color: Colors.light.tabIconSelected,
   },
 });
