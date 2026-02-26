@@ -333,13 +333,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    minHeight: 520,
     maxHeight: "92%",
     borderWidth: 1,
     borderColor: Colors.dark.border,
     borderBottomWidth: 0,
   },
   sheetContent: {
-    flex: 1,
+    flexShrink: 1,
   },
   handleBar: {
     width: 36,
