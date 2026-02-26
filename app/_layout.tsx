@@ -91,9 +91,10 @@ function RootLayoutNav() {
       <Stack.Screen
         name="currency-calculator-modal"
         options={{
-          presentation: "modal",
+          presentation: "transparentModal",
           headerShown: false,
           animation: "slide_from_bottom",
+          contentStyle: { backgroundColor: "transparent" },
         }}
       />
       <Stack.Screen
