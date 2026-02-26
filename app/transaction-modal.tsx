@@ -940,8 +940,6 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.07)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
