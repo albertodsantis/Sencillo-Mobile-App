@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   Animated,
+  PanResponder,
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -162,12 +163,62 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
     });
   };
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => (
+        Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+        && gestureState.dy < -2
+      ),
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy < 0) {
+          slideAnim.setValue(gestureState.dy);
+          overlayAnim.setValue(Math.max(0, 1 + (gestureState.dy / 180)));
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy < -45 || gestureState.vy < -0.7) {
+          animateClose();
+          return;
+        }
+
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 220,
+            mass: 0.9,
+            useNativeDriver: true,
+          }),
+          Animated.timing(overlayAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 220,
+            mass: 0.9,
+            useNativeDriver: true,
+          }),
+          Animated.timing(overlayAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+    }),
+  ).current;
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
       <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
         <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.handleBar} />
-
           <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
           </Pressable>
@@ -278,13 +329,16 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
               ))}
             </View>
           </ScrollView>
+
+          <View style={styles.bottomDragHandleWrap} {...panResponder.panHandlers}>
+            <View style={styles.handleBar} />
+          </View>
         </Animated.View>
       </Animated.View>
     </Modal>
   );
 }
 
-const CARD_BG = "#0f1729";
 
 const styles = StyleSheet.create({
   overlay: {
@@ -302,13 +356,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
   },
   handleBar: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    width: 48,
+    height: 5,
+    borderRadius: 99,
+    backgroundColor: "rgba(255,255,255,0.22)",
     alignSelf: "center" as const,
-    marginTop: 10,
-    marginBottom: 4,
+  },
+  bottomDragHandleWrap: {
+    paddingTop: 10,
+    paddingBottom: 2,
+    marginHorizontal: 20,
   },
   closeBtn: {
     alignSelf: "flex-end" as const,
@@ -342,8 +399,10 @@ const styles = StyleSheet.create({
   },
   rateCard: {
     width: "47%" as any,
-    backgroundColor: CARD_BG,
+    backgroundColor: "rgba(72, 103, 189, 0.14)",
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(148, 177, 255, 0.22)",
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
@@ -356,16 +415,16 @@ const styles = StyleSheet.create({
   rateCardTitle: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 11,
-    color: Colors.text.muted,
+    color: "#cfd8f7",
   },
   rateCardFlag: {
     fontFamily: "Outfit_700Bold",
     fontSize: 9,
-    color: Colors.text.disabled,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    paddingHorizontal: 6,
+    color: "#bfcdf9",
+    backgroundColor: "rgba(10, 18, 45, 0.45)",
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 8,
     overflow: "hidden" as const,
     letterSpacing: 0.5,
   },
@@ -378,7 +437,7 @@ const styles = StyleSheet.create({
   rateCardUnit: {
     fontFamily: "Outfit_400Regular",
     fontSize: 11,
-    color: Colors.text.disabled,
+    color: "#9eaed9",
     marginTop: 2,
   },
   brechaRow: {
