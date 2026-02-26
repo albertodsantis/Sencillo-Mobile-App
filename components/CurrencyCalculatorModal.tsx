@@ -165,6 +165,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
 
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => (
         Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
         && gestureState.dy < -4
@@ -218,11 +219,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={animateClose}>
       <Animated.View style={[styles.overlay, { paddingTop: insets.top + webTopInset + 8, opacity: overlayAnim }]}>
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.dragHandleWrap} {...panResponder.panHandlers}>
-            <View style={styles.handleBar} />
-          </View>
-
+        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 28, transform: [{ translateY: slideAnim }] }]}>
           <Pressable onPress={animateClose} hitSlop={12} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.text.secondary} />
           </Pressable>
@@ -237,37 +234,41 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
               <View style={styles.rateCard}>
                 <View style={styles.rateCardHead}>
                   <Text style={styles.rateCardTitle}>Dolar BCV</Text>
-                  <Text style={styles.rateCardFlag}>USD</Text>
                 </View>
-                <Text style={styles.rateCardValue}>{rates.bcv.toFixed(2)}</Text>
-                <Text style={styles.rateCardUnit}>Bs</Text>
+                <View style={styles.rateCardValueRow}>
+                  <Text style={styles.rateCardValue}>{rates.bcv.toFixed(2)}</Text>
+                  <Text style={styles.rateCardUnit}>Bs</Text>
+                </View>
               </View>
 
               <View style={styles.rateCard}>
                 <View style={styles.rateCardHead}>
                   <Text style={styles.rateCardTitle}>Dolar Paralelo</Text>
-                  <Text style={styles.rateCardFlag}>USDC</Text>
                 </View>
-                <Text style={styles.rateCardValue}>{rates.parallel.toFixed(2)}</Text>
-                <Text style={styles.rateCardUnit}>Bs</Text>
+                <View style={styles.rateCardValueRow}>
+                  <Text style={styles.rateCardValue}>{rates.parallel.toFixed(2)}</Text>
+                  <Text style={styles.rateCardUnit}>Bs</Text>
+                </View>
               </View>
 
               <View style={styles.rateCard}>
                 <View style={styles.rateCardHead}>
                   <Text style={styles.rateCardTitle}>Euro BCV</Text>
-                  <Text style={styles.rateCardFlag}>EUR</Text>
                 </View>
-                <Text style={styles.rateCardValue}>{rates.eur.toFixed(2)}</Text>
-                <Text style={styles.rateCardUnit}>Bs</Text>
+                <View style={styles.rateCardValueRow}>
+                  <Text style={styles.rateCardValue}>{rates.eur.toFixed(2)}</Text>
+                  <Text style={styles.rateCardUnit}>Bs</Text>
+                </View>
               </View>
 
               <View style={styles.rateCard}>
                 <View style={styles.rateCardHead}>
                   <Text style={styles.rateCardTitle}>Cruce EUR/USD</Text>
-                  <Text style={styles.rateCardFlag}>FX</Text>
                 </View>
-                <Text style={styles.rateCardValue}>{rates.eurCross.toFixed(2)}</Text>
-                <Text style={styles.rateCardUnit}>$/€</Text>
+                <View style={styles.rateCardValueRow}>
+                  <Text style={styles.rateCardValue}>{rates.eurCross.toFixed(2)}</Text>
+                  <Text style={styles.rateCardUnit}>$/€</Text>
+                </View>
               </View>
             </View>
 
@@ -334,7 +335,7 @@ export default function CurrencyCalculatorModal({ visible, onClose, rates, rates
             </View>
           </ScrollView>
 
-          <View style={styles.bottomDragHandleWrap} {...panResponder.panHandlers}>
+          <View style={[styles.bottomDragHandleWrap, { bottom: insets.bottom + 6 }]} {...panResponder.panHandlers}>
             <View style={styles.handleBar} />
           </View>
         </Animated.View>
@@ -367,13 +368,11 @@ const styles = StyleSheet.create({
     alignSelf: "center" as const,
   },
   bottomDragHandleWrap: {
-    paddingTop: 10,
-    paddingBottom: 2,
-    marginHorizontal: 20,
-  },
-  dragHandleWrap: {
-    paddingTop: 4,
-    paddingBottom: 2,
+    position: "absolute" as const,
+    alignSelf: "center" as const,
+    paddingVertical: 8,
+    width: 120,
+    zIndex: 2,
   },
   closeBtn: {
     alignSelf: "flex-end" as const,
@@ -382,6 +381,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   sectionHeader: {
     flexDirection: "row" as const,
@@ -418,25 +418,17 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   rateCardTitle: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 11,
     color: "#cfd8f7",
   },
-  rateCardFlag: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 9,
-    color: "#d5dbeb",
-    backgroundColor: "rgba(125,155,255,0.22)",
-    borderWidth: 1,
-    borderColor: "rgba(125,155,255,0.35)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    overflow: "hidden" as const,
-    letterSpacing: 0.5,
+  rateCardValueRow: {
+    flexDirection: "row" as const,
+    alignItems: "baseline" as const,
+    gap: 6,
   },
   rateCardValue: {
     fontFamily: "Outfit_700Bold",
@@ -445,10 +437,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
   },
   rateCardUnit: {
-    fontFamily: "Outfit_400Regular",
-    fontSize: 11,
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 12,
     color: "#9eaed9",
-    marginTop: 2,
   },
   brechaRow: {
     flexDirection: "row" as const,
