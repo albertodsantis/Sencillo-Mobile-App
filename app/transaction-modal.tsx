@@ -509,6 +509,10 @@ export default function TransactionModal() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
+        <View style={styles.dragHandleWrap}>
+          <View style={styles.dragHandle} />
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>
             {editingTx ? "Editar Movimiento" : "Registrar Movimiento"}
@@ -914,6 +918,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
     marginBottom: 20,
+  },
+  dragHandleWrap: {
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingTop: 4,
+    paddingBottom: 12,
+  },
+  dragHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: Colors.dark.highlight,
   },
   title: {
     fontFamily: "Outfit_900Black",

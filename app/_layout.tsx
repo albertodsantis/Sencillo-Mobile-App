@@ -86,14 +86,18 @@ function RootLayoutNav() {
           presentation: "modal",
           headerShown: false,
           animation: "slide_from_bottom",
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
         }}
       />
       <Stack.Screen
         name="currency-calculator-modal"
         options={{
-          presentation: "transparentModal",
+          presentation: "modal",
           headerShown: false,
           animation: "slide_from_bottom",
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
           contentStyle: { backgroundColor: "transparent" },
         }}
       />
