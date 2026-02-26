@@ -9,7 +9,7 @@ const Colors = {
   },
   brand: {
     light: '#34d399',
-    DEFAULT: '#10b981',
+    DEFAULT: '#0f766e',
     dark: '#047857',
     navigation: '#0f766e',
   },
@@ -34,9 +34,9 @@ const Colors = {
   light: {
     text: '#000',
     background: '#fff',
-    tint: '#10b981',
+    tint: '#0f766e',
     tabIconDefault: '#94A3B8',
-    tabIconSelected: '#10b981',
+    tabIconSelected: '#0f766e',
   },
 };
 
