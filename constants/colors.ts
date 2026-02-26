@@ -1,6 +1,6 @@
 const Colors = {
   dark: {
-    base: '#020617',
+    base: '#430a4d',
     surface: '#0f172a',
     card: '#1e293b',
     highlight: '#334155',
@@ -8,9 +8,10 @@ const Colors = {
     borderSubtle: 'rgba(255, 255, 255, 0.05)',
   },
   brand: {
-    light: '#34d399',
-    DEFAULT: '#10b981',
-    dark: '#047857',
+    light: '#6c2a7a',
+    DEFAULT: '#430a4d',
+    dark: '#2b0632',
+    mist: '#f7c8ff',
   },
   text: {
     primary: '#FFFFFF',
@@ -33,9 +34,9 @@ const Colors = {
   light: {
     text: '#000',
     background: '#fff',
-    tint: '#10b981',
+    tint: '#430a4d',
     tabIconDefault: '#94A3B8',
-    tabIconSelected: '#10b981',
+    tabIconSelected: '#430a4d',
   },
 };
 

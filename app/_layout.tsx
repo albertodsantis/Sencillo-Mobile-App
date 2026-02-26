@@ -29,8 +29,8 @@ function BrandedSplash() {
   return (
     <View style={splashStyles.root}>
       <LinearGradient
-        colors={["#020617", "#0a1628", "#0d2818", "#020617"]}
-        locations={[0, 0.3, 0.6, 1]}
+        colors={[Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.mist]}
+        locations={[0, 0.55, 1]}
         style={StyleSheet.absoluteFill}
       />
       <View style={splashStyles.logoCircle}>
@@ -174,7 +174,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <KeyboardProvider>
-            <StatusBar barStyle="light-content" backgroundColor="#020617" />
+            <StatusBar barStyle="light-content" backgroundColor={Colors.brand.dark} />
             <AuthProvider>
               <AuthGate />
             </AuthProvider>

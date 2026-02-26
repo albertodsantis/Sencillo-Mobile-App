@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
@@ -421,9 +422,13 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: topPadding }]}>
-        <ActivityIndicator size="large" color={Colors.brand.DEFAULT} />
-      </View>
+      <LinearGradient
+        colors={[Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.mist]}
+        locations={[0, 0.55, 1]}
+        style={[styles.loadingContainer, { paddingTop: topPadding }]}
+      >
+        <ActivityIndicator size="large" color={Colors.brand.mist} />
+      </LinearGradient>
     );
   }
 
@@ -442,7 +447,11 @@ export default function HomeScreen() {
     balanceDisplay.split(".");
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.mist]}
+      locations={[0, 0.55, 1]}
+      style={styles.container}
+    >
       <AmbientGlow />
       <ScrollView
         style={{ flex: 1 }}
@@ -807,7 +816,7 @@ export default function HomeScreen() {
           </Pressable>
         </Modal>
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -890,11 +899,9 @@ const guideStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.base,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: Colors.dark.base,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },

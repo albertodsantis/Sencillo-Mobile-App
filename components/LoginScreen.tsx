@@ -104,7 +104,11 @@ function LoginContent() {
   };
 
   return (
-    <View style={styles.root}>
+    <LinearGradient
+      colors={[Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.mist]}
+      locations={[0, 0.55, 1]}
+      style={styles.root}
+    >
       <AmbientGlow intensity={0.3} />
 
       <KeyboardAvoidingView
@@ -282,7 +286,7 @@ function LoginContent() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -297,7 +301,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.dark.base,
   },
   scrollContent: {
     flexGrow: 1,
