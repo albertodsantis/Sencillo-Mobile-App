@@ -23,6 +23,8 @@ import {
   Outfit_900Black,
 } from "@expo-google-fonts/outfit";
 
+const brandGradient = [Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.light] as const;
+
 SplashScreen.preventAutoHideAsync();
 
 function BrandedSplash() {
@@ -35,10 +37,11 @@ function BrandedSplash() {
       />
       <View style={splashStyles.logoCircle}>
         <LinearGradient
-          colors={[Colors.light.tabIconSelected, Colors.light.tabIconDefault]}
+          colors={brandGradient}
+          locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
         />
         <Text style={splashStyles.logoText}>S</Text>
       </View>

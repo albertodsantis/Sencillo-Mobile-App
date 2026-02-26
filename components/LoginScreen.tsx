@@ -25,6 +25,8 @@ import { useAuth } from "@/lib/context/AuthContext";
 
 type Mode = "login" | "signup";
 
+const brandGradient = [Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.light] as const;
+
 function LoginContent() {
   const insets = useSafeAreaInsets();
   const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
@@ -126,10 +128,11 @@ function LoginContent() {
           <View style={styles.logoSection}>
             <View style={styles.logoCircle}>
               <LinearGradient
-                colors={[Colors.light.tabIconSelected, Colors.light.tabIconDefault]}
+                colors={brandGradient}
+                locations={[0, 0.55, 1]}
                 style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                start={{ x: 0.1, y: 0 }}
+                end={{ x: 0.9, y: 1 }}
               />
               <Text style={styles.logoText}>S</Text>
             </View>
@@ -256,10 +259,11 @@ function LoginContent() {
             disabled={loading}
           >
             <LinearGradient
-              colors={[Colors.light.tabIconSelected, Colors.light.tabIconDefault]}
+              colors={brandGradient}
+              locations={[0, 0.5, 1]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 1, y: 1 }}
             />
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -426,6 +430,6 @@ const styles = StyleSheet.create({
   },
   switchModeLink: {
     fontFamily: "Outfit_700Bold",
-    color: Colors.light.tabIconSelected,
+    color: Colors.brand.light,
   },
 });
