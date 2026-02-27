@@ -607,7 +607,7 @@ export default function TransactionModal() {
           <Text style={styles.currencyFullLabel}>{currencyInfo.fullLabel}</Text>
         </Pressable>
 
-        <View style={styles.currencyPillRow}>
+        <View style={styles.currencySelector}>
           {CURRENCIES.map((c) => {
             const isActive = currency === c.id;
             return (
@@ -618,14 +618,14 @@ export default function TransactionModal() {
                   Haptics.selectionAsync();
                 }}
                 style={[
-                  styles.currencyPill,
-                  isActive && styles.currencyPillActive,
+                  styles.currencySelectorButton,
+                  isActive && styles.currencySelectorButtonActive,
                 ]}
               >
                 <Text
                   style={[
-                    styles.currencyPillText,
-                    isActive && styles.currencyPillTextActive,
+                    styles.currencySelectorText,
+                    isActive && styles.currencySelectorTextActive,
                   ]}
                 >
                   {c.label}
@@ -1003,35 +1003,32 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textTransform: "uppercase" as const,
   },
-  currencyPillRow: {
+  currencySelector: {
     flexDirection: "row" as const,
-    justifyContent: "center" as const,
-    gap: 8,
-    marginBottom: 24,
-    alignSelf: "center" as const,
-  },
-  currencyPill: {
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    minWidth: 68,
-    borderRadius: 12,
-    backgroundColor: "#0f1729",
+    backgroundColor: "rgba(15, 23, 42, 0.42)",
+    borderRadius: 16,
+    padding: 4,
     borderWidth: 1,
     borderColor: Colors.dark.border,
+    marginBottom: 24,
   },
-  currencyPillActive: {
-    backgroundColor: "rgba(255,255,255,0.10)",
-    borderColor: Colors.dark.highlight,
+  currencySelectorButton: {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
-  currencyPillText: {
-    fontFamily: "Outfit_600SemiBold",
-    fontSize: 13,
-    color: Colors.text.secondary,
+  currencySelectorButtonActive: {
+    backgroundColor: "#fff",
   },
-  currencyPillTextActive: {
-    color: Colors.text.primary,
+  currencySelectorText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 12,
+    color: Colors.text.muted,
+  },
+  currencySelectorTextActive: {
+    color: "#000",
   },
   inlineRow: {
     flexDirection: "row" as const,
