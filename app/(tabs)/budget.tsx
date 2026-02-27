@@ -146,7 +146,7 @@ export default function BudgetScreen() {
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
   const keyboardBehavior = Platform.OS === "ios" ? "padding" : "height";
-  const keyboardVerticalOffset = Platform.OS === "ios" ? insets.top + 88 : 24;
+  const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
 
@@ -305,7 +305,6 @@ export default function BudgetScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        automaticallyAdjustKeyboardInsets
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
