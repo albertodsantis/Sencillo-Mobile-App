@@ -23,7 +23,6 @@ export default function TabLayout() {
 
   const tabBarHeight = 56 + tabBarBottomPadding;
   const tabBarWidth = Math.min(screenWidth * 0.88, 540);
-  const tabBarHorizontalOffset = tabBarWidth / 2;
 
   return (
     <Tabs
@@ -36,9 +35,7 @@ export default function TabLayout() {
           position: "absolute" as const,
           bottom: tabBarBottomOffset,
           width: tabBarWidth,
-          left: "50%" as const,
-          marginLeft: -tabBarHorizontalOffset,
-          right: "auto" as const,
+          alignSelf: "center" as const,
           borderRadius: 24,
           backgroundColor:
             Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
