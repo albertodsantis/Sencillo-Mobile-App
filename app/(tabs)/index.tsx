@@ -477,7 +477,7 @@ export default function HomeScreen() {
         <View style={styles.toolbarRow}>
           <Pressable
             onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
-            style={styles.toolbarBtn}
+            style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
               <MaterialCommunityIcons
                 name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
@@ -487,7 +487,7 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => router.push("/currency-calculator-modal")}
-            style={styles.toolbarBtn}
+            style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <Ionicons
               name="calculator-outline"
@@ -497,7 +497,7 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => setHiddenBalances(!hiddenBalances)}
-            style={styles.toolbarBtn}
+            style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <Ionicons
               name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
@@ -507,7 +507,7 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => router.push("/report")}
-            style={styles.toolbarBtn}
+            style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <MaterialCommunityIcons
               name="file-table-outline"
@@ -517,7 +517,7 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => setShowGuide(true)}
-            style={styles.toolbarBtn}
+            style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <Ionicons
               name="help-circle-outline"
@@ -918,12 +918,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   toolbarBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
+    shadowColor: "#000",
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  toolbarBtnPressed: {
+    transform: [{ scale: 0.96 }],
+    backgroundColor: "rgba(255,255,255,0.12)",
   },
   helpBtn: {
     width: 40,
