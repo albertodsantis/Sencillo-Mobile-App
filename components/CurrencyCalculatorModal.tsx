@@ -450,13 +450,13 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "#0f1729",
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
   currencyChipActive: {
-    backgroundColor: Colors.brand.DEFAULT + "18",
-    borderColor: Colors.brand.DEFAULT + "50",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: Colors.dark.highlight,
   },
   currencyChipText: {
     fontFamily: "Outfit_600SemiBold",
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   currencyChipTextActive: {
-    color: Colors.brand.DEFAULT,
+    color: Colors.text.primary,
   },
   inputContainer: {
     flexDirection: "row" as const,
