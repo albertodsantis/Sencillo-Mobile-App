@@ -433,20 +433,20 @@ const styles = StyleSheet.create({
   },
   availableRow: {
     flexDirection: "row" as const,
-    backgroundColor: "rgba(96,165,250,0.05)",
+    backgroundColor: "rgba(168,85,247,0.08)",
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
   availableText: {
     fontFamily: "Outfit_800ExtraBold",
     fontSize: 10,
-    color: "#60a5fa",
+    color: "#a855f7",
     letterSpacing: 0.5,
   },
   availableCellText: {
     fontFamily: "Outfit_700Bold",
     fontSize: 11,
-    color: "#60a5fa",
+    color: "#a855f7",
   },
   flexRow: {
     flexDirection: "row" as const,
