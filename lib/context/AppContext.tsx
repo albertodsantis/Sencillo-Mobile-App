@@ -45,6 +45,8 @@ interface AppContextValue {
   displayCurrency: DisplayCurrency;
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
+  currentBudgetPeriodLabel: string;
+  canCopyPreviousBudgets: boolean;
 
   setViewMode: (mode: ViewMode) => void;
   setCurrentMonth: (month: number) => void;
@@ -69,9 +71,18 @@ interface AppContextValue {
   updateSavingsGoals: (goals: SavingsGoals) => Promise<void>;
   updateProfile: (profile: UserProfile) => Promise<void>;
   clearAccount: () => Promise<void>;
+  copyPreviousBudgets: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+const BUDGET_PERIOD_STORAGE_PREFIX = '@sencillo/budgets-period/';
+const PREVIOUS_BUDGETS_STORAGE_PREFIX = '@sencillo/budgets-previous/';
+
+function getCurrentBudgetPeriod() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -88,21 +99,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [displayCurrency, setDisplayCurrencyState] = useState<DisplayCurrency>('USD');
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [canCopyPreviousBudgets, setCanCopyPreviousBudgets] = useState(false);
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const currentBudgetPeriodLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat('es-ES', {
+      month: 'long',
+      year: 'numeric',
+    });
+    const formatted = formatter.format(new Date());
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }, []);
 
   const loadWorkspaceScopedData = useCallback(async () => {
+    const workspaceId = await AsyncStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY);
     const [txs, pnl, bdg, sg] = await Promise.all([
       TransactionRepository.getAll(),
       PnlRepository.get(),
       BudgetRepository.get(),
       SavingsRepository.get(),
     ]);
+
+    const periodKey = workspaceId ? `${BUDGET_PERIOD_STORAGE_PREFIX}${workspaceId}` : null;
+    const previousBudgetsKey = workspaceId ? `${PREVIOUS_BUDGETS_STORAGE_PREFIX}${workspaceId}` : null;
+    const currentPeriod = getCurrentBudgetPeriod();
+    const savedPeriod = periodKey ? await AsyncStorage.getItem(periodKey) : null;
+
+    let resolvedBudgets = bdg;
+    if (workspaceId && savedPeriod !== currentPeriod) {
+      const hasBudgets = Object.keys(bdg).length > 0;
+      if (previousBudgetsKey) {
+        if (hasBudgets) {
+          await AsyncStorage.setItem(previousBudgetsKey, JSON.stringify(bdg));
+        } else {
+          await AsyncStorage.removeItem(previousBudgetsKey);
+        }
+      }
+
+      if (hasBudgets) {
+        await BudgetRepository.clear();
+      }
+      resolvedBudgets = {};
+      if (periodKey) {
+        await AsyncStorage.setItem(periodKey, currentPeriod);
+      }
+    } else if (periodKey && !savedPeriod) {
+      await AsyncStorage.setItem(periodKey, currentPeriod);
+    }
+
+    if (previousBudgetsKey) {
+      const rawPreviousBudgets = await AsyncStorage.getItem(previousBudgetsKey);
+      let hasPreviousBudgets = false;
+      if (rawPreviousBudgets) {
+        try {
+          const parsed = JSON.parse(rawPreviousBudgets) as Budgets;
+          hasPreviousBudgets = Object.keys(parsed).length > 0;
+        } catch {
+          hasPreviousBudgets = false;
+        }
+      }
+      setCanCopyPreviousBudgets(hasPreviousBudgets && Object.keys(resolvedBudgets).length === 0);
+    } else {
+      setCanCopyPreviousBudgets(false);
+    }
+
     setTransactions(txs);
     setPnlStructure(pnl);
-    setBudgets(bdg);
+    setBudgets(resolvedBudgets);
     setSavingsGoals(sg);
   }, []);
 
@@ -239,8 +304,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateBudgets = useCallback(async (b: Budgets) => {
     setBudgets(b);
+    if (Object.keys(b).length > 0) {
+      setCanCopyPreviousBudgets(false);
+    }
     await BudgetRepository.save(b);
   }, []);
+
+  const copyPreviousBudgets = useCallback(async () => {
+    if (!activeWorkspaceId) return;
+    const previousBudgetsKey = `${PREVIOUS_BUDGETS_STORAGE_PREFIX}${activeWorkspaceId}`;
+    const rawPreviousBudgets = await AsyncStorage.getItem(previousBudgetsKey);
+    if (!rawPreviousBudgets) return;
+
+    try {
+      const parsed = JSON.parse(rawPreviousBudgets) as Budgets;
+      if (Object.keys(parsed).length === 0) {
+        await AsyncStorage.removeItem(previousBudgetsKey);
+        setCanCopyPreviousBudgets(false);
+        return;
+      }
+
+      await updateBudgets(parsed);
+      await AsyncStorage.removeItem(previousBudgetsKey);
+      setCanCopyPreviousBudgets(false);
+    } catch {
+      await AsyncStorage.removeItem(previousBudgetsKey);
+      setCanCopyPreviousBudgets(false);
+    }
+  }, [activeWorkspaceId, updateBudgets]);
 
   const updateSavingsGoals = useCallback(async (g: SavingsGoals) => {
     setSavingsGoals(g);
@@ -267,6 +358,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ProfileRepository.clear(),
       DisplayCurrencyRepository.clear(),
     ]);
+    if (activeWorkspaceId) {
+      await AsyncStorage.multiRemove([
+        `${BUDGET_PERIOD_STORAGE_PREFIX}${activeWorkspaceId}`,
+        `${PREVIOUS_BUDGETS_STORAGE_PREFIX}${activeWorkspaceId}`,
+      ]);
+    }
     setTransactions([]);
     setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
     setRatesTimestamp(null);
@@ -275,7 +372,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSavingsGoals({});
     setProfile(DEFAULT_PROFILE);
     setDisplayCurrencyState('USD');
-  }, []);
+    setCanCopyPreviousBudgets(false);
+  }, [activeWorkspaceId]);
 
   const dashboardData = useMemo(
     () => computeDashboard(transactions, viewMode, currentMonth, currentYear, rates),
@@ -307,6 +405,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       savingsGoals,
       workspaces,
       activeWorkspaceId,
+      currentBudgetPeriodLabel,
+      canCopyPreviousBudgets,
       setViewMode,
       setCurrentMonth,
       setCurrentYear,
@@ -326,16 +426,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateSavingsGoals,
       updateProfile,
       clearAccount,
+      copyPreviousBudgets,
     }),
     [
       transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
       currentMonth, currentYear, dashboardData, budgetSummary, ratesTimestamp,
       isLoading, isRefreshingRates, historyFilter, displayCurrency, profile,
       workspaces, activeWorkspaceId,
+      currentBudgetPeriodLabel, canCopyPreviousBudgets,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
       updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace, clearAccount,
-      deleteWorkspace,
+      deleteWorkspace, copyPreviousBudgets,
     ],
   );
 

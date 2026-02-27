@@ -131,6 +131,9 @@ export default function BudgetScreen() {
     transactions,
     rates,
     displayCurrency,
+    currentBudgetPeriodLabel,
+    canCopyPreviousBudgets,
+    copyPreviousBudgets,
   } = useApp();
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -360,6 +363,13 @@ export default function BudgetScreen() {
             </Pressable>
           ))}
         </View>
+
+        <Text style={styles.periodLabel}>{currentBudgetPeriodLabel}</Text>
+        {canCopyPreviousBudgets && (
+          <Pressable onPress={copyPreviousBudgets} style={styles.copyPreviousBudgetsBtn}>
+            <Text style={styles.copyPreviousBudgetsText}>Copiar presupuestos del mes anterior</Text>
+          </Pressable>
+        )}
 
         {activeTab === "presupuestos" &&
           budgetSummary.totalBudget > 0 &&
@@ -854,6 +864,24 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: "#000",
+  },
+  periodLabel: {
+    fontFamily: "Outfit_500Medium",
+    fontSize: 12,
+    color: Colors.text.muted,
+    marginTop: -8,
+    marginBottom: 4,
+    textTransform: "capitalize" as const,
+  },
+  copyPreviousBudgetsBtn: {
+    alignSelf: "flex-start" as const,
+    marginBottom: 16,
+  },
+  copyPreviousBudgetsText: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 13,
+    color: Colors.brand.DEFAULT,
+    textDecorationLine: "underline" as const,
   },
   overallCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
