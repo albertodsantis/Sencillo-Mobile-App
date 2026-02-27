@@ -23,7 +23,8 @@ import {
   Outfit_900Black,
 } from "@expo-google-fonts/outfit";
 
-const brandGradient = [Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.light] as const;
+const splashBackground = ["#020617", "#0b1730", "#111827", "#020617"] as const;
+const splashLogoGradient = ["#334155", "#1e293b", "#0f172a"] as const;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,17 +32,17 @@ function BrandedSplash() {
   return (
     <View style={splashStyles.root}>
       <LinearGradient
-        colors={["#020617", "#0a1628", "#0d2818", "#020617"]}
+        colors={splashBackground}
         locations={[0, 0.3, 0.6, 1]}
         style={StyleSheet.absoluteFill}
       />
       <View style={splashStyles.logoCircle}>
         <LinearGradient
-          colors={brandGradient}
-          locations={[0, 0.55, 1]}
+          colors={splashLogoGradient}
+          locations={[0, 0.6, 1]}
           style={StyleSheet.absoluteFill}
-          start={{ x: 0.1, y: 0 }}
-          end={{ x: 0.9, y: 1 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         />
         <Text style={splashStyles.logoText}>S</Text>
       </View>
@@ -58,18 +59,20 @@ const splashStyles = StyleSheet.create({
     justifyContent: "center",
   },
   logoCircle: {
-    width: 80,
-    height: 80,
+    width: 84,
+    height: 84,
     borderRadius: 24,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.2)",
   },
   logoText: {
     fontFamily: "Outfit_800ExtraBold",
-    fontSize: 40,
-    color: "#fff",
+    fontSize: 38,
+    color: "#e2e8f0",
     zIndex: 1,
   },
   appName: {

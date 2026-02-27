@@ -25,7 +25,8 @@ import { useAuth } from "@/lib/context/AuthContext";
 
 type Mode = "login" | "signup";
 
-const brandGradient = [Colors.brand.dark, Colors.brand.DEFAULT, Colors.brand.light] as const;
+const authAccentGradient = ["#334155", "#1e293b", "#0f172a"] as const;
+const authLinkColor = "#94a3b8";
 
 function LoginContent() {
   const insets = useSafeAreaInsets();
@@ -107,7 +108,7 @@ function LoginContent() {
 
   return (
     <View style={styles.root}>
-      <AmbientGlow intensity={0.3} />
+      <AmbientGlow color="#64748b" intensity={0.22} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -128,7 +129,7 @@ function LoginContent() {
           <View style={styles.logoSection}>
             <View style={styles.logoCircle}>
               <LinearGradient
-                colors={brandGradient}
+                colors={authAccentGradient}
                 locations={[0, 0.55, 1]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0.1, y: 0 }}
@@ -259,7 +260,7 @@ function LoginContent() {
             disabled={loading}
           >
             <LinearGradient
-              colors={brandGradient}
+              colors={authAccentGradient}
               locations={[0, 0.5, 1]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
@@ -280,7 +281,7 @@ function LoginContent() {
                 ? "No tienes cuenta? "
                 : "Ya tienes cuenta? "}
               <Text style={styles.switchModeLink}>
-                {mode === "login" ? "Registrate" : "Inicia Sesion"}
+                {mode === "login" ? "Registrarte" : "Iniciar Sesion"}
               </Text>
             </Text>
           </Pressable>
@@ -313,18 +314,20 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoCircle: {
-    width: 72,
-    height: 72,
+    width: 76,
+    height: 76,
     borderRadius: 22,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.25)",
   },
   logoText: {
     fontFamily: "Outfit_800ExtraBold",
     fontSize: 36,
-    color: "#fff",
+    color: "#e2e8f0",
     zIndex: 1,
   },
   welcomeTitle: {
@@ -416,7 +419,7 @@ const styles = StyleSheet.create({
   submitText: {
     fontFamily: "Outfit_700Bold",
     fontSize: 16,
-    color: "#fff",
+    color: "#e2e8f0",
     zIndex: 1,
   },
   switchMode: {
@@ -430,6 +433,6 @@ const styles = StyleSheet.create({
   },
   switchModeLink: {
     fontFamily: "Outfit_700Bold",
-    color: Colors.brand.light,
+    color: authLinkColor,
   },
 });
