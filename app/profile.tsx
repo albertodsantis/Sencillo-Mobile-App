@@ -278,6 +278,7 @@ export default function ProfileScreen() {
   const handleDeleteAccount = useCallback(() => {
     const doDelete = async () => {
       await clearAccount();
+      await signOut();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       router.replace("/");
     };
@@ -302,7 +303,7 @@ export default function ProfileScreen() {
         ]
       );
     }
-  }, [clearAccount, router]);
+  }, [clearAccount, router, signOut]);
 
   return (
     <KeyboardAvoidingView
