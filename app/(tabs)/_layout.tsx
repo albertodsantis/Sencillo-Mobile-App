@@ -11,11 +11,16 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
   const tabBarBottomPadding = Platform.select({
-    web: 18,
-    default: Math.max(insets.bottom - 8, 8),
+    web: 10,
+    default: 10,
   });
 
-  const tabBarHeight = 54 + tabBarBottomPadding;
+  const tabBarBottomOffset = Platform.select({
+    web: 12,
+    default: Math.max(insets.bottom + 6, 12),
+  });
+
+  const tabBarHeight = 56 + tabBarBottomPadding;
 
   return (
     <Tabs
@@ -28,9 +33,9 @@ export default function TabLayout() {
           position: "absolute" as const,
           left: 16,
           right: 16,
-          bottom: 8,
+          bottom: tabBarBottomOffset,
           borderRadius: 24,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.5)" : "transparent",
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.42)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: "rgba(226, 232, 240, 0.22)",
@@ -55,9 +60,9 @@ export default function TabLayout() {
               />
               <LinearGradient
                 colors={[
-                  "rgba(255, 255, 255, 0.26)",
-                  "rgba(148, 163, 184, 0.12)",
-                  "rgba(15, 23, 42, 0.5)",
+                  "rgba(255, 255, 255, 0.22)",
+                  "rgba(148, 163, 184, 0.1)",
+                  "rgba(15, 23, 42, 0.44)",
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -73,7 +78,7 @@ export default function TabLayout() {
             </View>
           ) : (
             <LinearGradient
-              colors={["rgba(255, 255, 255, 0.12)", "rgba(15, 23, 42, 0.58)"]}
+              colors={["rgba(255, 255, 255, 0.1)", "rgba(15, 23, 42, 0.5)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
@@ -85,8 +90,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Inicio",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name="home" size={focused ? 24 : 22} color={color} />
           ),
         }}
       />
@@ -94,8 +99,8 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "Historial",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name="time" size={focused ? 24 : 22} color={color} />
           ),
         }}
       />
@@ -105,7 +110,7 @@ export default function TabLayout() {
           title: "",
           tabBarIcon: () => (
             <View style={styles.addButton}>
-              <Ionicons name="add" size={24} color="#fff" />
+              <Ionicons name="add" size={30} color="#e2e8f0" />
             </View>
           ),
           tabBarLabel: () => null,
@@ -121,8 +126,8 @@ export default function TabLayout() {
         name="budget"
         options={{
           title: "Presupuesto",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chart-donut" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name="chart-donut" size={focused ? 24 : 22} color={color} />
           ),
         }}
       />
@@ -130,8 +135,8 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Personalizar",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="options-outline" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name="options-outline" size={focused ? 24 : 22} color={color} />
           ),
         }}
       />
@@ -141,20 +146,11 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "rgba(226, 232, 240, 0.22)",
-    borderWidth: 1,
-    borderColor: "rgba(241, 245, 249, 0.65)",
+    width: 44,
+    height: 44,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginTop: 0,
-    shadowColor: "#020617",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    elevation: 8,
+    marginTop: -1,
   },
   glassSheen: {
     ...StyleSheet.absoluteFillObject,
