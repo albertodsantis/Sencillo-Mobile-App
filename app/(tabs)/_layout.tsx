@@ -33,7 +33,7 @@ export default function TabLayout() {
         tabBarStyle: {
           position: "absolute" as const,
           bottom: tabBarBottomOffset,
-          marginHorizontal: screenWidth * 0.09,
+          marginHorizontal: screenWidth * 0.08,
           borderRadius: 24,
           backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.3)" : "transparent",
           borderTopWidth: 0,
