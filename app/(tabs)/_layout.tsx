@@ -84,16 +84,10 @@ export default function TabLayout() {
               />
               <View style={styles.topShine} />
               <LinearGradient
-                colors={["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0)"]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.sideFadeLeft}
-              />
-              <LinearGradient
-                colors={["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0)"]}
-                start={{ x: 1, y: 0.5 }}
-                end={{ x: 0, y: 0.5 }}
-                style={styles.sideFadeRight}
+                colors={["rgba(0, 0, 0, 0.75)", "rgba(0, 0, 0, 0)"]}
+                start={{ x: 0.5, y: 1 }}
+                end={{ x: 0.5, y: 0 }}
+                style={styles.bottomFade}
               />
             </View>
           ) : (
@@ -105,16 +99,10 @@ export default function TabLayout() {
                 style={StyleSheet.absoluteFill}
               />
               <LinearGradient
-                colors={["rgba(0, 0, 0, 0.65)", "rgba(0, 0, 0, 0)"]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.sideFadeLeft}
-              />
-              <LinearGradient
-                colors={["rgba(0, 0, 0, 0.65)", "rgba(0, 0, 0, 0)"]}
-                start={{ x: 1, y: 0.5 }}
-                end={{ x: 0, y: 0.5 }}
-                style={styles.sideFadeRight}
+                colors={["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0)"]}
+                start={{ x: 0.5, y: 1 }}
+                end={{ x: 0.5, y: 0 }}
+                style={styles.bottomFade}
               />
             </View>
           ),
@@ -205,18 +193,11 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "rgba(148, 163, 184, 0.3)",
   },
-  sideFadeLeft: {
+  bottomFade: {
     position: "absolute" as const,
+    bottom: 0,
     left: 0,
-    top: 0,
-    bottom: 0,
-    width: 48,
-  },
-  sideFadeRight: {
-    position: "absolute" as const,
     right: 0,
-    top: 0,
-    bottom: 0,
-    width: 48,
+    height: 40,
   },
 });
