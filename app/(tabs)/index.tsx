@@ -466,8 +466,10 @@ export default function HomeScreen() {
             onPress={() => router.push("/profile")}
             style={({ pressed }) => [styles.profileLink, pressed && styles.profileLinkPressed]}
           >
-            <Text style={styles.headerTitle}>{displayName}</Text>
-            <Text style={styles.workspaceBadge}>· {activeWorkspace?.name ?? "Personal"}</Text>
+            <Text style={styles.headerTitle}>
+              {displayName}
+              <Text style={styles.workspaceBadge}> · {activeWorkspace?.name ?? "Personal"}</Text>
+            </Text>
             <Ionicons name="chevron-forward" size={14} color={Colors.text.muted} />
           </Pressable>
         </View>
