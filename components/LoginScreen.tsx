@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Outfit_400Regular",
     fontSize: 15,
+    letterSpacing: 0.3,
     color: Colors.text.primary,
     height: 52,
   },
