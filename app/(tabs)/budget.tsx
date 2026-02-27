@@ -135,7 +135,7 @@ export default function BudgetScreen() {
   const [editValue, setEditValue] = useState("");
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalValue, setGoalValue] = useState("");
-  const [showGuide, setShowGuide] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
   const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
   const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">(
     "presupuestos",

@@ -280,7 +280,7 @@ export default function HomeScreen() {
 
   const { width: windowWidth } = useWindowDimensions();
 
-  const [showGuide, setShowGuide] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
   const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
