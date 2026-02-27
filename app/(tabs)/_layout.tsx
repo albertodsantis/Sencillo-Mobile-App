@@ -30,43 +30,50 @@ export default function TabLayout() {
           right: 16,
           bottom: 10,
           borderRadius: 28,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.72)" : "transparent",
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.64)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
-          borderColor: "rgba(148, 163, 184, 0.22)",
+          borderColor: "rgba(226, 232, 240, 0.28)",
           elevation: 0,
           height: tabBarHeight,
           paddingBottom: tabBarBottomPadding - 2,
           paddingTop: 10,
           shadowColor: "#020617",
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.3,
-          shadowRadius: 22,
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.42,
+          shadowRadius: 24,
           overflow: "hidden" as const,
         },
         tabBarBackground: () =>
           Platform.OS !== "web" ? (
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <BlurView
-                intensity={92}
+                intensity={100}
                 tint="dark"
                 experimentalBlurMethod="dimezisBlurView"
                 style={StyleSheet.absoluteFill}
               />
               <LinearGradient
                 colors={[
-                  "rgba(148, 163, 184, 0.28)",
-                  "rgba(30, 41, 59, 0.10)",
-                  "rgba(15, 23, 42, 0.46)",
+                  "rgba(255, 255, 255, 0.26)",
+                  "rgba(148, 163, 184, 0.16)",
+                  "rgba(15, 23, 42, 0.62)",
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
+              <LinearGradient
+                colors={["rgba(255, 255, 255, 0.14)", "rgba(255, 255, 255, 0)"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 0.75 }}
+                style={styles.glassSheen}
+              />
+              <View style={styles.topShine} />
             </View>
           ) : (
             <LinearGradient
-              colors={["rgba(148, 163, 184, 0.16)", "rgba(15, 23, 42, 0.78)"]}
+              colors={["rgba(255, 255, 255, 0.18)", "rgba(15, 23, 42, 0.78)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
@@ -98,7 +105,7 @@ export default function TabLayout() {
           title: "",
           tabBarIcon: () => (
             <View style={styles.addButton}>
-              <Ionicons name="add" size={28} color="#fff" />
+              <Ionicons name="add" size={24} color="#fff" />
             </View>
           ),
           tabBarLabel: () => null,
@@ -134,19 +141,30 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: "rgba(226, 232, 240, 0.20)",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "rgba(226, 232, 240, 0.22)",
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.55)",
+    borderColor: "rgba(241, 245, 249, 0.65)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginTop: -22,
+    marginTop: 0,
     shadowColor: "#020617",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 8,
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  topShine: {
+    position: "absolute" as const,
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.45)",
   },
 });
