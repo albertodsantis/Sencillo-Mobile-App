@@ -91,6 +91,7 @@ function RootLayoutNav() {
           animation: "slide_from_bottom",
           gestureEnabled: true,
           fullScreenGestureEnabled: true,
+          contentStyle: { backgroundColor: Colors.dark.surface },
         }}
       />
       <Stack.Screen
