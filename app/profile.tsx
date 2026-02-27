@@ -33,7 +33,7 @@ const PHONE_PREFIXES = [
   "+58", "+1", "+34", "+57", "+52", "+56", "+51", "+55", "+44", "+33",
 ];
 const FACE_ID_KEY = "@sencillo/face_id_enabled";
-const WORKSPACE_MODAL_ACCENT = "#94a3b8";
+const WORKSPACE_MODAL_ACCENT = "#cbd5e1";
 const WORKSPACE_MODAL_PRIMARY = "#334155";
 const WORKSPACE_MODAL_PRIMARY_PRESSED = "#1e293b";
 
