@@ -22,8 +22,8 @@ export default function TabLayout() {
   });
 
   const tabBarHeight = 56 + tabBarBottomPadding;
-  const tabBarWidth = Math.min(screenWidth * 0.62, 320);
-  const tabBarHorizontalOffset = (screenWidth - tabBarWidth) / 2;
+  const tabBarMaxWidth = Math.min(screenWidth * 0.62, 320);
+  const sideInset = (screenWidth - tabBarMaxWidth) / 2;
 
   return (
     <Tabs
@@ -34,9 +34,8 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute" as const,
-          width: tabBarWidth,
-          left: "50%" as any,
-          marginLeft: -(tabBarWidth / 2),
+          left: sideInset,
+          right: sideInset,
           bottom: tabBarBottomOffset,
           borderRadius: 24,
           backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.3)" : "transparent",
