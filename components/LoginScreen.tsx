@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   welcomeTitle: {
-    fontFamily: Platform.select({ ios: "Prociono", android: "serif", default: "Prociono" }),
+    fontFamily: "Alexandria",
     fontSize: 26,
     color: Colors.text.primary,
     marginBottom: 6,
