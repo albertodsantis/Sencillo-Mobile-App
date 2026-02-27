@@ -13,17 +13,20 @@ export default function TabLayout() {
 
   const tabBarBottomPadding = Platform.select({
     web: 10,
-    default: 10,
+    default: Math.max(insets.bottom, 10),
   });
 
   const tabBarBottomOffset = Platform.select({
-    web: 12,
-    default: Math.max(insets.bottom + 6, 12),
+    web: 0,
+    default: 0,
   });
 
   const tabBarHeight = 56 + tabBarBottomPadding;
-  const safeViewportWidth = Math.max(screenWidth - insets.left - insets.right, 0);
-  const tabBarWidth = Math.min(safeViewportWidth * 0.88, 540);
+  const tabBarHorizontalInset = Platform.select({
+    web: 0,
+    default: Math.max(insets.left, insets.right),
+  });
+  const tabBarWidth = Math.max(screenWidth - tabBarHorizontalInset * 2, 0);
 
   return (
     <Tabs
@@ -36,10 +39,9 @@ export default function TabLayout() {
           position: "absolute" as const,
           bottom: tabBarBottomOffset,
           width: tabBarWidth,
-          left: "50%" as const,
+          left: tabBarHorizontalInset,
           right: undefined,
-          transform: [{ translateX: -tabBarWidth / 2 }],
-          borderRadius: 24,
+          borderRadius: 0,
           backgroundColor:
             Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
           borderTopWidth: 0,
@@ -81,14 +83,40 @@ export default function TabLayout() {
                 style={styles.glassSheen}
               />
               <View style={styles.topShine} />
+              <LinearGradient
+                colors={["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0)"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.sideFadeLeft}
+              />
+              <LinearGradient
+                colors={["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0)"]}
+                start={{ x: 1, y: 0.5 }}
+                end={{ x: 0, y: 0.5 }}
+                style={styles.sideFadeRight}
+              />
             </View>
           ) : (
-            <LinearGradient
-              colors={["rgba(255, 255, 255, 0.08)", "rgba(15, 23, 42, 0.36)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              <LinearGradient
+                colors={["rgba(255, 255, 255, 0.08)", "rgba(15, 23, 42, 0.36)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <LinearGradient
+                colors={["rgba(0, 0, 0, 0.65)", "rgba(0, 0, 0, 0)"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.sideFadeLeft}
+              />
+              <LinearGradient
+                colors={["rgba(0, 0, 0, 0.65)", "rgba(0, 0, 0, 0)"]}
+                start={{ x: 1, y: 0.5 }}
+                end={{ x: 0, y: 0.5 }}
+                style={styles.sideFadeRight}
+              />
+            </View>
           ),
       }}
     >
@@ -176,5 +204,19 @@ const styles = StyleSheet.create({
     right: 20,
     height: 1,
     backgroundColor: "rgba(148, 163, 184, 0.3)",
+  },
+  sideFadeLeft: {
+    position: "absolute" as const,
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 48,
+  },
+  sideFadeRight: {
+    position: "absolute" as const,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 48,
   },
 });
