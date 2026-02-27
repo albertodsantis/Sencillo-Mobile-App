@@ -35,10 +35,10 @@ export default function TabLayout() {
           right: 16,
           bottom: tabBarBottomOffset,
           borderRadius: 24,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.42)" : "transparent",
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.3)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
-          borderColor: "rgba(226, 232, 240, 0.22)",
+          borderColor: "rgba(148, 163, 184, 0.16)",
           elevation: 0,
           height: tabBarHeight,
           paddingBottom: tabBarBottomPadding,
@@ -53,23 +53,23 @@ export default function TabLayout() {
           Platform.OS !== "web" ? (
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <BlurView
-                intensity={85}
+                intensity={75}
                 tint="dark"
                 experimentalBlurMethod="dimezisBlurView"
                 style={StyleSheet.absoluteFill}
               />
               <LinearGradient
                 colors={[
-                  "rgba(255, 255, 255, 0.22)",
-                  "rgba(148, 163, 184, 0.1)",
-                  "rgba(15, 23, 42, 0.44)",
+                  "rgba(255, 255, 255, 0.16)",
+                  "rgba(148, 163, 184, 0.08)",
+                  "rgba(15, 23, 42, 0.34)",
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
               <LinearGradient
-                colors={["rgba(255, 255, 255, 0.14)", "rgba(255, 255, 255, 0)"]}
+                colors={["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0)"]}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 0.75 }}
                 style={styles.glassSheen}
@@ -78,7 +78,7 @@ export default function TabLayout() {
             </View>
           ) : (
             <LinearGradient
-              colors={["rgba(255, 255, 255, 0.1)", "rgba(15, 23, 42, 0.5)"]}
+              colors={["rgba(255, 255, 255, 0.08)", "rgba(15, 23, 42, 0.36)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
@@ -161,6 +161,6 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.45)",
+    backgroundColor: "rgba(148, 163, 184, 0.3)",
   },
 });
