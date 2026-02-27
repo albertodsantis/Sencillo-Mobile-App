@@ -1,5 +1,5 @@
 import { Tabs, useRouter } from "expo-router";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import React from "react";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function TabLayout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
 
   const tabBarBottomPadding = Platform.select({
     web: 10,
@@ -21,6 +22,7 @@ export default function TabLayout() {
   });
 
   const tabBarHeight = 56 + tabBarBottomPadding;
+  const tabBarWidth = Math.min(screenWidth * 0.84, 420);
 
   return (
     <Tabs
@@ -31,9 +33,8 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute" as const,
-          alignSelf: "center" as const,
-          width: "84%",
-          maxWidth: 420,
+          width: tabBarWidth,
+          left: (screenWidth - tabBarWidth) / 2,
           bottom: tabBarBottomOffset,
           borderRadius: 24,
           backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.3)" : "transparent",
