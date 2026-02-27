@@ -8,10 +8,10 @@ const Colors = {
     borderSubtle: 'rgba(255, 255, 255, 0.05)',
   },
   brand: {
-    light: '#34d399',
-    DEFAULT: '#0f766e',
-    dark: '#047857',
-    navigation: '#0f766e',
+    light: '#475569',
+    DEFAULT: '#334155',
+    dark: '#1e293b',
+    navigation: '#334155',
   },
   text: {
     primary: '#FFFFFF',
@@ -34,9 +34,9 @@ const Colors = {
   light: {
     text: '#000',
     background: '#fff',
-    tint: '#0f766e',
+    tint: '#334155',
     tabIconDefault: '#94A3B8',
-    tabIconSelected: '#0f766e',
+    tabIconSelected: '#334155',
   },
 };
 
