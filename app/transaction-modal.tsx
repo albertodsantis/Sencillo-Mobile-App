@@ -910,7 +910,6 @@ export default function TransactionModal() {
 const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
-    backgroundColor: Colors.dark.surface,
   },
   container: {
     flex: 1,
