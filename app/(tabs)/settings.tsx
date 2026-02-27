@@ -161,7 +161,7 @@ export default function SettingsScreen() {
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
-  const [showGuide, setShowGuide] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
   const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
