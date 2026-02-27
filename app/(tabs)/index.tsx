@@ -897,7 +897,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    marginBottom: 14,
+    marginBottom: 24,
   },
   headerTitle: {
     fontFamily: "Outfit_400Regular",
