@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   navButton: {
     padding: 6,
@@ -950,7 +950,7 @@ const styles = StyleSheet.create({
   },
   segmentControl: {
     flexDirection: "row" as const,
-    backgroundColor: "rgba(15, 23, 42, 0.55)",
+    backgroundColor: "rgba(15, 23, 42, 0.42)",
     borderRadius: 16,
     padding: 4,
     marginBottom: 16,
@@ -976,8 +976,8 @@ const styles = StyleSheet.create({
   },
   balanceSection: {
     alignItems: "center" as const,
-    marginBottom: 20,
-    paddingVertical: 8,
+    marginBottom: 14,
+    paddingVertical: 4,
   },
   balanceLabel: {
     fontFamily: "Outfit_700Bold",
