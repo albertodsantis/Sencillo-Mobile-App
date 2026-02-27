@@ -468,9 +468,9 @@ export default function HomeScreen() {
           >
             <Text style={styles.headerTitle}>
               {displayName}
-              <Text style={styles.workspaceBadge}> · {activeWorkspace?.name ?? "Personal"}</Text>
+              <Text style={styles.workspaceBadge}> {activeWorkspace?.name ?? "Personal"}</Text>
             </Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.text.muted} />
+            <Ionicons name="chevron-forward" size={16} color={Colors.text.muted} />
           </Pressable>
         </View>
 
@@ -479,11 +479,11 @@ export default function HomeScreen() {
             onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
             style={styles.toolbarBtn}
           >
-            <MaterialCommunityIcons
-              name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
-              size={20}
-              color={Colors.text.muted}
-            />
+              <MaterialCommunityIcons
+                name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
+                size={22}
+                color={Colors.text.muted}
+              />
           </Pressable>
           <Pressable
             onPress={() => router.push("/currency-calculator-modal")}
@@ -491,7 +491,7 @@ export default function HomeScreen() {
           >
             <Ionicons
               name="calculator-outline"
-              size={20}
+              size={22}
               color={Colors.text.muted}
             />
           </Pressable>
@@ -501,7 +501,7 @@ export default function HomeScreen() {
           >
             <Ionicons
               name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
-              size={20}
+              size={22}
               color={Colors.text.muted}
             />
           </Pressable>
@@ -511,7 +511,7 @@ export default function HomeScreen() {
           >
             <MaterialCommunityIcons
               name="file-table-outline"
-              size={20}
+              size={22}
               color={Colors.text.muted}
             />
           </Pressable>
@@ -521,7 +521,7 @@ export default function HomeScreen() {
           >
             <Ionicons
               name="help-circle-outline"
-              size={20}
+              size={22}
               color={Colors.text.muted}
             />
           </Pressable>
@@ -912,9 +912,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   toolbarBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
