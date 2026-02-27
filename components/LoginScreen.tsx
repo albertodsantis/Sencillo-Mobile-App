@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: "rgba(15, 23, 42, 0.72)",
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: "rgba(15, 23, 42, 0.68)",
     borderRadius: 14,
     paddingHorizontal: 16,
     borderWidth: 1,
