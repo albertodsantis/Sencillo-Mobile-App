@@ -1199,17 +1199,17 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   saveButton: {
-    backgroundColor: Colors.brand.DEFAULT + "18",
+    backgroundColor: "rgba(148, 163, 184, 0.16)",
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center" as const,
     borderWidth: 1,
-    borderColor: Colors.brand.DEFAULT + "50",
+    borderColor: "rgba(203, 213, 225, 0.45)",
   },
   saveButtonText: {
     fontFamily: "Outfit_700Bold",
     fontSize: 17,
-    color: Colors.brand.DEFAULT,
+    color: "#E2E8F0",
   },
   deleteButton: {
     flexDirection: "row" as const,
