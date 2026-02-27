@@ -462,58 +462,64 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Pressable onPress={() => router.push("/profile")} style={styles.profileLink}>
-              <Text style={styles.headerTitle}>{displayName}</Text>
-              <Text style={styles.workspaceBadge}>({activeWorkspace?.name ?? "Personal"})</Text>
-            </Pressable>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable
-              onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
-              hitSlop={8}
-              style={styles.headerIconBtn}
-            >
-              <MaterialCommunityIcons
-                name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
-                size={22}
-                color={Colors.text.muted}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push("/currency-calculator-modal")}
-              hitSlop={8}
-              style={styles.headerIconBtn}
-            >
-              <Ionicons
-                name="calculator-outline"
-                size={24}
-                color={Colors.text.muted}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => setHiddenBalances(!hiddenBalances)}
-              hitSlop={8}
-              style={styles.headerIconBtn}
-            >
-              <Ionicons
-                name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
-                size={26}
-                color={Colors.text.muted}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => setShowGuide(true)}
-              hitSlop={8}
-              style={styles.headerIconBtn}
-            >
-              <Ionicons
-                name="help-circle-outline"
-                size={28}
-                color={Colors.text.muted}
-              />
-            </Pressable>
-          </View>
+          <Pressable onPress={() => router.push("/profile")} style={styles.profileLink}>
+            <Text style={styles.headerTitle}>{displayName}</Text>
+            <Text style={styles.workspaceBadge}>({activeWorkspace?.name ?? "Personal"})</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.toolbarRow}>
+          <Pressable
+            onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
+            style={styles.toolbarBtn}
+          >
+            <MaterialCommunityIcons
+              name={displayCurrency === "USD" ? "currency-usd" : "currency-eur"}
+              size={20}
+              color={Colors.text.muted}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/currency-calculator-modal")}
+            style={styles.toolbarBtn}
+          >
+            <Ionicons
+              name="calculator-outline"
+              size={20}
+              color={Colors.text.muted}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => setHiddenBalances(!hiddenBalances)}
+            style={styles.toolbarBtn}
+          >
+            <Ionicons
+              name={hiddenBalances ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color={Colors.text.muted}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/report")}
+            style={styles.toolbarBtn}
+          >
+            <MaterialCommunityIcons
+              name="file-table-outline"
+              size={20}
+              color={Colors.text.muted}
+            />
+          </Pressable>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            onPress={() => setShowGuide(true)}
+            style={styles.toolbarBtn}
+          >
+            <Ionicons
+              name="help-circle-outline"
+              size={20}
+              color={Colors.text.muted}
+            />
+          </Pressable>
         </View>
 
         <View style={styles.segmentControl}>
@@ -558,10 +564,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => router.push("/report")}
-          style={styles.balanceSection}
-        >
+        <View style={styles.balanceSection}>
           <Text style={styles.balanceLabel}>{balanceLabel}</Text>
           {hiddenBalances ? (
             <Text style={styles.balanceValue}>{`${getDisplayCurrencySymbol(displayCurrency)} ••••••`}</Text>
@@ -577,14 +580,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-          <View style={styles.reportLinkIcon}>
-            <MaterialCommunityIcons
-              name="file-table-outline"
-              size={20}
-              color={Colors.text.secondary}
-            />
-          </View>
-        </Pressable>
+        </View>
 
         <ScrollView
           horizontal
@@ -895,14 +891,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 28,
-  },
-  headerLeft: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 8,
+    marginBottom: 12,
   },
   headerTitle: {
     fontFamily: "Outfit_400Regular",
@@ -910,15 +900,17 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     letterSpacing: -0.3,
   },
-  headerRight: {
+  toolbarRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 12,
+    gap: 10,
+    marginBottom: 16,
   },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  toolbarBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
@@ -1005,9 +997,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: Colors.text.secondary,
     letterSpacing: -0.5,
-  },
-  reportLinkIcon: {
-    marginTop: 10,
   },
   kpiScroll: {
     marginBottom: 8,
