@@ -11,11 +11,11 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
   const tabBarBottomPadding = Platform.select({
-    web: 34,
-    default: Math.max(insets.bottom, 12),
+    web: 18,
+    default: Math.max(insets.bottom - 8, 8),
   });
 
-  const tabBarHeight = 62 + tabBarBottomPadding;
+  const tabBarHeight = 54 + tabBarBottomPadding;
 
   return (
     <Tabs
@@ -28,16 +28,16 @@ export default function TabLayout() {
           position: "absolute" as const,
           left: 16,
           right: 16,
-          bottom: 10,
-          borderRadius: 28,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.64)" : "transparent",
+          bottom: 8,
+          borderRadius: 24,
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.5)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
-          borderColor: "rgba(226, 232, 240, 0.28)",
+          borderColor: "rgba(226, 232, 240, 0.22)",
           elevation: 0,
           height: tabBarHeight,
-          paddingBottom: tabBarBottomPadding - 2,
-          paddingTop: 10,
+          paddingBottom: tabBarBottomPadding,
+          paddingTop: 8,
           shadowColor: "#020617",
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.42,
@@ -48,7 +48,7 @@ export default function TabLayout() {
           Platform.OS !== "web" ? (
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <BlurView
-                intensity={100}
+                intensity={85}
                 tint="dark"
                 experimentalBlurMethod="dimezisBlurView"
                 style={StyleSheet.absoluteFill}
@@ -56,8 +56,8 @@ export default function TabLayout() {
               <LinearGradient
                 colors={[
                   "rgba(255, 255, 255, 0.26)",
-                  "rgba(148, 163, 184, 0.16)",
-                  "rgba(15, 23, 42, 0.62)",
+                  "rgba(148, 163, 184, 0.12)",
+                  "rgba(15, 23, 42, 0.5)",
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -73,7 +73,7 @@ export default function TabLayout() {
             </View>
           ) : (
             <LinearGradient
-              colors={["rgba(255, 255, 255, 0.18)", "rgba(15, 23, 42, 0.78)"]}
+              colors={["rgba(255, 255, 255, 0.12)", "rgba(15, 23, 42, 0.58)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
