@@ -509,7 +509,6 @@ export default function HomeScreen() {
               color={Colors.text.muted}
             />
           </Pressable>
-          <View style={{ flex: 1 }} />
           <Pressable
             onPress={() => setShowGuide(true)}
             style={styles.toolbarBtn}
@@ -903,7 +902,7 @@ const styles = StyleSheet.create({
   toolbarRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 10,
+    justifyContent: "space-between" as const,
     marginBottom: 16,
   },
   toolbarBtn: {
