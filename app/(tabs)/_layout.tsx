@@ -31,8 +31,9 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute" as const,
-          left: 16,
-          right: 16,
+          alignSelf: "center" as const,
+          width: "84%",
+          maxWidth: 420,
           bottom: tabBarBottomOffset,
           borderRadius: 24,
           backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.3)" : "transparent",
