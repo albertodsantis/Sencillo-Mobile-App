@@ -372,7 +372,7 @@ export default function SettingsScreen() {
                   <SegmentIcon segment="ahorro" color={SEGMENT_CONFIG.ahorro.color} />
                 </View>
                 <Text style={guideStyles.segmentInfoText}>
-                  <Text style={guideStyles.bold}>Ahorros:</Text> La parte de tus ingresos que decides pagarte a ti mismo primero. Financieramente, este monto se separa de tu balance general para que no cuentes con el para tus gastos diarios.
+                  <Text style={guideStyles.bold}>Ahorros:</Text> La parte de tus ingresos que decides pagarte a ti mismo primero. Financieramente, este monto se resta de tu balance general para que no cuentes con el para tus gastos.
                 </Text>
               </View>
 
@@ -390,7 +390,7 @@ export default function SettingsScreen() {
                   <SegmentIcon segment="gastos_variables" color={SEGMENT_CONFIG.gastos_variables.color} />
                 </View>
                 <Text style={guideStyles.segmentInfoText}>
-                  <Text style={guideStyles.bold}>Gastos Variables:</Text> Los gastos diarios que poco a poco se van acumulando (ocio, compras, antojos). Como tu decides cuando y en que gastarlos, esta es tu zona de oportunidad: presupuestar y controlarlos es la clave para dominar tu dinero.
+                  <Text style={guideStyles.bold}>Gastos Variables:</Text> Los gastos diarios que poco a poco se van acumulando (ocio, antojos). Como tu decides cuando y en que gastarlos, esta es tu area de oportunidad: presupuestar y controlar es la clave para dominar tu dinero.
                 </Text>
               </View>
             </View>
