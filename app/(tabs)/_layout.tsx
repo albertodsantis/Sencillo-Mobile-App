@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import React from "react";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
@@ -29,7 +30,7 @@ export default function TabLayout() {
           right: 16,
           bottom: 10,
           borderRadius: 28,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.85)" : "transparent",
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.72)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: "rgba(148, 163, 184, 0.22)",
@@ -41,16 +42,36 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.3,
           shadowRadius: 22,
+          overflow: "hidden" as const,
         },
         tabBarBackground: () =>
           Platform.OS !== "web" ? (
-            <BlurView
-              intensity={80}
-              tint="dark"
-              experimentalBlurMethod="dimezisBlurView"
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              <BlurView
+                intensity={92}
+                tint="dark"
+                experimentalBlurMethod="dimezisBlurView"
+                style={StyleSheet.absoluteFill}
+              />
+              <LinearGradient
+                colors={[
+                  "rgba(148, 163, 184, 0.28)",
+                  "rgba(30, 41, 59, 0.10)",
+                  "rgba(15, 23, 42, 0.46)",
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+            </View>
+          ) : (
+            <LinearGradient
+              colors={["rgba(148, 163, 184, 0.16)", "rgba(15, 23, 42, 0.78)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-          ) : null,
+          ),
       }}
     >
       <Tabs.Screen
@@ -116,7 +137,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: "rgba(226, 232, 240, 0.22)",
+    backgroundColor: "rgba(226, 232, 240, 0.20)",
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.55)",
     alignItems: "center" as const,
