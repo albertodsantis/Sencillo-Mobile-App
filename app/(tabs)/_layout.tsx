@@ -22,7 +22,7 @@ export default function TabLayout() {
   });
 
   const tabBarHeight = 56 + tabBarBottomPadding;
-  const tabBarMaxWidth = Math.min(screenWidth * 0.62, 320);
+  const tabBarMaxWidth = Math.min(screenWidth * 0.52, 280);
   const sideInset = (screenWidth - tabBarMaxWidth) / 2;
 
   return (
