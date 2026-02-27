@@ -129,7 +129,7 @@ function LoginContent() {
         >
           <View style={styles.logoSection}>
             <Image
-              source={require("@/assets/images/icon_logo_official.png")}
+              source={require("@/assets/images/IconKitchen-Output/web/icon-512.png")}
               style={styles.logoImage}
             />
             <Text style={styles.welcomeTitle}>Sencillo</Text>

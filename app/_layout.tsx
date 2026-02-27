@@ -37,7 +37,7 @@ function BrandedSplash() {
         style={StyleSheet.absoluteFill}
       />
       <Image
-        source={require("@/assets/images/icon_logo_official.png")}
+        source={require("@/assets/images/IconKitchen-Output/web/icon-512.png")}
         style={splashStyles.logoImage}
       />
       <Text style={splashStyles.appName}>Sencillo</Text>
