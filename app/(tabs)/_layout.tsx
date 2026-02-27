@@ -22,7 +22,9 @@ export default function TabLayout() {
   });
 
   const tabBarHeight = 56 + tabBarBottomPadding;
-  const tabBarWidth = Math.min(screenWidth * 0.88, 540);
+  const safeViewportWidth = Math.max(screenWidth - insets.left - insets.right, 0);
+  const tabBarWidth = Math.min(safeViewportWidth * 0.88, 540);
+  const tabBarLeftOffset = insets.left + (safeViewportWidth - tabBarWidth) / 2;
 
   return (
     <Tabs
@@ -35,7 +37,8 @@ export default function TabLayout() {
           position: "absolute" as const,
           bottom: tabBarBottomOffset,
           width: tabBarWidth,
-          alignSelf: "center" as const,
+          left: tabBarLeftOffset,
+          right: undefined,
           borderRadius: 24,
           backgroundColor:
             Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
