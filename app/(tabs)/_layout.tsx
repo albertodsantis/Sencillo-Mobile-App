@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
   topShine: {
     position: "absolute" as const,
     top: 0,
-    left: 20,
-    right: 20,
+    left: 0,
+    right: 0,
     height: 1,
     backgroundColor: "rgba(148, 163, 184, 0.3)",
   },
