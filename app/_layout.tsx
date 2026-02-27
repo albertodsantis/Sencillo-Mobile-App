@@ -4,7 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import { StatusBar, View, Text, StyleSheet } from "react-native";
+import { StatusBar, View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
@@ -36,16 +36,10 @@ function BrandedSplash() {
         locations={[0, 0.3, 0.6, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <View style={splashStyles.logoCircle}>
-        <LinearGradient
-          colors={splashLogoGradient}
-          locations={[0, 0.6, 1]}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <Text style={splashStyles.logoText}>S</Text>
-      </View>
+      <Image
+        source={require("@/assets/images/icon_logo_official.png")}
+        style={splashStyles.logoImage}
+      />
       <Text style={splashStyles.appName}>Sencillo</Text>
     </View>
   );
@@ -58,22 +52,11 @@ const splashStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoCircle: {
+  logoImage: {
     width: 84,
     height: 84,
-    borderRadius: 24,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
+    resizeMode: "contain",
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.2)",
-  },
-  logoText: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 38,
-    color: "#e2e8f0",
-    zIndex: 1,
   },
   appName: {
     fontFamily: "Outfit_700Bold",

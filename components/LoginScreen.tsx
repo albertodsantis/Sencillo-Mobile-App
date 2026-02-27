@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -127,16 +128,10 @@ function LoginContent() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoSection}>
-            <View style={styles.logoCircle}>
-              <LinearGradient
-                colors={authAccentGradient}
-                locations={[0, 0.55, 1]}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0.1, y: 0 }}
-                end={{ x: 0.9, y: 1 }}
-              />
-              <Text style={styles.logoText}>S</Text>
-            </View>
+            <Image
+              source={require("@/assets/images/icon_logo_official.png")}
+              style={styles.logoImage}
+            />
             <Text style={styles.welcomeTitle}>Sencillo</Text>
             <Text style={styles.welcomeSubtitle}>
               Tus finanzas personales en Venezuela
@@ -313,22 +308,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 32,
   },
-  logoCircle: {
+  logoImage: {
     width: 76,
     height: 76,
-    borderRadius: 22,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
+    resizeMode: "contain",
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.25)",
-  },
-  logoText: {
-    fontFamily: "Outfit_800ExtraBold",
-    fontSize: 36,
-    color: "#e2e8f0",
-    zIndex: 1,
   },
   welcomeTitle: {
     fontFamily: "Outfit_800ExtraBold",
