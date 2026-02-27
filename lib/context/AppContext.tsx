@@ -67,6 +67,7 @@ interface AppContextValue {
   savingsGoals: SavingsGoals;
   refreshRates: () => Promise<void>;
   updatePnlStructure: (pnl: PnlStructure) => Promise<void>;
+  deleteCategoryAndRelatedData: (segment: Transaction['segment'], category: string) => Promise<void>;
   updateBudgets: (budgets: Budgets) => Promise<void>;
   updateSavingsGoals: (goals: SavingsGoals) => Promise<void>;
   updateProfile: (profile: UserProfile) => Promise<void>;
@@ -302,6 +303,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await PnlRepository.save(pnl);
   }, []);
 
+  const deleteCategoryAndRelatedData = useCallback(
+    async (segment: Transaction['segment'], category: string) => {
+      const updatedPnl = {
+        ...pnlStructure,
+        [segment]: pnlStructure[segment].filter((item) => item !== category),
+      };
+      setPnlStructure(updatedPnl);
+
+      const filteredTransactions = transactions.filter(
+        (tx) => !(tx.segment === segment && tx.category === category),
+      );
+      setTransactions(filteredTransactions);
+
+      let nextBudgets = budgets;
+      if (segment === 'gastos_variables' && category in budgets) {
+        nextBudgets = { ...budgets };
+        delete nextBudgets[category];
+        setBudgets(nextBudgets);
+      }
+
+      let nextSavingsGoals = savingsGoals;
+      if (segment === 'ahorro' && category in savingsGoals) {
+        nextSavingsGoals = { ...savingsGoals };
+        delete nextSavingsGoals[category];
+        setSavingsGoals(nextSavingsGoals);
+      }
+
+      await Promise.all([
+        PnlRepository.save(updatedPnl),
+        TransactionRepository.save(filteredTransactions),
+        BudgetRepository.save(nextBudgets),
+        SavingsRepository.save(nextSavingsGoals),
+      ]);
+    },
+    [budgets, pnlStructure, savingsGoals, transactions],
+  );
+
   const updateBudgets = useCallback(async (b: Budgets) => {
     setBudgets(b);
     if (Object.keys(b).length > 0) {
@@ -422,6 +460,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       deleteAllTx,
       refreshRates,
       updatePnlStructure,
+      deleteCategoryAndRelatedData,
       updateBudgets,
       updateSavingsGoals,
       updateProfile,
@@ -436,6 +475,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentBudgetPeriodLabel, canCopyPreviousBudgets,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
+      deleteCategoryAndRelatedData,
       updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace, clearAccount,
       deleteWorkspace, copyPreviousBudgets,
     ],

@@ -51,12 +51,14 @@ function CategoryRow({
   segColor,
   pnlStructure,
   updatePnlStructure,
+  deleteCategoryAndRelatedData,
 }: {
   cat: string;
   segment: Segment;
   segColor: string;
   pnlStructure: PnlStructure;
   updatePnlStructure: (s: PnlStructure) => Promise<void>;
+  deleteCategoryAndRelatedData: (segment: Segment, category: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(cat);
@@ -96,11 +98,7 @@ function CategoryRow({
 
   const handleDelete = async () => {
     const doDelete = async () => {
-      const updated = {
-        ...pnlStructure,
-        [segment]: pnlStructure[segment].filter((c) => c !== cat),
-      };
-      await updatePnlStructure(updated);
+      await deleteCategoryAndRelatedData(segment, cat);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     };
     if (Platform.OS === "web") {
@@ -158,7 +156,7 @@ function CategoryRow({
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const { pnlStructure, updatePnlStructure } = useApp();
+  const { pnlStructure, updatePnlStructure, deleteCategoryAndRelatedData } = useApp();
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
@@ -291,6 +289,7 @@ export default function SettingsScreen() {
                     segColor={config.color}
                     pnlStructure={pnlStructure}
                     updatePnlStructure={updatePnlStructure}
+                    deleteCategoryAndRelatedData={deleteCategoryAndRelatedData}
                   />
                 ))}
 
