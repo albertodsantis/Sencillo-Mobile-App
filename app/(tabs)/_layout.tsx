@@ -4,7 +4,6 @@ import React from "react";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/constants/colors";
 
 export default function TabLayout() {
   const router = useRouter();
@@ -15,33 +14,40 @@ export default function TabLayout() {
     default: Math.max(insets.bottom, 12),
   });
 
-  const tabBarHeight = 56 + tabBarBottomPadding + 8;
+  const tabBarHeight = 62 + tabBarBottomPadding;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.brand.DEFAULT,
-        tabBarInactiveTintColor: Colors.text.muted,
+        tabBarActiveTintColor: "#e2e8f0",
+        tabBarInactiveTintColor: "#94a3b8",
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute" as const,
-          backgroundColor: Platform.select({
-            ios: "transparent",
-            android: Colors.dark.base,
-            web: Colors.dark.base,
-          }),
+          left: 16,
+          right: 16,
+          bottom: 10,
+          borderRadius: 28,
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.85)" : "transparent",
           borderTopWidth: 0,
+          borderWidth: 1,
+          borderColor: "rgba(148, 163, 184, 0.22)",
           elevation: 0,
           height: tabBarHeight,
-          paddingBottom: tabBarBottomPadding,
-          paddingTop: 8,
+          paddingBottom: tabBarBottomPadding - 2,
+          paddingTop: 10,
+          shadowColor: "#020617",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 22,
         },
         tabBarBackground: () =>
-          Platform.OS === "ios" ? (
+          Platform.OS !== "web" ? (
             <BlurView
-              intensity={100}
+              intensity={80}
               tint="dark"
+              experimentalBlurMethod="dimezisBlurView"
               style={StyleSheet.absoluteFill}
             />
           ) : null,
@@ -107,17 +113,19 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.brand.DEFAULT,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "rgba(226, 232, 240, 0.22)",
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.55)",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginTop: -20,
-    shadowColor: Colors.brand.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    marginTop: -22,
+    shadowColor: "#020617",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 12,
   },
 });
