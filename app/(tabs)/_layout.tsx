@@ -22,7 +22,7 @@ export default function TabLayout() {
   });
 
   const tabBarHeight = 56 + tabBarBottomPadding;
-  const tabBarWidth = Math.min(screenWidth * 0.84, 420);
+  const tabBarWidth = Math.min(screenWidth * 0.72, 360);
   const tabBarHorizontalOffset = (screenWidth - tabBarWidth) / 2;
 
   return (
