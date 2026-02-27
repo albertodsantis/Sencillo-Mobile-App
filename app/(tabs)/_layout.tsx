@@ -38,7 +38,8 @@ export default function TabLayout() {
           bottom: tabBarBottomOffset,
           width: tabBarWidth,
           left: tabBarCenterX,
-          transform: [{ translateX: -tabBarWidth / 2 }],
+          right: undefined,
+          marginLeft: -tabBarWidth / 2,
           borderRadius: 24,
           backgroundColor:
             Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
