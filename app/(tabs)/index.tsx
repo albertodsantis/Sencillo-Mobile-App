@@ -466,10 +466,10 @@ export default function HomeScreen() {
             onPress={() => router.push("/profile")}
             style={({ pressed }) => [styles.profileLink, pressed && styles.profileLinkPressed]}
           >
-            <Text style={styles.headerTitle}>
-              {displayName}
-              <Text style={styles.workspaceBadge}> {activeWorkspace?.name ?? "Personal"}</Text>
-            </Text>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.headerTitle}>{displayName}</Text>
+              <Text style={styles.workspaceBadge}>{activeWorkspace?.name ?? "Personal"}</Text>
+            </View>
             <Ionicons name="chevron-forward" size={16} color={Colors.text.muted} />
           </Pressable>
         </View>
@@ -904,6 +904,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.primary,
     letterSpacing: -0.3,
+  },
+  headerTitleRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 10,
   },
   toolbarRow: {
     flexDirection: "row" as const,
