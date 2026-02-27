@@ -4,30 +4,30 @@
     "slug": "sencillo",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/images/IconKitchen-Output/ios/AppIcon~ios-marketing.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "sencillo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/IconKitchen-Output/web/icon-512.png",
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#020617"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sencillo.app"
+      "bundleIdentifier": "com.sencillo.app",
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "package": "com.sencillo.app",
       "adaptiveIcon": {
-        "backgroundColor": "#2d3446",
-        "foregroundImage": "./assets/images/IconKitchen-Output/android/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
-        "backgroundImage": "./assets/images/IconKitchen-Output/android/res/mipmap-xxxhdpi/ic_launcher_background.png",
-        "monochromeImage": "./assets/images/IconKitchen-Output/android/res/mipmap-xxxhdpi/ic_launcher_monochrome.png"
+        "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
+        "backgroundImage": "./assets/images/adaptive-icon-background.png",
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png"
       }
     },
     "web": {
-      "favicon": "./assets/images/IconKitchen-Output/web/favicon.ico"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
