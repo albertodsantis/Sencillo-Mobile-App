@@ -35,7 +35,7 @@ export default function TabLayout() {
           bottom: tabBarBottomOffset,
           marginHorizontal: screenWidth * 0.07,
           borderRadius: 24,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.3)" : "transparent",
+          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: "rgba(148, 163, 184, 0.16)",
@@ -53,16 +53,16 @@ export default function TabLayout() {
           Platform.OS !== "web" ? (
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <BlurView
-                intensity={75}
+                intensity={50}
                 tint="dark"
                 experimentalBlurMethod="dimezisBlurView"
                 style={StyleSheet.absoluteFill}
               />
               <LinearGradient
                 colors={[
-                  "rgba(255, 255, 255, 0.16)",
-                  "rgba(148, 163, 184, 0.08)",
-                  "rgba(15, 23, 42, 0.34)",
+                  "rgba(255, 255, 255, 0.10)",
+                  "rgba(148, 163, 184, 0.05)",
+                  "rgba(15, 23, 42, 0.22)",
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
