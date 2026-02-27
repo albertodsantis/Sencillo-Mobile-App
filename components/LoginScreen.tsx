@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,6 +32,7 @@ const authLinkColor = "#94a3b8";
 
 function LoginContent() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
@@ -127,7 +129,15 @@ function LoginContent() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.logoSection}>
+          <View
+            style={[
+              styles.formShell,
+              {
+                maxWidth: width >= 768 ? 560 : undefined,
+              },
+            ]}
+          >
+            <View style={styles.logoSection}>
             <Image
               source={require("@/assets/images/splash-icon.png")}
               style={styles.logoImage}
@@ -136,9 +146,9 @@ function LoginContent() {
             <Text style={styles.welcomeSubtitle}>
               Tus finanzas personales en Venezuela
             </Text>
-          </View>
+            </View>
 
-          <View style={styles.socialRow}>
+            <View style={styles.socialRow}>
             <Pressable
               style={({ pressed }) => [
                 styles.socialButton,
@@ -164,33 +174,33 @@ function LoginContent() {
                 <Path d="M44.5 20H24v8.5h11.8c-1 3-3 5.5-5.6 7l6.5 5.5C42 36.2 46 30.7 46 24c0-1.3-.2-2.7-.5-4z" fill="#1976D2" />
               </Svg>
             </Pressable>
-          </View>
+            </View>
 
-          <View style={styles.divider}>
+            <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>O</Text>
             <View style={styles.dividerLine} />
-          </View>
-
-          {mode === "signup" && (
-            <View style={styles.fieldGroup}>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  ref={nameRef}
-                  style={styles.input}
-                  placeholder="Tu nombre completo"
-                  placeholderTextColor={Colors.text.disabled}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                  onSubmitEditing={() => emailRef.current?.focus()}
-                />
-              </View>
             </View>
-          )}
 
-          <View style={styles.fieldGroup}>
+            {mode === "signup" && (
+              <View style={styles.fieldGroup}>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    ref={nameRef}
+                    style={styles.input}
+                    placeholder="Tu nombre completo"
+                    placeholderTextColor={Colors.text.disabled}
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                    onSubmitEditing={() => emailRef.current?.focus()}
+                  />
+                </View>
+              </View>
+            )}
+
+            <View style={styles.fieldGroup}>
             <View style={styles.inputContainer}>
               <TextInput
                 ref={emailRef}
@@ -206,9 +216,9 @@ function LoginContent() {
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
             </View>
-          </View>
+            </View>
 
-          <View style={styles.fieldGroup}>
+            <View style={styles.fieldGroup}>
             <View style={styles.inputContainer}>
               <TextInput
                 ref={passwordRef}
@@ -233,53 +243,54 @@ function LoginContent() {
                 />
               </Pressable>
             </View>
-          </View>
-
-          {!!error && (
-            <View style={styles.errorContainer}>
-              <Ionicons
-                name="alert-circle"
-                size={14}
-                color={Colors.status.danger}
-              />
-              <Text style={styles.errorText}>{error}</Text>
             </View>
-          )}
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.submitButton,
-              pressed && { opacity: 0.85 },
-            ]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <LinearGradient
-              colors={authAccentGradient}
-              locations={[0, 0.5, 1]}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            {loading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.submitText}>
-                {mode === "login" ? "Iniciar Sesion" : "Crear Cuenta"}
-              </Text>
+            {!!error && (
+              <View style={styles.errorContainer}>
+                <Ionicons
+                  name="alert-circle"
+                  size={14}
+                  color={Colors.status.danger}
+                />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
             )}
-          </Pressable>
 
-          <Pressable onPress={toggleMode} style={styles.switchMode}>
-            <Text style={styles.switchModeText}>
-              {mode === "login"
-                ? "No tienes cuenta? "
-                : "Ya tienes cuenta? "}
-              <Text style={styles.switchModeLink}>
-                {mode === "login" ? "Registrarte" : "Iniciar Sesion"}
+            <Pressable
+              style={({ pressed }) => [
+                styles.submitButton,
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={authAccentGradient}
+                locations={[0, 0.5, 1]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+              {loading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.submitText}>
+                  {mode === "login" ? "Iniciar Sesion" : "Crear Cuenta"}
+                </Text>
+              )}
+            </Pressable>
+
+            <Pressable onPress={toggleMode} style={styles.switchMode}>
+              <Text style={styles.switchModeText}>
+                {mode === "login"
+                  ? "No tienes cuenta? "
+                  : "Ya tienes cuenta? "}
+                <Text style={styles.switchModeLink}>
+                  {mode === "login" ? "Registrarte" : "Iniciar Sesion"}
+                </Text>
               </Text>
-            </Text>
-          </Pressable>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -304,6 +315,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     justifyContent: "center",
   },
+  formShell: {
+    width: "100%",
+    alignSelf: "center",
+  },
   logoSection: {
     alignItems: "center",
     marginBottom: 32,
@@ -315,7 +330,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   welcomeTitle: {
-    fontFamily: "Alexandria",
+    fontFamily: "Outfit_700Bold",
     fontSize: 26,
     color: Colors.text.primary,
     marginBottom: 6,

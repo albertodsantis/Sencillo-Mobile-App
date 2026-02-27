@@ -10,8 +10,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Dimensions,
   Keyboard,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -94,6 +94,66 @@ function BottomSheetPicker({
   title: string;
   children: React.ReactNode;
 }) {
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  const sheetStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        overlay: {
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          justifyContent: "flex-end" as const,
+          paddingHorizontal: isTablet ? 16 : 0,
+          paddingBottom: isTablet ? 16 : 0,
+        },
+        sheet: {
+          alignSelf: "center" as const,
+          width: "100%",
+          maxWidth: isTablet ? 560 : undefined,
+          backgroundColor: Colors.dark.surface,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          borderBottomLeftRadius: isTablet ? 24 : 0,
+          borderBottomRightRadius: isTablet ? 24 : 0,
+          paddingBottom: 40,
+          maxHeight: height * 0.65,
+        },
+        handle: {
+          width: 36,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: Colors.dark.highlight,
+          alignSelf: "center" as const,
+          marginTop: 10,
+          marginBottom: 8,
+        },
+        header: {
+          flexDirection: "row" as const,
+          justifyContent: "space-between" as const,
+          alignItems: "center" as const,
+          paddingHorizontal: 20,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: Colors.dark.borderSubtle,
+        },
+        title: {
+          fontFamily: "Outfit_700Bold",
+          fontSize: 16,
+          color: Colors.text.primary,
+        },
+        closeBtn: {
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: "rgba(255,255,255,0.06)",
+          alignItems: "center" as const,
+          justifyContent: "center" as const,
+        },
+      }),
+    [height, isTablet],
+  );
+
   return (
     <Modal
       visible={visible}
@@ -116,52 +176,6 @@ function BottomSheetPicker({
     </Modal>
   );
 }
-
-const sheetStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end" as const,
-  },
-  sheet: {
-    backgroundColor: Colors.dark.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-    maxHeight: Dimensions.get("window").height * 0.6,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.dark.highlight,
-    alignSelf: "center" as const,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  header: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderSubtle,
-  },
-  title: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 16,
-    color: Colors.text.primary,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-});
 
 function DatePickerSheet({
   visible,
