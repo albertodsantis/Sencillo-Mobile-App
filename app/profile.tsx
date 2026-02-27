@@ -33,6 +33,9 @@ const PHONE_PREFIXES = [
   "+58", "+1", "+34", "+57", "+52", "+56", "+51", "+55", "+44", "+33",
 ];
 const FACE_ID_KEY = "@sencillo/face_id_enabled";
+const WORKSPACE_MODAL_ACCENT = "#94a3b8";
+const WORKSPACE_MODAL_PRIMARY = "#334155";
+const WORKSPACE_MODAL_PRIMARY_PRESSED = "#1e293b";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -744,8 +747,8 @@ export default function ProfileScreen() {
                         Haptics.selectionAsync();
                       }}
                     >
-                      <Text style={[styles.workspaceMenuName, selected && { color: Colors.brand.DEFAULT }]}>{workspace.name}</Text>
-                      {selected ? <Ionicons name="checkmark" size={18} color={Colors.brand.DEFAULT} /> : null}
+                      <Text style={[styles.workspaceMenuName, selected && styles.workspaceMenuNameSelected]}>{workspace.name}</Text>
+                      {selected ? <Ionicons name="checkmark" size={18} color={WORKSPACE_MODAL_ACCENT} /> : null}
                     </Pressable>
                     {canDelete ? (
                       <Pressable
@@ -766,7 +769,7 @@ export default function ProfileScreen() {
                 <Ionicons
                   name={showCreateWorkspaceModal ? 'remove' : 'add'}
                   size={18}
-                  color={Colors.brand.DEFAULT}
+                  color={WORKSPACE_MODAL_ACCENT}
                 />
                 <Text style={styles.workspaceCreateText}>Crear nuevo espacio</Text>
               </Pressable>
@@ -791,7 +794,13 @@ export default function ProfileScreen() {
                     >
                       <Text style={styles.workspaceCancelText}>Cancelar</Text>
                     </Pressable>
-                    <Pressable style={styles.workspaceSaveBtn} onPress={handleCreateWorkspace}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.workspaceSaveBtn,
+                        pressed && styles.workspaceSaveBtnPressed,
+                      ]}
+                      onPress={handleCreateWorkspace}
+                    >
                       <Text style={styles.workspaceSaveText}>Guardar</Text>
                     </Pressable>
                   </View>
@@ -1099,6 +1108,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text.primary,
   },
+  workspaceMenuNameSelected: {
+    color: WORKSPACE_MODAL_ACCENT,
+  },
   workspaceCreateBtn: {
     marginTop: 16,
     flexDirection: "row" as const,
@@ -1108,11 +1120,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.brand.DEFAULT,
+    borderColor: WORKSPACE_MODAL_ACCENT,
   },
   workspaceCreateText: {
     fontFamily: "Outfit_600SemiBold",
-    color: Colors.brand.DEFAULT,
+    color: WORKSPACE_MODAL_ACCENT,
   },
   workspaceCreateInlineCard: {
     backgroundColor: "rgba(255,255,255,0.03)",
@@ -1155,10 +1167,13 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
   },
   workspaceSaveBtn: {
-    backgroundColor: Colors.brand.DEFAULT,
+    backgroundColor: WORKSPACE_MODAL_PRIMARY,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
+  },
+  workspaceSaveBtnPressed: {
+    backgroundColor: WORKSPACE_MODAL_PRIMARY_PRESSED,
   },
   workspaceSaveText: {
     fontFamily: "Outfit_600SemiBold",
