@@ -732,13 +732,8 @@ export default function HomeScreen() {
               </View>
 
               <View style={guideStyles.step}>
-                <View
-                  style={[
-                    guideStyles.iconCircle,
-                    { backgroundColor: "rgba(16,185,129,0.15)" },
-                  ]}
-                >
-                  <Ionicons name="add" size={22} color={Colors.brand.DEFAULT} />
+                <View style={guideStyles.iconCircle}>
+                  <Ionicons name="add" size={22} color={Colors.text.secondary} />
                 </View>
                 <View style={guideStyles.stepContent}>
                   <Text style={guideStyles.stepTitle}>
