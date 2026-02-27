@@ -27,7 +27,7 @@ const SEGMENTS: Segment[] = [
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { pnlStructure, updatePnlStructure } = useApp();
+  const { pnlStructure, updatePnlStructure, deleteCategoryAndRelatedData } = useApp();
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
@@ -62,11 +62,7 @@ export default function CategoriesScreen() {
   const handleDeleteCategory = useCallback(
     async (segment: Segment, category: string) => {
       const doDelete = async () => {
-        const updated = {
-          ...pnlStructure,
-          [segment]: pnlStructure[segment].filter((c) => c !== category),
-        };
-        await updatePnlStructure(updated);
+        await deleteCategoryAndRelatedData(segment, category);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       };
 
@@ -79,7 +75,7 @@ export default function CategoriesScreen() {
         ]);
       }
     },
-    [pnlStructure, updatePnlStructure]
+    [deleteCategoryAndRelatedData]
   );
 
   return (
