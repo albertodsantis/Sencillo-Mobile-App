@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   welcomeTitle: {
-    fontFamily: "Outfit_800ExtraBold",
+    fontFamily: Platform.select({ ios: "Prociono", android: "serif", default: "Prociono" }),
     fontSize: 26,
     color: Colors.text.primary,
     marginBottom: 6,
