@@ -33,9 +33,10 @@ export default function TabLayout() {
         tabBarStyle: {
           position: "absolute" as const,
           bottom: tabBarBottomOffset,
-          marginHorizontal: screenWidth * 0.07,
+          marginHorizontal: screenWidth * 0.06,
           borderRadius: 24,
-          backgroundColor: Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
+          backgroundColor:
+            Platform.OS === "web" ? "rgba(15, 23, 42, 0.18)" : "transparent",
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: "rgba(148, 163, 184, 0.16)",
@@ -127,7 +128,11 @@ export default function TabLayout() {
         options={{
           title: "Presupuesto",
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons name="chart-donut" size={focused ? 24 : 22} color={color} />
+            <MaterialCommunityIcons
+              name="chart-donut"
+              size={focused ? 24 : 22}
+              color={color}
+            />
           ),
         }}
       />
@@ -136,7 +141,11 @@ export default function TabLayout() {
         options={{
           title: "Personalizar",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name="options-outline" size={focused ? 24 : 22} color={color} />
+            <Ionicons
+              name="options-outline"
+              size={focused ? 24 : 22}
+              color={color}
+            />
           ),
         }}
       />
