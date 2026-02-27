@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Modal,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -144,6 +145,8 @@ export default function BudgetScreen() {
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
+  const keyboardBehavior = Platform.OS === "ios" ? "padding" : "height";
+  const keyboardVerticalOffset = Platform.OS === "ios" ? insets.top + 88 : 24;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
 
@@ -290,12 +293,19 @@ export default function BudgetScreen() {
         : Colors.brand.DEFAULT;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={keyboardBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+    >
       <AmbientGlow />
       <ScrollView
         style={{ flex: 1, paddingHorizontal: 24 }}
         contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        automaticallyAdjustKeyboardInsets
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -686,7 +696,7 @@ export default function BudgetScreen() {
           </Pressable>
         </Modal>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
