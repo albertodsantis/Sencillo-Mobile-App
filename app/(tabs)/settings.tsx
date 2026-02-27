@@ -4,6 +4,7 @@ import {
   Text,
   View,
   ScrollView,
+  KeyboardAvoidingView,
   Pressable,
   TextInput,
   Platform,
@@ -166,6 +167,8 @@ export default function SettingsScreen() {
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
+  const keyboardBehavior = Platform.OS === "ios" ? "padding" : "height";
+  const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
 
   useEffect(() => {
     let mounted = true;
@@ -218,7 +221,11 @@ export default function SettingsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={keyboardBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+    >
       <AmbientGlow />
       <ScrollView
         style={{ flex: 1, paddingHorizontal: 24 }}
@@ -228,6 +235,7 @@ export default function SettingsScreen() {
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
       <View style={styles.headerRow}>
         <View>
@@ -415,7 +423,7 @@ export default function SettingsScreen() {
         </Pressable>
       </Modal>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
