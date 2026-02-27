@@ -24,9 +24,8 @@ import {
 } from "@expo-google-fonts/outfit";
 
 const splashBackground = ["#020617", "#0b1730", "#111827", "#020617"] as const;
-const splashLogoGradient = ["#334155", "#1e293b", "#0f172a"] as const;
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync();
 
 function BrandedSplash() {
   return (
