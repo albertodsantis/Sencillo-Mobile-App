@@ -462,9 +462,13 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <Pressable onPress={() => router.push("/profile")} style={styles.profileLink}>
+          <Pressable
+            onPress={() => router.push("/profile")}
+            style={({ pressed }) => [styles.profileLink, pressed && styles.profileLinkPressed]}
+          >
             <Text style={styles.headerTitle}>{displayName}</Text>
-            <Text style={styles.workspaceBadge}>({activeWorkspace?.name ?? "Personal"})</Text>
+            <Text style={styles.workspaceBadge}>· {activeWorkspace?.name ?? "Personal"}</Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.text.muted} />
           </Pressable>
         </View>
 
@@ -1180,15 +1184,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   profileLink: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.dark.borderSubtle,
-    backgroundColor: 'rgba(255,255,255,0.03)',
     flexDirection: "row" as const,
-    alignItems: "baseline" as const,
+    alignItems: "center" as const,
     gap: 6,
+    paddingVertical: 2,
+  },
+  profileLinkPressed: {
+    opacity: 0.6,
   },
   workspaceBadge: {
     fontFamily: "Outfit_600SemiBold",
