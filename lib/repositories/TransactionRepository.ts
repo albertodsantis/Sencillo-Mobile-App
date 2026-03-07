@@ -56,9 +56,6 @@ export const TransactionRepository = {
     const workspaceId = await getActiveWorkspaceId();
     if (!userId || !workspaceId) return;
 
-    await supabase.from('transactions').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
-    if (transactions.length === 0) return;
-
     const rows = transactions.map((tx) => ({
       id: tx.id,
       user_id: userId,
@@ -75,7 +72,29 @@ export const TransactionRepository = {
       profile_id: tx.profileId || null,
     }));
 
-    await supabase.from('transactions').insert(rows);
+    const nextIds = new Set(rows.map((row) => row.id));
+    const { data: existingRows } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId);
+
+    if (rows.length > 0) {
+      await supabase.from('transactions').upsert(rows, { onConflict: 'id' });
+    }
+
+    const staleIds = ((existingRows ?? []) as { id: string }[])
+      .map((row) => row.id)
+      .filter((id) => !nextIds.has(id));
+
+    if (staleIds.length > 0) {
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .in('id', staleIds);
+    }
   },
 
   async add(tx: Omit<Transaction, 'id'>): Promise<Transaction> {

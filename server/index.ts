@@ -1,130 +1,24 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
+import { createServer } from "node:http";
 
 const app = express();
 const log = console.log;
 
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
+// This server only hosts exported web/Expo build artifacts.
 
-function setupCors(app: express.Application) {
-  app.use((req, res, next) => {
-    const origins = new Set<string>();
-
-    const addOrigin = (value: string) => {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return;
-      }
-
-      try {
-        if (trimmed.includes("://")) {
-          origins.add(new URL(trimmed).origin);
-          return;
-        }
-
-        origins.add(new URL(`https://${trimmed}`).origin);
-        origins.add(new URL(`http://${trimmed}`).origin);
-      } catch {
-        // Ignore invalid CORS origins in env vars.
-      }
-    };
-
-    const addOriginsFromEnv = (envValue?: string) => {
-      if (!envValue) {
-        return;
-      }
-
-      envValue.split(",").forEach((entry) => addOrigin(entry));
-    };
-
-    if (process.env.REPLIT_DEV_DOMAIN) {
-      addOrigin(process.env.REPLIT_DEV_DOMAIN);
-    }
-
-    if (process.env.REPLIT_DOMAINS) {
-      process.env.REPLIT_DOMAINS.split(",").forEach((d: string) => {
-        addOrigin(d);
-      });
-    }
-
-    addOriginsFromEnv(process.env.CORS_ORIGINS);
-
-    const origin = req.header("origin");
-
-    const isLocalhost =
-      origin === "http://localhost" ||
-      origin === "https://localhost" ||
-      origin?.startsWith("http://localhost:") ||
-      origin?.startsWith("https://localhost:") ||
-      origin === "http://127.0.0.1" ||
-      origin === "https://127.0.0.1" ||
-      origin?.startsWith("http://127.0.0.1:") ||
-      origin?.startsWith("https://127.0.0.1:");
-
-    if (origin && (origins.has(origin) || isLocalhost)) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS",
-      );
-      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-      res.header("Access-Control-Allow-Credentials", "true");
-    }
-
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(200);
-    }
-
-    next();
-  });
-}
-
-function setupBodyParsing(app: express.Application) {
-  app.use(
-    express.json({
-      verify: (req, _res, buf) => {
-        req.rawBody = buf;
-      },
-    }),
-  );
-
-  app.use(express.urlencoded({ extended: false }));
-}
-
-function setupRequestLogging(app: express.Application) {
+function setupStaticRequestLogging(app: express.Application) {
   app.use((req, res, next) => {
     const start = Date.now();
-    const path = req.path;
-    let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
-
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
+    const requestPath = req.path;
 
     res.on("finish", () => {
-      if (!path.startsWith("/api")) return;
-
-      const duration = Date.now() - start;
-
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (requestPath.startsWith("/_expo") || requestPath === "/manifest") {
+        const duration = Date.now() - start;
+        log(`${req.method} ${requestPath} ${res.statusCode} in ${duration}ms`);
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "...";
-      }
-
-      log(logLine);
     });
 
     next();
@@ -210,10 +104,6 @@ function configureExpoAndLanding(app: express.Application) {
   if (hasWebBuild) log("Web build found - serving web app for browser requests");
 
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith("/api")) {
-      return next();
-    }
-
     if (req.path !== "/" && req.path !== "/manifest") {
       return next();
     }
@@ -246,7 +136,6 @@ function configureExpoAndLanding(app: express.Application) {
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
 
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith("/api")) return next();
     const platform = req.header("expo-platform");
     if (platform) return next();
     if (hasWebBuild && req.accepts("html")) {
@@ -280,13 +169,10 @@ function setupErrorHandler(app: express.Application) {
 }
 
 (async () => {
-  setupCors(app);
-  setupBodyParsing(app);
-  setupRequestLogging(app);
+  setupStaticRequestLogging(app);
 
   configureExpoAndLanding(app);
-
-  const server = await registerRoutes(app);
+  const server = createServer(app);
 
   setupErrorHandler(app);
 

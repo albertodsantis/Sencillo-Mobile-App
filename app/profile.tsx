@@ -40,6 +40,7 @@ const WORKSPACE_MODAL_PRIMARY_PRESSED = "#1e293b";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { signOut, updatePassword } = useAuth();
   const {
     profile,
     updateProfile,
@@ -59,7 +60,6 @@ export default function ProfileScreen() {
   const [email, setEmail] = useState(profile.email);
 
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPrefixPicker, setShowPrefixPicker] = useState(false);
@@ -151,12 +151,6 @@ export default function ProfileScreen() {
   }, [firstName, lastName, phonePrefix, phoneNumber, email, profile, updateProfile]);
 
   const handleChangePassword = useCallback(async () => {
-    if (profile.password && currentPassword !== profile.password) {
-      const msg = "La contrasena actual no es correcta";
-      if (Platform.OS === "web") alert(msg);
-      else Alert.alert("Error", msg);
-      return;
-    }
     if (!newPassword || newPassword.length < 4) {
       const msg = "La nueva contrasena debe tener al menos 4 caracteres";
       if (Platform.OS === "web") alert(msg);
@@ -169,16 +163,21 @@ export default function ProfileScreen() {
       else Alert.alert("Error", msg);
       return;
     }
-    await updateProfile({ ...profile, password: newPassword });
+    const result = await updatePassword(newPassword);
+    if (!result.success) {
+      const msg = result.error || "No se pudo actualizar la contrasena";
+      if (Platform.OS === "web") alert(msg);
+      else Alert.alert("Error", msg);
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowPasswordChange(false);
-    setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     const successMsg = "Contrasena actualizada correctamente";
     if (Platform.OS === "web") alert(successMsg);
     else Alert.alert("Listo", successMsg);
-  }, [currentPassword, newPassword, confirmPassword, profile, updateProfile]);
+  }, [confirmPassword, newPassword, updatePassword]);
 
   const handleCreateWorkspace = useCallback(async () => {
     const name = workspaceName.trim();
@@ -238,8 +237,6 @@ export default function ProfileScreen() {
     setShowCreateWorkspaceModal(false);
     setWorkspaceName('');
   }, []);
-
-  const { signOut } = useAuth();
 
   const handleLogout = useCallback(() => {
     const doLogout = async () => {
@@ -550,7 +547,7 @@ export default function ProfileScreen() {
               <View>
                 <Text style={styles.rowLabel}>Cambiar Contrasena</Text>
                 <Text style={styles.rowSub}>
-                  {profile.password ? "Configurada" : "Sin contrasena"}
+                  Administrada de forma segura por Supabase Auth
                 </Text>
               </View>
             </View>
@@ -587,17 +584,6 @@ export default function ProfileScreen() {
 
           {showPasswordChange && (
             <View style={styles.passwordArea}>
-              {profile.password ? (
-                <TextInput
-                  style={styles.pwInput}
-                  value={currentPassword}
-                  onChangeText={setCurrentPassword}
-                  placeholder="Contrasena actual"
-                  placeholderTextColor={Colors.text.disabled}
-                  secureTextEntry
-                  autoCapitalize="none"
-                />
-              ) : null}
               <TextInput
                 style={styles.pwInput}
                 value={newPassword}
@@ -623,7 +609,6 @@ export default function ProfileScreen() {
                 <Pressable
                   onPress={() => {
                     setShowPasswordChange(false);
-                    setCurrentPassword("");
                     setNewPassword("");
                     setConfirmPassword("");
                   }}

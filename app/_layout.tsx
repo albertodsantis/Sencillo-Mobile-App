@@ -1,4 +1,3 @@
-import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
@@ -7,7 +6,6 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar, View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { queryClient } from "@/lib/query-client";
 import { AppProvider } from "@/lib/context/AppContext";
 import { AuthProvider, useAuth } from "@/lib/context/AuthContext";
 import "@/lib/notifications";
@@ -160,16 +158,14 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <KeyboardProvider>
-            <StatusBar barStyle="light-content" backgroundColor="#020617" />
-            <AuthProvider>
-              <AuthGate />
-            </AuthProvider>
-          </KeyboardProvider>
-        </GestureHandlerRootView>
-      </QueryClientProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardProvider>
+          <StatusBar barStyle="light-content" backgroundColor="#020617" />
+          <AuthProvider>
+            <AuthGate />
+          </AuthProvider>
+        </KeyboardProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }
