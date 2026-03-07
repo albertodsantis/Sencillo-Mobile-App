@@ -30,18 +30,38 @@ export const SavingsRepository = {
     const workspaceId = await getActiveWorkspaceId();
     if (!userId || !workspaceId) return;
 
-    await supabase.from('savings_goals').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
     const entries = Object.entries(goals);
-    if (entries.length === 0) return;
+    const nextCategories = new Set(entries.map(([category]) => category));
+    const { data: existingRows } = await supabase
+      .from('savings_goals')
+      .select('category')
+      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId);
 
-    await supabase.from('savings_goals').insert(
-      entries.map(([category, amount]) => ({
-        user_id: userId,
-        workspace_id: workspaceId,
-        category,
-        amount,
-      })),
-    );
+    if (entries.length > 0) {
+      await supabase.from('savings_goals').upsert(
+        entries.map(([category, amount]) => ({
+          user_id: userId,
+          workspace_id: workspaceId,
+          category,
+          amount,
+        })),
+        { onConflict: 'user_id,workspace_id,category' },
+      );
+    }
+
+    const staleCategories = ((existingRows ?? []) as { category: string }[])
+      .map((row) => row.category)
+      .filter((category) => !nextCategories.has(category));
+
+    if (staleCategories.length > 0) {
+      await supabase
+        .from('savings_goals')
+        .delete()
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .in('category', staleCategories);
+    }
   },
 
   async clear(): Promise<void> {

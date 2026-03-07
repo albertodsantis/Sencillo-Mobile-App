@@ -47,7 +47,7 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
   };
 }
 
-function buildProfileFromRegistration(name: string, email: string, password: string): UserProfile {
+function buildProfileFromRegistration(name: string, email: string): UserProfile {
   const normalizedName = name.trim();
   const { firstName, lastName } = splitName(normalizedName);
 
@@ -57,11 +57,10 @@ function buildProfileFromRegistration(name: string, email: string, password: str
     phonePrefix: '+58',
     phoneNumber: '',
     email,
-    password,
   };
 }
 
-async function ensureInitialProfile(user: User, password = ''): Promise<void> {
+async function ensureInitialProfile(user: User): Promise<void> {
   const normalizedEmail = user.email?.toLowerCase().trim() ?? '';
   const displayName = (user.user_metadata?.name as string | undefined)?.trim() ||
     normalizedEmail.split('@')[0] ||
@@ -76,7 +75,6 @@ async function ensureInitialProfile(user: User, password = ''): Promise<void> {
       phone_prefix: '+58',
       phone_number: '',
       email: normalizedEmail,
-      password,
     },
     { onConflict: 'user_id' },
   );
@@ -177,7 +175,7 @@ export const AuthRepository = {
     let user: AuthUser = mapSupabaseUserToAuthUser(data.user);
 
     try {
-      const profile = buildProfileFromRegistration(normalizedName, normalizedEmail, password);
+      const profile = buildProfileFromRegistration(normalizedName, normalizedEmail);
       await ProfileRepository.save(profile);
       user = await syncAuthenticatedUser(data.user);
     } catch (profileError) {
@@ -215,7 +213,7 @@ export const AuthRepository = {
 
     let user: AuthUser;
     try {
-      await ensureInitialProfile(data.user, password);
+      await ensureInitialProfile(data.user);
       user = await syncAuthenticatedUser(data.user);
     } catch (profileError) {
       console.warn('No se pudo asegurar el perfil para este usuario:', profileError);
@@ -294,5 +292,18 @@ export const AuthRepository = {
   async logout(): Promise<void> {
     await supabase.auth.signOut();
     await this.clearSession();
+  },
+
+  async updatePassword(password: string): Promise<{ success: boolean; error?: string }> {
+    if (!password || password.length < 4) {
+      return { success: false, error: 'La nueva contrasena debe tener al menos 4 caracteres' };
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
   },
 };

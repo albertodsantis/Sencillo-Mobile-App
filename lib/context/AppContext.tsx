@@ -27,6 +27,13 @@ import {
 } from '../repositories';
 import { ACTIVE_WORKSPACE_STORAGE_KEY } from '../repositories/workspaceScope';
 import { fetchRates, computeDashboard, computeBudget } from '../domain/finance';
+import {
+  clearStoredPreviousBudgets,
+  clearWorkspaceBudgetArtifacts,
+  getStoredPreviousBudgets,
+  loadAppBootstrapSnapshot,
+  loadWorkspaceScopedSnapshot,
+} from './appBootstrap';
 
 interface AppContextValue {
   transactions: Transaction[];
@@ -77,14 +84,6 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-const BUDGET_PERIOD_STORAGE_PREFIX = '@sencillo/budgets-period/';
-const PREVIOUS_BUDGETS_STORAGE_PREFIX = '@sencillo/budgets-previous/';
-
-function getCurrentBudgetPeriod() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [rates, setRates] = useState<Rates>({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
@@ -116,91 +115,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const loadWorkspaceScopedData = useCallback(async () => {
     const workspaceId = await AsyncStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY);
-    const [txs, pnl, bdg, sg] = await Promise.all([
-      TransactionRepository.getAll(),
-      PnlRepository.get(),
-      BudgetRepository.get(),
-      SavingsRepository.get(),
-    ]);
+    const snapshot = await loadWorkspaceScopedSnapshot(workspaceId);
 
-    const periodKey = workspaceId ? `${BUDGET_PERIOD_STORAGE_PREFIX}${workspaceId}` : null;
-    const previousBudgetsKey = workspaceId ? `${PREVIOUS_BUDGETS_STORAGE_PREFIX}${workspaceId}` : null;
-    const currentPeriod = getCurrentBudgetPeriod();
-    const savedPeriod = periodKey ? await AsyncStorage.getItem(periodKey) : null;
-
-    let resolvedBudgets = bdg;
-    if (workspaceId && savedPeriod !== currentPeriod) {
-      const hasBudgets = Object.keys(bdg).length > 0;
-      if (previousBudgetsKey) {
-        if (hasBudgets) {
-          await AsyncStorage.setItem(previousBudgetsKey, JSON.stringify(bdg));
-        } else {
-          await AsyncStorage.removeItem(previousBudgetsKey);
-        }
-      }
-
-      if (hasBudgets) {
-        await BudgetRepository.clear();
-      }
-      resolvedBudgets = {};
-      if (periodKey) {
-        await AsyncStorage.setItem(periodKey, currentPeriod);
-      }
-    } else if (periodKey && !savedPeriod) {
-      await AsyncStorage.setItem(periodKey, currentPeriod);
-    }
-
-    if (previousBudgetsKey) {
-      const rawPreviousBudgets = await AsyncStorage.getItem(previousBudgetsKey);
-      let hasPreviousBudgets = false;
-      if (rawPreviousBudgets) {
-        try {
-          const parsed = JSON.parse(rawPreviousBudgets) as Budgets;
-          hasPreviousBudgets = Object.keys(parsed).length > 0;
-        } catch {
-          hasPreviousBudgets = false;
-        }
-      }
-      setCanCopyPreviousBudgets(hasPreviousBudgets && Object.keys(resolvedBudgets).length === 0);
-    } else {
-      setCanCopyPreviousBudgets(false);
-    }
-
-    setTransactions(txs);
-    setPnlStructure(pnl);
-    setBudgets(resolvedBudgets);
-    setSavingsGoals(sg);
+    setTransactions(snapshot.transactions);
+    setPnlStructure(snapshot.pnlStructure);
+    setBudgets(snapshot.budgets);
+    setSavingsGoals(snapshot.savingsGoals);
+    setCanCopyPreviousBudgets(snapshot.canCopyPreviousBudgets);
   }, []);
 
   useEffect(() => {
     (async () => {
       try {
-        await WorkspaceRepository.ensureDefault();
-        const workspaceList = await WorkspaceRepository.getAll();
-        setWorkspaces(workspaceList);
+        const snapshot = await loadAppBootstrapSnapshot();
+        setWorkspaces(snapshot.workspaces);
+        setActiveWorkspaceId(snapshot.activeWorkspaceId);
 
-        let persistedWorkspaceId = await AsyncStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY);
-        if (!persistedWorkspaceId || !workspaceList.some((w) => w.id === persistedWorkspaceId)) {
-          persistedWorkspaceId = workspaceList[0]?.id ?? null;
-        }
+        if (snapshot.rates) setRates(snapshot.rates);
+        setProfile(snapshot.profile);
+        setDisplayCurrencyState(snapshot.displayCurrency);
+        setRatesTimestamp(snapshot.ratesTimestamp);
 
-        if (persistedWorkspaceId) {
-          await AsyncStorage.setItem(ACTIVE_WORKSPACE_STORAGE_KEY, persistedWorkspaceId);
-          setActiveWorkspaceId(persistedWorkspaceId);
-        }
-
-        const [savedRates, prof, displayPref] = await Promise.all([
-          RatesRepository.get(),
-          ProfileRepository.get(),
-          DisplayCurrencyRepository.get(),
-        ]);
-
-        if (savedRates) setRates(savedRates);
-        setProfile(prof);
-        setDisplayCurrencyState(displayPref);
-        setRatesTimestamp(await RatesRepository.getTimestamp());
-
-        if (persistedWorkspaceId) {
+        if (snapshot.activeWorkspaceId) {
           await loadWorkspaceScopedData();
         }
       } catch (e) {
@@ -349,24 +285,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const copyPreviousBudgets = useCallback(async () => {
-    if (!activeWorkspaceId) return;
-    const previousBudgetsKey = `${PREVIOUS_BUDGETS_STORAGE_PREFIX}${activeWorkspaceId}`;
-    const rawPreviousBudgets = await AsyncStorage.getItem(previousBudgetsKey);
-    if (!rawPreviousBudgets) return;
+    const previousBudgets = await getStoredPreviousBudgets(activeWorkspaceId);
+    if (!previousBudgets) return;
 
     try {
-      const parsed = JSON.parse(rawPreviousBudgets) as Budgets;
-      if (Object.keys(parsed).length === 0) {
-        await AsyncStorage.removeItem(previousBudgetsKey);
-        setCanCopyPreviousBudgets(false);
-        return;
-      }
-
-      await updateBudgets(parsed);
-      await AsyncStorage.removeItem(previousBudgetsKey);
+      await updateBudgets(previousBudgets);
+      await clearStoredPreviousBudgets(activeWorkspaceId);
       setCanCopyPreviousBudgets(false);
     } catch {
-      await AsyncStorage.removeItem(previousBudgetsKey);
+      await clearStoredPreviousBudgets(activeWorkspaceId);
       setCanCopyPreviousBudgets(false);
     }
   }, [activeWorkspaceId, updateBudgets]);
@@ -396,12 +323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ProfileRepository.clear(),
       DisplayCurrencyRepository.clear(),
     ]);
-    if (activeWorkspaceId) {
-      await AsyncStorage.multiRemove([
-        `${BUDGET_PERIOD_STORAGE_PREFIX}${activeWorkspaceId}`,
-        `${PREVIOUS_BUDGETS_STORAGE_PREFIX}${activeWorkspaceId}`,
-      ]);
-    }
+    await clearWorkspaceBudgetArtifacts(activeWorkspaceId);
     setTransactions([]);
     setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
     setRatesTimestamp(null);
