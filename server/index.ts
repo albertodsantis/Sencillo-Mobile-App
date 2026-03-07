@@ -17,22 +17,56 @@ function setupCors(app: express.Application) {
   app.use((req, res, next) => {
     const origins = new Set<string>();
 
+    const addOrigin = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      try {
+        if (trimmed.includes("://")) {
+          origins.add(new URL(trimmed).origin);
+          return;
+        }
+
+        origins.add(new URL(`https://${trimmed}`).origin);
+        origins.add(new URL(`http://${trimmed}`).origin);
+      } catch {
+        // Ignore invalid CORS origins in env vars.
+      }
+    };
+
+    const addOriginsFromEnv = (envValue?: string) => {
+      if (!envValue) {
+        return;
+      }
+
+      envValue.split(",").forEach((entry) => addOrigin(entry));
+    };
+
     if (process.env.REPLIT_DEV_DOMAIN) {
-      origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+      addOrigin(process.env.REPLIT_DEV_DOMAIN);
     }
 
     if (process.env.REPLIT_DOMAINS) {
       process.env.REPLIT_DOMAINS.split(",").forEach((d: string) => {
-        origins.add(`https://${d.trim()}`);
+        addOrigin(d);
       });
     }
 
+    addOriginsFromEnv(process.env.CORS_ORIGINS);
+
     const origin = req.header("origin");
 
-    // Allow localhost origins for Expo web development (any port)
     const isLocalhost =
+      origin === "http://localhost" ||
+      origin === "https://localhost" ||
       origin?.startsWith("http://localhost:") ||
-      origin?.startsWith("http://127.0.0.1:");
+      origin?.startsWith("https://localhost:") ||
+      origin === "http://127.0.0.1" ||
+      origin === "https://127.0.0.1" ||
+      origin?.startsWith("http://127.0.0.1:") ||
+      origin?.startsWith("https://127.0.0.1:");
 
     if (origin && (origins.has(origin) || isLocalhost)) {
       res.header("Access-Control-Allow-Origin", origin);
@@ -40,7 +74,7 @@ function setupCors(app: express.Application) {
         "Access-Control-Allow-Methods",
         "GET, POST, PUT, DELETE, OPTIONS",
       );
-      res.header("Access-Control-Allow-Headers", "Content-Type");
+      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
       res.header("Access-Control-Allow-Credentials", "true");
     }
 
@@ -87,7 +121,7 @@ function setupRequestLogging(app: express.Application) {
       }
 
       if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+        logLine = logLine.slice(0, 79) + "...";
       }
 
       log(logLine);
@@ -257,14 +291,7 @@ function setupErrorHandler(app: express.Application) {
   setupErrorHandler(app);
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`express server serving on port ${port}`);
-    },
-  );
+  server.listen(port, "0.0.0.0", () => {
+    log(`express server serving on port ${port}`);
+  });
 })();
