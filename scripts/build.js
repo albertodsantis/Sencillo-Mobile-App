@@ -5,6 +5,8 @@ const { Readable } = require("stream");
 const { pipeline } = require("stream/promises");
 
 let metroProcess = null;
+const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
+const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
 
 function exitWithError(message) {
   console.error(message);
@@ -39,21 +41,21 @@ function stripProtocol(domain) {
 }
 
 function getDeploymentDomain() {
-  // Check Replit deployment environment variables first
-  if (process.env.REPLIT_INTERNAL_APP_DOMAIN) {
-    return stripProtocol(process.env.REPLIT_INTERNAL_APP_DOMAIN);
-  }
+  const candidates = [
+    process.env.DEPLOYMENT_DOMAIN,
+    process.env.EXPO_PUBLIC_DOMAIN,
+    process.env.REPLIT_INTERNAL_APP_DOMAIN,
+    process.env.REPLIT_DEV_DOMAIN,
+  ];
 
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    return stripProtocol(process.env.REPLIT_DEV_DOMAIN);
-  }
-
-  if (process.env.EXPO_PUBLIC_DOMAIN) {
-    return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
+  for (const candidate of candidates) {
+    if (candidate && candidate.trim()) {
+      return stripProtocol(candidate);
+    }
   }
 
   console.error(
-    "ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN",
+    "ERROR: No deployment domain found. Set DEPLOYMENT_DOMAIN or EXPO_PUBLIC_DOMAIN.",
   );
   process.exit(1);
 }
@@ -118,7 +120,7 @@ async function startMetro(expoPublicDomain) {
     ...process.env,
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
   };
-  metroProcess = spawn("npm", ["run", "expo:start:static:build"], {
+  metroProcess = spawn(npmCmd, ["run", "expo:start:static:build"], {
     stdio: ["ignore", "pipe", "pipe"],
     detached: false,
     env,
@@ -564,7 +566,7 @@ async function buildWeb(domain) {
       ...process.env,
       EXPO_PUBLIC_DOMAIN: domain,
     };
-    const webBuild = spawn("npx", ["expo", "export", "--platform", "web", "--output-dir", "web-build"], {
+    const webBuild = spawn(npxCmd, ["expo", "export", "--platform", "web", "--output-dir", "web-build"], {
       stdio: ["ignore", "pipe", "pipe"],
       env,
     });

@@ -1,20 +1,70 @@
 import { fetch } from "expo/fetch";
+import Constants from "expo-constants";
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-/**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
- * @returns {string} The API base URL
- */
-export function getApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
+function ensureTrailingSlash(url: string): string {
+  return url.endsWith("/") ? url : `${url}/`;
+}
 
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+function normalizeBaseUrl(
+  value: string,
+  defaultProtocol: "http" | "https",
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error("API base URL is empty");
   }
 
-  let url = new URL(`https://${host}`);
+  const withProtocol = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `${defaultProtocol}://${trimmed}`;
 
-  return url.href;
+  return ensureTrailingSlash(new URL(withProtocol).toString());
+}
+
+function resolveFromExpoHostUri(): string | null {
+  const constants = Constants as unknown as {
+    expoConfig?: { hostUri?: string | null };
+    manifest2?: {
+      extra?: { expoGo?: { debuggerHost?: string | null } };
+    };
+  };
+
+  const hostUri =
+    constants.expoConfig?.hostUri ??
+    constants.manifest2?.extra?.expoGo?.debuggerHost;
+
+  if (!hostUri) {
+    return null;
+  }
+
+  const host = hostUri.split(":")[0];
+  const port = process.env.EXPO_PUBLIC_API_PORT || "5000";
+  return `http://${host}:${port}/`;
+}
+
+/**
+ * Gets the base URL for the Express API server.
+ */
+export function getApiUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return normalizeBaseUrl(process.env.EXPO_PUBLIC_API_URL, "http");
+  }
+
+  if (process.env.EXPO_PUBLIC_DOMAIN) {
+    return normalizeBaseUrl(process.env.EXPO_PUBLIC_DOMAIN, "https");
+  }
+
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return ensureTrailingSlash(window.location.origin);
+  }
+
+  const expoHostUrl = resolveFromExpoHostUri();
+  if (expoHostUrl) {
+    return expoHostUrl;
+  }
+
+  return "http://localhost:5000/";
 }
 
 async function throwIfResNotOk(res: Response) {
