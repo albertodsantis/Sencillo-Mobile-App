@@ -1,3 +1,8 @@
+const fs = require("fs");
+const path = require("path");
+
+const projectRoot = fs.realpathSync(__dirname);
+
 module.exports = function (api) {
   api.cache(true);
   return {
@@ -7,7 +12,7 @@ module.exports = function (api) {
         "module-resolver",
         {
           alias: {
-            "@": ".",
+            "@": projectRoot,
           },
         },
       ],
