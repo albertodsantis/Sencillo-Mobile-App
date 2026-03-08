@@ -1,3 +1,8 @@
 {
-  "workbench.browser.openLocalhostLinks": true
+  "workbench.browser.openLocalhostLinks": true,
+  "terminal.integrated.env.windows": {
+    "ANDROID_HOME": "${env:LOCALAPPDATA}\\Android\\Sdk",
+    "ANDROID_SDK_ROOT": "${env:LOCALAPPDATA}\\Android\\Sdk",
+    "Path": "${env:Path};${env:LOCALAPPDATA}\\Android\\Sdk\\platform-tools;${env:LOCALAPPDATA}\\Android\\Sdk\\emulator"
+  }
 }
