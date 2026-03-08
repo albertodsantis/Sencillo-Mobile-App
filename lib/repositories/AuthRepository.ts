@@ -4,11 +4,14 @@ import type { User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
+import { Platform } from 'react-native';
 import { ProfileRepository } from './ProfileRepository';
 import { WorkspaceRepository } from './WorkspaceRepository';
 import type { UserProfile } from '../domain/types';
 
 const SESSION_KEY = '@sencillo/auth_user';
+const OAUTH_CALLBACK_PATH = 'auth/callback';
+const NATIVE_OAUTH_REDIRECT = 'sencillo://auth/callback';
 WebBrowser.maybeCompleteAuthSession();
 
 export interface AuthUser {
@@ -98,6 +101,32 @@ async function syncAuthenticatedUser(user: User): Promise<AuthUser> {
   return mapped;
 }
 
+function buildOAuthRedirectUrl(): string {
+  if (Platform.OS === 'web') {
+    return makeRedirectUri({ path: OAUTH_CALLBACK_PATH });
+  }
+
+  return makeRedirectUri({
+    scheme: 'sencillo',
+    path: OAUTH_CALLBACK_PATH,
+    native: NATIVE_OAUTH_REDIRECT,
+  });
+}
+
+function getAuthParamsFromUrl(url: string): {
+  accessToken?: string;
+  refreshToken?: string;
+  errorCode?: string;
+} {
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+
+  return {
+    accessToken: params.access_token ?? undefined,
+    refreshToken: params.refresh_token ?? undefined,
+    errorCode: errorCode ?? undefined,
+  };
+}
+
 export const AuthRepository = {
   async getSession(): Promise<AuthUser | null> {
     const cached = await AsyncStorage.getItem(SESSION_KEY);
@@ -129,6 +158,40 @@ export const AuthRepository = {
 
   async syncFromSupabaseSessionUser(user: User): Promise<AuthUser> {
     return await syncAuthenticatedUser(user);
+  },
+
+  async syncFromOAuthRedirectUrl(url: string): Promise<AuthUser | null> {
+    const { accessToken, refreshToken, errorCode } = getAuthParamsFromUrl(url);
+
+    if (errorCode) {
+      throw new Error(errorCode);
+    }
+
+    if (!accessToken || !refreshToken) {
+      return null;
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (sessionError) {
+      throw sessionError;
+    }
+
+    if (!sessionData.user) {
+      throw new Error('No se pudo iniciar sesion con Google');
+    }
+
+    try {
+      return await syncAuthenticatedUser(sessionData.user);
+    } catch (profileError) {
+      console.warn('No se pudo asegurar el perfil para usuario de Google:', profileError);
+      const user = mapSupabaseUserToAuthUser(sessionData.user);
+      await this.persistSession(user);
+      return user;
+    }
   },
 
   async register(
@@ -225,7 +288,7 @@ export const AuthRepository = {
   },
 
   async loginWithGoogle(): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
-    const redirectUrl = makeRedirectUri();
+    const redirectUrl = buildOAuthRedirectUrl();
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -236,6 +299,12 @@ export const AuthRepository = {
     });
 
     if (error) {
+      if (error.message.toLowerCase().includes('requested path is invalid')) {
+        return {
+          success: false,
+          error: `Supabase rechazo el redirect de Google. Agrega ${redirectUrl} en Auth > URL Configuration > Redirect URLs.`,
+        };
+      }
       return { success: false, error: error.message };
     }
 
@@ -252,41 +321,18 @@ export const AuthRepository = {
       return { success: false, error: 'No se pudo completar Google Sign-In' };
     }
 
-    const { params, errorCode } = QueryParams.getQueryParams(res.url);
-
-    if (errorCode) {
-      throw new Error(errorCode);
-    }
-
-    const { access_token, refresh_token } = params;
-
-    if (!access_token) {
-      return { success: false, error: 'No se pudo obtener el token de acceso de Google' };
-    }
-
-    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-      access_token,
-      refresh_token,
-    });
-
-    if (sessionError) {
-      return { success: false, error: sessionError.message };
-    }
-
-    if (!sessionData.user) {
+    try {
+      const user = await this.syncFromOAuthRedirectUrl(res.url);
+      if (!user) {
+        return { success: false, error: 'No se pudo obtener la sesion de Google' };
+      }
+      return { success: true, user };
+    } catch (sessionError) {
+      if (sessionError instanceof Error) {
+        return { success: false, error: sessionError.message };
+      }
       return { success: false, error: 'No se pudo iniciar sesion con Google' };
     }
-
-    let user: AuthUser;
-    try {
-      user = await syncAuthenticatedUser(sessionData.user);
-    } catch (profileError) {
-      console.warn('No se pudo asegurar el perfil para usuario de Google:', profileError);
-      user = mapSupabaseUserToAuthUser(sessionData.user);
-      await this.persistSession(user);
-    }
-
-    return { success: true, user };
   },
 
   async logout(): Promise<void> {

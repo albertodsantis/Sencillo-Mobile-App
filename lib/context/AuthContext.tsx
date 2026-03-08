@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import * as Linking from "expo-linking";
 import { supabase } from "@/utils/supabase";
 import { AuthRepository, type AuthUser } from "../repositories/AuthRepository";
 
@@ -22,9 +23,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    const syncOAuthUrl = async (url: string | null) => {
+      if (!url) return;
+
+      try {
+        const syncedUser = await AuthRepository.syncFromOAuthRedirectUrl(url);
+        if (syncedUser && isMounted) {
+          setUser(syncedUser);
+        }
+      } catch (error) {
+        console.warn("No se pudo completar el redirect OAuth:", error);
+      }
+    };
 
     (async () => {
       try {
+        await syncOAuthUrl(await Linking.getInitialURL());
         const session = await AuthRepository.getSession();
         if (isMounted) setUser(session);
       } catch {
@@ -33,6 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) setIsLoading(false);
       }
     })();
+
+    const linkingSubscription = Linking.addEventListener("url", ({ url }) => {
+      void syncOAuthUrl(url);
+    });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
@@ -57,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      linkingSubscription.remove();
       authListener.subscription.unsubscribe();
     };
   }, []);
