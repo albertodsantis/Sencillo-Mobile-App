@@ -4,9 +4,29 @@
 create extension if not exists pgcrypto;
 
 -- Optional enums mirroring local TypeScript unions
-create type transaction_type as enum ('income', 'expense');
-create type transaction_segment as enum ('ingresos', 'ahorro', 'gastos_fijos', 'gastos_variables');
-create type currency_code as enum ('VES', 'USD', 'EUR');
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'transaction_type') then
+    create type transaction_type as enum ('income', 'expense');
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'transaction_segment') then
+    create type transaction_segment as enum ('ingresos', 'ahorro', 'gastos_fijos', 'gastos_variables');
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'currency_code') then
+    create type currency_code as enum ('VES', 'USD', 'EUR');
+  end if;
+end
+$$;
 
 -- Profile data (UserProfile)
 create table if not exists public.profiles (
@@ -108,109 +128,133 @@ alter table public.budgets enable row level security;
 alter table public.savings_goals enable row level security;
 
 -- Profiles policies
+drop policy if exists profiles_select_own on public.profiles;
 create policy profiles_select_own on public.profiles
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists profiles_insert_own on public.profiles;
 create policy profiles_insert_own on public.profiles
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists profiles_update_own on public.profiles;
 create policy profiles_update_own on public.profiles
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists profiles_delete_own on public.profiles;
 create policy profiles_delete_own on public.profiles
   for delete to authenticated
   using (user_id = auth.uid());
 
 -- Transactions policies
+drop policy if exists transactions_select_own on public.transactions;
 create policy transactions_select_own on public.transactions
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists transactions_insert_own on public.transactions;
 create policy transactions_insert_own on public.transactions
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists transactions_update_own on public.transactions;
 create policy transactions_update_own on public.transactions
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists transactions_delete_own on public.transactions;
 create policy transactions_delete_own on public.transactions
   for delete to authenticated
   using (user_id = auth.uid());
 
 -- Rates policies
+drop policy if exists rates_select_own on public.rates;
 create policy rates_select_own on public.rates
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists rates_insert_own on public.rates;
 create policy rates_insert_own on public.rates
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists rates_update_own on public.rates;
 create policy rates_update_own on public.rates
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists rates_delete_own on public.rates;
 create policy rates_delete_own on public.rates
   for delete to authenticated
   using (user_id = auth.uid());
 
 -- PnL categories policies
+drop policy if exists pnl_categories_select_own on public.pnl_categories;
 create policy pnl_categories_select_own on public.pnl_categories
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists pnl_categories_insert_own on public.pnl_categories;
 create policy pnl_categories_insert_own on public.pnl_categories
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists pnl_categories_update_own on public.pnl_categories;
 create policy pnl_categories_update_own on public.pnl_categories
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists pnl_categories_delete_own on public.pnl_categories;
 create policy pnl_categories_delete_own on public.pnl_categories
   for delete to authenticated
   using (user_id = auth.uid());
 
 -- Budgets policies
+drop policy if exists budgets_select_own on public.budgets;
 create policy budgets_select_own on public.budgets
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists budgets_insert_own on public.budgets;
 create policy budgets_insert_own on public.budgets
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists budgets_update_own on public.budgets;
 create policy budgets_update_own on public.budgets
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists budgets_delete_own on public.budgets;
 create policy budgets_delete_own on public.budgets
   for delete to authenticated
   using (user_id = auth.uid());
 
 -- Savings goals policies
+drop policy if exists savings_goals_select_own on public.savings_goals;
 create policy savings_goals_select_own on public.savings_goals
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists savings_goals_insert_own on public.savings_goals;
 create policy savings_goals_insert_own on public.savings_goals
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists savings_goals_update_own on public.savings_goals;
 create policy savings_goals_update_own on public.savings_goals
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists savings_goals_delete_own on public.savings_goals;
 create policy savings_goals_delete_own on public.savings_goals
   for delete to authenticated
   using (user_id = auth.uid());
@@ -320,29 +364,36 @@ drop index if exists idx_transactions_user_category;
 create index if not exists idx_transactions_user_workspace_category on public.transactions(user_id, workspace_id, category);
 
 alter table public.pnl_categories drop constraint if exists pnl_categories_user_id_segment_name_key;
+alter table public.pnl_categories drop constraint if exists pnl_categories_user_workspace_segment_name_key;
 alter table public.pnl_categories add constraint pnl_categories_user_workspace_segment_name_key unique (user_id, workspace_id, segment, name);
 
 alter table public.budgets drop constraint if exists budgets_user_id_category_key;
+alter table public.budgets drop constraint if exists budgets_user_workspace_category_key;
 alter table public.budgets add constraint budgets_user_workspace_category_key unique (user_id, workspace_id, category);
 
 alter table public.savings_goals drop constraint if exists savings_goals_user_id_category_key;
+alter table public.savings_goals drop constraint if exists savings_goals_user_workspace_category_key;
 alter table public.savings_goals add constraint savings_goals_user_workspace_category_key unique (user_id, workspace_id, category);
 
 alter table public.workspaces enable row level security;
 
+drop policy if exists workspaces_select_own on public.workspaces;
 create policy workspaces_select_own on public.workspaces
   for select to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists workspaces_insert_own on public.workspaces;
 create policy workspaces_insert_own on public.workspaces
   for insert to authenticated
   with check (user_id = auth.uid());
 
+drop policy if exists workspaces_update_own on public.workspaces;
 create policy workspaces_update_own on public.workspaces
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists workspaces_delete_own on public.workspaces;
 create policy workspaces_delete_own on public.workspaces
   for delete to authenticated
   using (user_id = auth.uid() and is_default = false);
