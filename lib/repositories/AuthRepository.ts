@@ -60,6 +60,7 @@ function buildProfileFromRegistration(name: string, email: string): UserProfile 
     phonePrefix: '+58',
     phoneNumber: '',
     email,
+    onboardingCompleted: false,
   };
 }
 
@@ -78,6 +79,7 @@ async function ensureInitialProfile(user: User): Promise<void> {
       phone_prefix: '+58',
       phone_number: '',
       email: normalizedEmail,
+      onboarding_completed: false,
     },
     { onConflict: 'user_id' },
   );

@@ -7,6 +7,7 @@ type ProfileRow = {
   phone_prefix: string;
   phone_number: string;
   email: string;
+  onboarding_completed: boolean | null;
 };
 
 async function getCurrentUserId(): Promise<string | null> {
@@ -21,6 +22,7 @@ function mapProfile(row: ProfileRow): UserProfile {
     phonePrefix: row.phone_prefix,
     phoneNumber: row.phone_number,
     email: row.email,
+    onboardingCompleted: row.onboarding_completed ?? false,
   };
 }
 
@@ -32,7 +34,7 @@ export const ProfileRepository = {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name, last_name, phone_prefix, phone_number, email')
+        .select('first_name, last_name, phone_prefix, phone_number, email, onboarding_completed')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -55,6 +57,7 @@ export const ProfileRepository = {
         phone_prefix: profile.phonePrefix,
         phone_number: profile.phoneNumber,
         email: profile.email,
+        onboarding_completed: profile.onboardingCompleted,
       },
       { onConflict: 'user_id' },
     );

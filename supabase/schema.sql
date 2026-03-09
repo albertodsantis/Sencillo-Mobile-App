@@ -17,11 +17,13 @@ create table if not exists public.profiles (
   phone_prefix text not null default '+58',
   phone_number text not null default '',
   email text not null default '',
+  onboarding_completed boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table public.profiles drop column if exists password;
+alter table public.profiles add column if not exists onboarding_completed boolean not null default false;
 
 -- Transactions (Transaction)
 create table if not exists public.transactions (

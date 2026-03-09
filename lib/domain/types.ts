@@ -90,6 +90,7 @@ export interface UserProfile {
   phonePrefix: string;
   phoneNumber: string;
   email: string;
+  onboardingCompleted: boolean;
 }
 
 export interface Workspace {
@@ -105,6 +106,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   phonePrefix: '+58',
   phoneNumber: '',
   email: '',
+  onboardingCompleted: false,
 };
 
 export const RECURRENCE_OPTIONS: { id: RecurrenceType; label: string }[] = [

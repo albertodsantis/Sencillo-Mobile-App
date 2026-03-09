@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -6,7 +6,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar, View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AppProvider } from "@/lib/context/AppContext";
+import { AppProvider, useApp } from "@/lib/context/AppContext";
 import { AuthProvider, useAuth } from "@/lib/context/AuthContext";
 import "@/lib/notifications";
 import LoginScreen from "@/components/LoginScreen";
@@ -67,6 +67,14 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
+        name="onboarding"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+          animation: "fade",
+        }}
+      />
+      <Stack.Screen
         name="transaction-modal"
         options={{
           presentation: "modal",
@@ -114,6 +122,32 @@ function RootLayoutNav() {
   );
 }
 
+function AppNavigatorGate() {
+  const { isLoading, needsOnboarding } = useApp();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const isOnboardingRoute = pathname === "/onboarding";
+    if (needsOnboarding && !isOnboardingRoute) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    if (!needsOnboarding && isOnboardingRoute) {
+      router.replace("/(tabs)");
+    }
+  }, [isLoading, needsOnboarding, pathname, router]);
+
+  if (isLoading) {
+    return <BrandedSplash />;
+  }
+
+  return <RootLayoutNav />;
+}
+
 function AuthGate() {
   const { user, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
@@ -133,7 +167,7 @@ function AuthGate() {
 
   return (
     <AppProvider>
-      <RootLayoutNav />
+      <AppNavigatorGate />
     </AppProvider>
   );
 }

@@ -26,13 +26,14 @@ import {
   WorkspaceRepository,
 } from '../repositories';
 import { ACTIVE_WORKSPACE_STORAGE_KEY } from '../repositories/workspaceScope';
-import { fetchRates, computeDashboard, computeBudget } from '../domain/finance';
+import { fetchRates, computeDashboard, computeBudget, getLocalDateString } from '../domain/finance';
 import {
   clearStoredPreviousBudgets,
   clearWorkspaceBudgetArtifacts,
   getStoredPreviousBudgets,
   loadAppBootstrapSnapshot,
   loadWorkspaceScopedSnapshot,
+  type WorkspaceScopedSnapshot,
 } from './appBootstrap';
 
 interface AppContextValue {
@@ -54,6 +55,7 @@ interface AppContextValue {
   activeWorkspaceId: string | null;
   currentBudgetPeriodLabel: string;
   canCopyPreviousBudgets: boolean;
+  needsOnboarding: boolean;
 
   setViewMode: (mode: ViewMode) => void;
   setCurrentMonth: (month: number) => void;
@@ -80,9 +82,49 @@ interface AppContextValue {
   updateProfile: (profile: UserProfile) => Promise<void>;
   clearAccount: () => Promise<void>;
   copyPreviousBudgets: () => Promise<void>;
+  completeOnboarding: (payload: OperationalOnboardingPayload) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+export interface OperationalOnboardingPayload {
+  fixedCategories: string[];
+  variableCategories: string[];
+  budgetCategory: string | null;
+  budgetLimit: number | null;
+  monthlyIncome: number | null;
+}
+
+const EMPTY_WORKSPACE_SNAPSHOT: WorkspaceScopedSnapshot = {
+  transactions: [],
+  pnlStructure: DEFAULT_PNL,
+  budgets: {},
+  savingsGoals: {},
+  canCopyPreviousBudgets: false,
+};
+
+function hasCustomizedCategories(pnl: PnlStructure): boolean {
+  return (Object.keys(DEFAULT_PNL) as (keyof PnlStructure)[]).some((segment) => {
+    const defaults = DEFAULT_PNL[segment];
+    const current = pnl[segment];
+
+    if (defaults.length !== current.length) return true;
+    return defaults.some((item, index) => current[index] !== item);
+  });
+}
+
+function shouldPromptOperationalOnboarding(
+  nextProfile: UserProfile,
+  snapshot: WorkspaceScopedSnapshot,
+): boolean {
+  if (nextProfile.onboardingCompleted) return false;
+  if (!nextProfile.email.trim()) return false;
+  if (snapshot.transactions.length > 0) return false;
+  if (Object.keys(snapshot.budgets).length > 0) return false;
+  if (Object.keys(snapshot.savingsGoals).length > 0) return false;
+  if (hasCustomizedCategories(snapshot.pnlStructure)) return false;
+  return true;
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -100,6 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [canCopyPreviousBudgets, setCanCopyPreviousBudgets] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
@@ -113,7 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }, []);
 
-  const loadWorkspaceScopedData = useCallback(async () => {
+  const loadWorkspaceScopedData = useCallback(async (): Promise<WorkspaceScopedSnapshot> => {
     const workspaceId = await AsyncStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY);
     const snapshot = await loadWorkspaceScopedSnapshot(workspaceId);
 
@@ -122,6 +165,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBudgets(snapshot.budgets);
     setSavingsGoals(snapshot.savingsGoals);
     setCanCopyPreviousBudgets(snapshot.canCopyPreviousBudgets);
+    return snapshot;
   }, []);
 
   useEffect(() => {
@@ -136,9 +180,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setDisplayCurrencyState(snapshot.displayCurrency);
         setRatesTimestamp(snapshot.ratesTimestamp);
 
-        if (snapshot.activeWorkspaceId) {
-          await loadWorkspaceScopedData();
-        }
+        const workspaceSnapshot = snapshot.activeWorkspaceId
+          ? await loadWorkspaceScopedData()
+          : EMPTY_WORKSPACE_SNAPSHOT;
+        setNeedsOnboarding(shouldPromptOperationalOnboarding(snapshot.profile, workspaceSnapshot));
       } catch (e) {
         console.error('Error loading data:', e);
       } finally {
@@ -308,6 +353,79 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await ProfileRepository.save(p);
   }, []);
 
+  const completeOnboarding = useCallback(
+    async ({
+      fixedCategories,
+      variableCategories,
+      budgetCategory,
+      budgetLimit,
+      monthlyIncome,
+    }: OperationalOnboardingPayload) => {
+      const nextPnl: PnlStructure = {
+        ...pnlStructure,
+        gastos_fijos: fixedCategories.length > 0 ? fixedCategories : pnlStructure.gastos_fijos,
+        gastos_variables: variableCategories.length > 0 ? variableCategories : pnlStructure.gastos_variables,
+      };
+
+      if (fixedCategories.length > 0 || variableCategories.length > 0) {
+        await updatePnlStructure(nextPnl);
+      }
+
+      if (budgetCategory && budgetLimit && budgetLimit > 0) {
+        const normalizedBudget =
+          displayCurrency === 'EUR' && rates.eurCross > 0
+            ? budgetLimit * rates.eurCross
+            : budgetLimit;
+
+        await updateBudgets({
+          ...budgets,
+          [budgetCategory]: normalizedBudget,
+        });
+      }
+
+      if (monthlyIncome && monthlyIncome > 0) {
+        const txDate = new Date(`${getLocalDateString()}T12:00:00`).toISOString();
+        const incomeCategory = nextPnl.ingresos[0] ?? DEFAULT_PNL.ingresos[0];
+        const normalizedIncomeUSD =
+          displayCurrency === 'EUR' && rates.eurCross > 0
+            ? monthlyIncome * rates.eurCross
+            : monthlyIncome;
+
+        await addTx({
+          type: 'income',
+          segment: 'ingresos',
+          amount: monthlyIncome,
+          currency: displayCurrency,
+          originalRate: displayCurrency === 'EUR' ? (rates.eurCross > 0 ? rates.eurCross : 1) : 1,
+          amountUSD: normalizedIncomeUSD,
+          category: incomeCategory,
+          description: 'Configuración inicial',
+          date: txDate,
+          profileId: '',
+        });
+      }
+
+      const nextProfile = {
+        ...profile,
+        onboardingCompleted: true,
+      };
+
+      await updateProfile(nextProfile);
+      setNeedsOnboarding(false);
+    },
+    [
+      addTx,
+      budgets,
+      displayCurrency,
+      pnlStructure,
+      profile,
+      rates.eurCross,
+      updateBudgets,
+      updatePnlStructure,
+      updateProfile,
+    ],
+  );
+
   const setDisplayCurrency = useCallback(async (currency: DisplayCurrency) => {
     setDisplayCurrencyState(currency);
     await DisplayCurrencyRepository.save(currency);
@@ -333,6 +451,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProfile(DEFAULT_PROFILE);
     setDisplayCurrencyState('USD');
     setCanCopyPreviousBudgets(false);
+    setNeedsOnboarding(false);
   }, [activeWorkspaceId]);
 
   const dashboardData = useMemo(
@@ -367,6 +486,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       activeWorkspaceId,
       currentBudgetPeriodLabel,
       canCopyPreviousBudgets,
+      needsOnboarding,
       setViewMode,
       setCurrentMonth,
       setCurrentYear,
@@ -388,18 +508,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateProfile,
       clearAccount,
       copyPreviousBudgets,
+      completeOnboarding,
     }),
     [
       transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
       currentMonth, currentYear, dashboardData, budgetSummary, ratesTimestamp,
       isLoading, isRefreshingRates, historyFilter, displayCurrency, profile,
       workspaces, activeWorkspaceId,
-      currentBudgetPeriodLabel, canCopyPreviousBudgets,
+      currentBudgetPeriodLabel, canCopyPreviousBudgets, needsOnboarding,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
       deleteCategoryAndRelatedData,
       updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace, clearAccount,
-      deleteWorkspace, copyPreviousBudgets,
+      deleteWorkspace, copyPreviousBudgets, completeOnboarding,
     ],
   );
 
