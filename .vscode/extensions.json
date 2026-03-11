@@ -1,7 +1,9 @@
 {
   "recommendations": [
-    "msjsdiag.vscode-react-native",
     "expo.vscode-expo-tools",
     "diemasmichiels.emulate"
+  ],
+  "unwantedRecommendations": [
+    "msjsdiag.vscode-react-native"
   ]
 }
