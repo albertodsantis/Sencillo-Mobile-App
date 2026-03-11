@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -58,12 +59,14 @@ function SelectionChip({
   emoji,
   active,
   accentColor,
+  width,
   onPress,
 }: {
   label: string;
   emoji: string;
   active: boolean;
   accentColor: string;
+  width: number;
   onPress: () => void;
 }) {
   return (
@@ -71,6 +74,7 @@ function SelectionChip({
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
+        { width },
         {
           borderColor: active ? accentColor : Colors.dark.border,
           backgroundColor: active ? `${accentColor}18` : "rgba(255,255,255,0.03)",
@@ -78,18 +82,30 @@ function SelectionChip({
         pressed && styles.chipPressed,
       ]}
     >
-      <Text style={styles.chipEmoji}>{emoji}</Text>
-      <Text
-        style={[
-          styles.chipText,
-          active && {
-            color: Colors.text.primary,
-            fontFamily: "Outfit_700Bold",
-          },
-        ]}
-      >
-        {label}
-      </Text>
+      <View style={styles.chipMain}>
+        <View
+          style={[
+            styles.chipIconWrap,
+            active && {
+              backgroundColor: `${accentColor}22`,
+              borderColor: `${accentColor}55`,
+            },
+          ]}
+        >
+          <Text style={styles.chipEmoji}>{emoji}</Text>
+        </View>
+        <Text
+          style={[
+            styles.chipText,
+            active && {
+              color: Colors.text.primary,
+              fontFamily: "Outfit_700Bold",
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
       <View
         style={[
           styles.chipCheck,
@@ -107,6 +123,7 @@ function SelectionChip({
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const router = useRouter();
   const { completeOnboarding, displayCurrency } = useApp();
 
@@ -119,7 +136,17 @@ export default function OnboardingScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
-  const topPadding = insets.top + webTopInset + 20;
+  const shellPadding = windowWidth < 390 ? 18 : 24;
+  const cardPadding = windowWidth < 390 ? 18 : 24;
+  const chipGap = 10;
+  const contentMaxWidth = 640;
+  const topPadding = insets.top + webTopInset + 12;
+  const bottomPadding = insets.bottom + 24;
+  const cardWidth = Math.min(windowWidth - shellPadding * 2, contentMaxWidth);
+  const cardInnerWidth = Math.max(cardWidth - cardPadding * 2, 0);
+  const useTwoColumnChips = cardInnerWidth >= 320;
+  const chipWidth = useTwoColumnChips ? (cardInnerWidth - chipGap) / 2 : cardInnerWidth;
+  const contentMinHeight = Math.max(windowHeight - topPadding - bottomPadding, 0);
   const accentColor = useMemo(() => {
     if (step === 0) return Colors.segments.gastos_fijos.color;
     if (step === 1 || step === 2) return Colors.segments.gastos_variables.color;
@@ -259,13 +286,23 @@ export default function OnboardingScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={{
+          flexGrow: 1,
           paddingTop: topPadding,
-          paddingBottom: insets.bottom + 34,
+          paddingBottom: bottomPadding,
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.shell}>
+        <View
+          style={[
+            styles.shell,
+            {
+              paddingHorizontal: shellPadding,
+              minHeight: contentMinHeight,
+              maxWidth: contentMaxWidth + shellPadding * 2,
+            },
+          ]}
+        >
           <View style={styles.header}>
             <View style={styles.headerRow}>
               <Pressable
@@ -296,13 +333,13 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { padding: cardPadding }]}>
             <Text style={styles.eyebrow}>Configuración inicial</Text>
             <Text style={styles.title}>{stepTitle}</Text>
             <Text style={styles.description}>{stepDescription}</Text>
 
             {step === 0 ? (
-              <View style={styles.chipGrid}>
+              <View style={[styles.chipGrid, { gap: chipGap }]}>
                 {FIXED_EXPENSE_OPTIONS.map((option) => (
                   <SelectionChip
                     key={option.id}
@@ -310,6 +347,7 @@ export default function OnboardingScreen() {
                     emoji={option.emoji}
                     active={fixedCategories.includes(option.id)}
                     accentColor={Colors.segments.gastos_fijos.color}
+                    width={chipWidth}
                     onPress={() => toggleMultiSelect(option.id, setFixedCategories)}
                   />
                 ))}
@@ -317,7 +355,7 @@ export default function OnboardingScreen() {
             ) : null}
 
             {step === 1 ? (
-              <View style={styles.chipGrid}>
+              <View style={[styles.chipGrid, { gap: chipGap }]}>
                 {VARIABLE_EXPENSE_OPTIONS.map((option) => (
                   <SelectionChip
                     key={option.id}
@@ -325,6 +363,7 @@ export default function OnboardingScreen() {
                     emoji={option.emoji}
                     active={variableCategories.includes(option.id)}
                     accentColor={Colors.segments.gastos_variables.color}
+                    width={chipWidth}
                     onPress={() => toggleMultiSelect(option.id, setVariableCategories)}
                   />
                 ))}
@@ -336,7 +375,7 @@ export default function OnboardingScreen() {
                 {variableCategories.length > 0 ? (
                   <>
                     <Text style={styles.selectorLabel}>Categoría a presupuestar</Text>
-                    <View style={styles.chipGrid}>
+                    <View style={[styles.chipGrid, { gap: chipGap }]}>
                       {variableCategories.map((category) => {
                         const chipConfig = VARIABLE_EXPENSE_OPTIONS.find((option) => option.id === category);
                         return (
@@ -346,6 +385,7 @@ export default function OnboardingScreen() {
                             emoji={chipConfig?.emoji ?? "✨"}
                             active={budgetCategory === category}
                             accentColor={Colors.segments.gastos_variables.color}
+                            width={chipWidth}
                             onPress={() => setBudgetCategory(category)}
                           />
                         );
@@ -457,10 +497,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   shell: {
-    paddingHorizontal: 24,
+    width: "100%",
+    alignSelf: "center",
   },
   header: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
   headerRow: {
     flexDirection: "row",
@@ -503,13 +544,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   progressTrack: {
-    height: 8,
+    height: 6,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.06)",
     overflow: "hidden",
   },
   progressFill: {
-    height: 8,
+    height: 6,
     borderRadius: 999,
   },
   card: {
@@ -517,7 +558,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    padding: 24,
+    flexGrow: 1,
   },
   eyebrow: {
     fontFamily: "Outfit_700Bold",
@@ -529,54 +570,67 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "Outfit_900Black",
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 25,
+    lineHeight: 30,
     color: Colors.text.primary,
     letterSpacing: -0.8,
   },
   description: {
     fontFamily: "Outfit_500Medium",
     fontSize: 14,
-    lineHeight: 22,
+    lineHeight: 20,
     color: Colors.text.secondary,
-    marginTop: 10,
-    marginBottom: 22,
+    marginTop: 8,
+    marginBottom: 18,
   },
   chipGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
   },
   chip: {
-    width: "48%",
-    minHeight: 92,
-    borderRadius: 20,
+    minHeight: 76,
+    borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   chipPressed: {
     transform: [{ scale: 0.98 }],
   },
+  chipMain: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  chipIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.04)",
+  },
   chipEmoji: {
-    fontSize: 24,
-    marginBottom: 10,
+    fontSize: 20,
   },
   chipText: {
     fontFamily: "Outfit_600SemiBold",
-    fontSize: 14,
+    flex: 1,
+    fontSize: 15,
     lineHeight: 18,
     color: Colors.text.secondary,
-    paddingRight: 28,
   },
   chipCheck: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1,
     borderColor: Colors.dark.border,
     alignItems: "center",
@@ -584,7 +638,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
   },
   inputStep: {
-    gap: 18,
+    gap: 14,
   },
   selectorLabel: {
     fontFamily: "Outfit_700Bold",
@@ -599,8 +653,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
   },
   bigInputLabel: {
     fontFamily: "Outfit_600SemiBold",
@@ -615,12 +669,12 @@ const styles = StyleSheet.create({
   },
   bigInputSymbol: {
     fontFamily: "Outfit_800ExtraBold",
-    fontSize: 32,
+    fontSize: 28,
   },
   bigInput: {
     flex: 1,
     fontFamily: "Outfit_900Black",
-    fontSize: 38,
+    fontSize: 34,
     color: Colors.text.primary,
     letterSpacing: -1.1,
     paddingVertical: 0,
@@ -634,7 +688,7 @@ const styles = StyleSheet.create({
   emptyState: {
     borderRadius: 22,
     paddingHorizontal: 20,
-    paddingVertical: 26,
+    paddingVertical: 22,
     alignItems: "center",
     backgroundColor: Colors.dark.surface,
     borderWidth: 1,
@@ -656,12 +710,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   actions: {
-    marginTop: 26,
+    marginTop: "auto",
+    paddingTop: 20,
     gap: 10,
   },
   primaryButton: {
     borderRadius: 18,
-    paddingVertical: 17,
+    paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
   },
