@@ -29,7 +29,6 @@ import { ACTIVE_WORKSPACE_STORAGE_KEY } from '../repositories/workspaceScope';
 import { fetchRates, computeDashboard, computeBudget, getLocalDateString } from '../domain/finance';
 import {
   clearStoredPreviousBudgets,
-  clearWorkspaceBudgetArtifacts,
   getStoredPreviousBudgets,
   loadAppBootstrapSnapshot,
   loadWorkspaceScopedSnapshot,
@@ -80,7 +79,6 @@ interface AppContextValue {
   updateBudgets: (budgets: Budgets) => Promise<void>;
   updateSavingsGoals: (goals: SavingsGoals) => Promise<void>;
   updateProfile: (profile: UserProfile) => Promise<void>;
-  clearAccount: () => Promise<void>;
   copyPreviousBudgets: () => Promise<void>;
   completeOnboarding: (payload: OperationalOnboardingPayload) => Promise<void>;
 }
@@ -280,8 +278,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updatePnlStructure = useCallback(async (pnl: PnlStructure) => {
-    setPnlStructure(pnl);
     await PnlRepository.save(pnl);
+    setPnlStructure(pnl);
   }, []);
 
   const deleteCategoryAndRelatedData = useCallback(
@@ -290,25 +288,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...pnlStructure,
         [segment]: pnlStructure[segment].filter((item) => item !== category),
       };
-      setPnlStructure(updatedPnl);
 
       const filteredTransactions = transactions.filter(
         (tx) => !(tx.segment === segment && tx.category === category),
       );
-      setTransactions(filteredTransactions);
 
       let nextBudgets = budgets;
       if (segment === 'gastos_variables' && category in budgets) {
         nextBudgets = { ...budgets };
         delete nextBudgets[category];
-        setBudgets(nextBudgets);
       }
 
       let nextSavingsGoals = savingsGoals;
       if (segment === 'ahorro' && category in savingsGoals) {
         nextSavingsGoals = { ...savingsGoals };
         delete nextSavingsGoals[category];
-        setSavingsGoals(nextSavingsGoals);
       }
 
       await Promise.all([
@@ -317,16 +311,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         BudgetRepository.save(nextBudgets),
         SavingsRepository.save(nextSavingsGoals),
       ]);
+
+      setPnlStructure(updatedPnl);
+      setTransactions(filteredTransactions);
+      setBudgets(nextBudgets);
+      setSavingsGoals(nextSavingsGoals);
     },
     [budgets, pnlStructure, savingsGoals, transactions],
   );
 
   const updateBudgets = useCallback(async (b: Budgets) => {
+    await BudgetRepository.save(b);
     setBudgets(b);
     if (Object.keys(b).length > 0) {
       setCanCopyPreviousBudgets(false);
     }
-    await BudgetRepository.save(b);
   }, []);
 
   const copyPreviousBudgets = useCallback(async () => {
@@ -344,13 +343,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [activeWorkspaceId, updateBudgets]);
 
   const updateSavingsGoals = useCallback(async (g: SavingsGoals) => {
-    setSavingsGoals(g);
     await SavingsRepository.save(g);
+    setSavingsGoals(g);
   }, []);
 
   const updateProfile = useCallback(async (p: UserProfile) => {
-    setProfile(p);
     await ProfileRepository.save(p);
+    setProfile(p);
   }, []);
 
   const completeOnboarding = useCallback(
@@ -431,29 +430,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await DisplayCurrencyRepository.save(currency);
   }, []);
 
-  const clearAccount = useCallback(async () => {
-    await Promise.all([
-      TransactionRepository.clear(),
-      RatesRepository.clear(),
-      PnlRepository.clear(),
-      BudgetRepository.clear(),
-      SavingsRepository.clear(),
-      ProfileRepository.clear(),
-      DisplayCurrencyRepository.clear(),
-    ]);
-    await clearWorkspaceBudgetArtifacts(activeWorkspaceId);
-    setTransactions([]);
-    setRates({ bcv: 0, parallel: 0, eur: 0, eurCross: 0 });
-    setRatesTimestamp(null);
-    setPnlStructure(DEFAULT_PNL);
-    setBudgets({});
-    setSavingsGoals({});
-    setProfile(DEFAULT_PROFILE);
-    setDisplayCurrencyState('USD');
-    setCanCopyPreviousBudgets(false);
-    setNeedsOnboarding(false);
-  }, [activeWorkspaceId]);
-
   const dashboardData = useMemo(
     () => computeDashboard(transactions, viewMode, currentMonth, currentYear, rates),
     [transactions, viewMode, currentMonth, currentYear, rates],
@@ -506,7 +482,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateBudgets,
       updateSavingsGoals,
       updateProfile,
-      clearAccount,
       copyPreviousBudgets,
       completeOnboarding,
     }),
@@ -519,7 +494,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
       deleteCategoryAndRelatedData,
-      updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace, clearAccount,
+      updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace,
       deleteWorkspace, copyPreviousBudgets, completeOnboarding,
     ],
   );

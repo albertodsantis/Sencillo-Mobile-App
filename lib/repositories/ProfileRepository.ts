@@ -49,7 +49,7 @@ export const ProfileRepository = {
     const userId = await getCurrentUserId();
     if (!userId) return;
 
-    await supabase.from('profiles').upsert(
+    const { error } = await supabase.from('profiles').upsert(
       {
         user_id: userId,
         first_name: profile.firstName,
@@ -61,11 +61,19 @@ export const ProfileRepository = {
       },
       { onConflict: 'user_id' },
     );
+
+    if (error) {
+      throw new Error(error.message || 'No se pudo guardar el perfil');
+    }
   },
 
   async clear(): Promise<void> {
     const userId = await getCurrentUserId();
     if (!userId) return;
-    await supabase.from('profiles').delete().eq('user_id', userId);
+
+    const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
+    if (error) {
+      throw new Error(error.message || 'No se pudo limpiar el perfil');
+    }
   },
 };

@@ -35,6 +35,11 @@ export default function CategoriesScreen() {
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
 
+  const showError = useCallback((message: string) => {
+    if (Platform.OS === "web") alert(message);
+    else Alert.alert("Error", message);
+  }, []);
+
   const handleAddCategory = useCallback(
     async (segment: Segment) => {
       const trimmed = newCategoryText.trim();
@@ -51,19 +56,29 @@ export default function CategoriesScreen() {
         ...pnlStructure,
         [segment]: [...pnlStructure[segment], trimmed],
       };
-      await updatePnlStructure(updated);
-      setNewCategoryText("");
-      setAddingToSegment(null);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      try {
+        await updatePnlStructure(updated);
+        setNewCategoryText("");
+        setAddingToSegment(null);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo guardar la categoria";
+        showError(msg);
+      }
     },
-    [newCategoryText, pnlStructure, updatePnlStructure]
+    [newCategoryText, pnlStructure, showError, updatePnlStructure]
   );
 
   const handleDeleteCategory = useCallback(
     async (segment: Segment, category: string) => {
       const doDelete = async () => {
-        await deleteCategoryAndRelatedData(segment, category);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        try {
+          await deleteCategoryAndRelatedData(segment, category);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : "No se pudo eliminar la categoria";
+          showError(msg);
+        }
       };
 
       if (Platform.OS === "web") {
@@ -75,7 +90,7 @@ export default function CategoriesScreen() {
         ]);
       }
     },
-    [deleteCategoryAndRelatedData]
+    [deleteCategoryAndRelatedData, showError]
   );
 
   return (

@@ -40,12 +40,11 @@ const WORKSPACE_MODAL_PRIMARY_PRESSED = "#1e293b";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { signOut, updatePassword } = useAuth();
+  const { signOut, updatePassword, deleteAccount } = useAuth();
   const {
     profile,
     updateProfile,
     deleteAllTx,
-    clearAccount,
     workspaces,
     activeWorkspaceId,
     setActiveWorkspace,
@@ -80,6 +79,10 @@ export default function ProfileScreen() {
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
+  const showError = useCallback((message: string, title = "Error") => {
+    if (Platform.OS === "web") alert(message);
+    else Alert.alert(title, message);
+  }, []);
 
   useEffect(() => {
     const changed =
@@ -138,17 +141,22 @@ export default function ProfileScreen() {
   }, []);
 
   const handleSaveProfile = useCallback(async () => {
-    await updateProfile({
-      ...profile,
-      firstName,
-      lastName,
-      phonePrefix,
-      phoneNumber,
-      email,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setHasChanges(false);
-  }, [firstName, lastName, phonePrefix, phoneNumber, email, profile, updateProfile]);
+    try {
+      await updateProfile({
+        ...profile,
+        firstName,
+        lastName,
+        phonePrefix,
+        phoneNumber,
+        email,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setHasChanges(false);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "No se pudo guardar el perfil";
+      showError(msg);
+    }
+  }, [email, firstName, lastName, phoneNumber, phonePrefix, profile, showError, updateProfile]);
 
   const handleChangePassword = useCallback(async () => {
     if (!newPassword || newPassword.length < 4) {
@@ -277,8 +285,12 @@ export default function ProfileScreen() {
 
   const handleDeleteAccount = useCallback(() => {
     const doDelete = async () => {
-      await clearAccount();
-      await signOut();
+      const result = await deleteAccount();
+      if (!result.success) {
+        showError(result.error || "No se pudo eliminar la cuenta");
+        return;
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       router.replace("/");
     };
@@ -303,7 +315,7 @@ export default function ProfileScreen() {
         ]
       );
     }
-  }, [clearAccount, router, signOut]);
+  }, [deleteAccount, router, showError]);
 
   return (
     <KeyboardAvoidingView

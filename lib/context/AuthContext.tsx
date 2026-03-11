@@ -11,6 +11,7 @@ interface AuthContextValue {
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
   updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
 }
@@ -104,6 +105,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: result.success, error: result.error };
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    const result = await AuthRepository.deleteAccount();
+    if (result.success) {
+      setUser(null);
+    }
+    return result;
+  }, []);
+
   const updatePassword = useCallback(async (password: string) => {
     return await AuthRepository.updatePassword(password);
   }, []);
@@ -119,9 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
+    deleteAccount,
     updatePassword,
     signOut,
-  }), [user, isLoading, signInWithEmail, signUpWithEmail, signInWithGoogle, updatePassword, signOut]);
+  }), [user, isLoading, signInWithEmail, signUpWithEmail, signInWithGoogle, deleteAccount, updatePassword, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

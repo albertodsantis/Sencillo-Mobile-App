@@ -32,14 +32,18 @@ export const SavingsRepository = {
 
     const entries = Object.entries(goals);
     const nextCategories = new Set(entries.map(([category]) => category));
-    const { data: existingRows } = await supabase
+    const { data: existingRows, error: existingRowsError } = await supabase
       .from('savings_goals')
       .select('category')
       .eq('user_id', userId)
       .eq('workspace_id', workspaceId);
 
+    if (existingRowsError) {
+      throw new Error(existingRowsError.message || 'No se pudieron leer las metas actuales');
+    }
+
     if (entries.length > 0) {
-      await supabase.from('savings_goals').upsert(
+      const { error } = await supabase.from('savings_goals').upsert(
         entries.map(([category, amount]) => ({
           user_id: userId,
           workspace_id: workspaceId,
@@ -48,6 +52,10 @@ export const SavingsRepository = {
         })),
         { onConflict: 'user_id,workspace_id,category' },
       );
+
+      if (error) {
+        throw new Error(error.message || 'No se pudieron guardar las metas');
+      }
     }
 
     const staleCategories = ((existingRows ?? []) as { category: string }[])
@@ -55,12 +63,16 @@ export const SavingsRepository = {
       .filter((category) => !nextCategories.has(category));
 
     if (staleCategories.length > 0) {
-      await supabase
+      const { error } = await supabase
         .from('savings_goals')
         .delete()
         .eq('user_id', userId)
         .eq('workspace_id', workspaceId)
         .in('category', staleCategories);
+
+      if (error) {
+        throw new Error(error.message || 'No se pudieron eliminar las metas obsoletas');
+      }
     }
   },
 
@@ -68,6 +80,15 @@ export const SavingsRepository = {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
     if (!userId || !workspaceId) return;
-    await supabase.from('savings_goals').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
+
+    const { error } = await supabase
+      .from('savings_goals')
+      .delete()
+      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudieron limpiar las metas');
+    }
   },
 };

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -152,6 +153,10 @@ export default function BudgetScreen() {
   const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
+  const showError = useCallback((message: string) => {
+    if (Platform.OS === "web") alert(message);
+    else Alert.alert("Error", message);
+  }, []);
 
   const variableCategories = pnlStructure.gastos_variables;
   const ahorroCategories = pnlStructure.ahorro;
@@ -226,19 +231,29 @@ export default function BudgetScreen() {
         return;
       }
       const updated = { ...budgets, [category]: value };
-      await updateBudgets(updated);
-      setEditingCategory(null);
+      try {
+        await updateBudgets(updated);
+        setEditingCategory(null);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo guardar el presupuesto";
+        showError(msg);
+      }
     },
-    [editValue, budgets, updateBudgets],
+    [budgets, editValue, showError, updateBudgets],
   );
 
   const handleRemoveBudget = useCallback(
     async (category: string) => {
       const updated = { ...budgets };
       delete updated[category];
-      await updateBudgets(updated);
+      try {
+        await updateBudgets(updated);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo eliminar el presupuesto";
+        showError(msg);
+      }
     },
-    [budgets, updateBudgets],
+    [budgets, showError, updateBudgets],
   );
 
   const handleSaveGoal = useCallback(
@@ -249,23 +264,33 @@ export default function BudgetScreen() {
         return;
       }
       const updated = { ...savingsGoals, [category]: value };
-      await updateSavingsGoals(updated);
-      setEditingGoal(null);
+      try {
+        await updateSavingsGoals(updated);
+        setEditingGoal(null);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo guardar la meta";
+        showError(msg);
+      }
     },
-    [goalValue, savingsGoals, updateSavingsGoals],
+    [goalValue, savingsGoals, showError, updateSavingsGoals],
   );
 
   const handleRemoveGoal = useCallback(
     async (category: string) => {
       const updated = { ...savingsGoals };
       delete updated[category];
-      await updateSavingsGoals(updated);
+      try {
+        await updateSavingsGoals(updated);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo eliminar la meta";
+        showError(msg);
+      }
     },
-    [savingsGoals, updateSavingsGoals],
+    [savingsGoals, showError, updateSavingsGoals],
   );
 
   const moveCategory = useCallback(
-    (
+    async (
       segment: "gastos_variables" | "ahorro",
       fromIdx: number,
       toIdx: number,
@@ -275,9 +300,14 @@ export default function BudgetScreen() {
       const [moved] = cats.splice(fromIdx, 1);
       cats.splice(toIdx, 0, moved);
       const updated = { ...pnlStructure, [segment]: cats };
-      updatePnlStructure(updated);
+      try {
+        await updatePnlStructure(updated);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo reordenar la categoria";
+        showError(msg);
+      }
     },
-    [pnlStructure, updatePnlStructure],
+    [pnlStructure, showError, updatePnlStructure],
   );
 
   const toggleReordering = useCallback(() => {

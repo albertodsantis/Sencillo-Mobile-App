@@ -10,6 +10,7 @@ import { WorkspaceRepository } from './WorkspaceRepository';
 import type { UserProfile } from '../domain/types';
 
 const SESSION_KEY = '@sencillo/auth_user';
+const APP_STORAGE_PREFIX = '@sencillo/';
 const OAUTH_CALLBACK_PATH = 'auth/callback';
 const NATIVE_OAUTH_REDIRECT = 'sencillo://auth/callback';
 WebBrowser.maybeCompleteAuthSession();
@@ -127,6 +128,15 @@ function getAuthParamsFromUrl(url: string): {
     refreshToken: params.refresh_token ?? undefined,
     errorCode: errorCode ?? undefined,
   };
+}
+
+async function clearLocalAppStorage(): Promise<void> {
+  const keys = await AsyncStorage.getAllKeys();
+  const appKeys = keys.filter((key) => key.startsWith(APP_STORAGE_PREFIX));
+
+  if (appKeys.length > 0) {
+    await AsyncStorage.multiRemove(appKeys);
+  }
 }
 
 export const AuthRepository = {
@@ -340,6 +350,30 @@ export const AuthRepository = {
   async logout(): Promise<void> {
     await supabase.auth.signOut();
     await this.clearSession();
+  },
+
+  async deleteAccount(): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.rpc('delete_user_account');
+
+    if (error) {
+      const functionMissing = error.message.toLowerCase().includes('delete_user_account');
+      return {
+        success: false,
+        error: functionMissing
+          ? 'La funcion delete_user_account no esta disponible en Supabase. Aplica la migracion antes de usar este flujo.'
+          : error.message || 'No se pudo eliminar la cuenta',
+      };
+    }
+
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // The account is already deleted remotely; best effort local cleanup is enough here.
+    }
+
+    await clearLocalAppStorage();
+    await this.clearSession();
+    return { success: true };
   },
 
   async updatePassword(password: string): Promise<{ success: boolean; error?: string }> {

@@ -37,16 +37,24 @@ export const PnlRepository = {
       names.map((name) => ({ user_id: userId, workspace_id: workspaceId, segment, name })),
     );
     const nextKeys = new Set(rows.map((row) => `${row.segment}::${row.name}`));
-    const { data: existingRows } = await supabase
+    const { data: existingRows, error: existingRowsError } = await supabase
       .from('pnl_categories')
       .select('segment, name')
       .eq('user_id', userId)
       .eq('workspace_id', workspaceId);
 
+    if (existingRowsError) {
+      throw new Error(existingRowsError.message || 'No se pudieron leer las categorias actuales');
+    }
+
     if (rows.length > 0) {
-      await supabase.from('pnl_categories').upsert(rows, {
+      const { error } = await supabase.from('pnl_categories').upsert(rows, {
         onConflict: 'user_id,workspace_id,segment,name',
       });
+
+      if (error) {
+        throw new Error(error.message || 'No se pudieron guardar las categorias');
+      }
     }
 
     const staleRows = ((existingRows ?? []) as PnlCategoryRow[])
@@ -62,13 +70,17 @@ export const PnlRepository = {
 
         if (staleNames.length === 0) continue;
 
-        await supabase
+        const { error } = await supabase
           .from('pnl_categories')
           .delete()
           .eq('user_id', userId)
           .eq('workspace_id', workspaceId)
           .eq('segment', segment)
           .in('name', staleNames);
+
+        if (error) {
+          throw new Error(error.message || 'No se pudieron eliminar las categorias obsoletas');
+        }
       }
     }
   },
@@ -77,6 +89,15 @@ export const PnlRepository = {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
     if (!userId || !workspaceId) return;
-    await supabase.from('pnl_categories').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
+
+    const { error } = await supabase
+      .from('pnl_categories')
+      .delete()
+      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudieron limpiar las categorias');
+    }
   },
 };

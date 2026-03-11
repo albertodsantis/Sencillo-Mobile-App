@@ -73,14 +73,19 @@ export const TransactionRepository = {
     }));
 
     const nextIds = new Set(rows.map((row) => row.id));
-    const { data: existingRows } = await supabase
+    const { data: existingRows, error: existingRowsError } = await supabase
       .from('transactions')
       .select('id')
       .eq('user_id', userId)
       .eq('workspace_id', workspaceId);
 
+    if (existingRowsError) {
+      throw new Error(existingRowsError.message || 'No se pudieron leer las transacciones actuales');
+    }
+
     if (rows.length > 0) {
-      await supabase.from('transactions').upsert(rows, { onConflict: 'id' });
+      const { error } = await supabase.from('transactions').upsert(rows, { onConflict: 'id' });
+      if (error) throw new Error(error.message || 'No se pudieron guardar las transacciones');
     }
 
     const staleIds = ((existingRows ?? []) as { id: string }[])
@@ -88,12 +93,16 @@ export const TransactionRepository = {
       .filter((id) => !nextIds.has(id));
 
     if (staleIds.length > 0) {
-      await supabase
+      const { error } = await supabase
         .from('transactions')
         .delete()
         .eq('user_id', userId)
         .eq('workspace_id', workspaceId)
         .in('id', staleIds);
+
+      if (error) {
+        throw new Error(error.message || 'No se pudieron limpiar las transacciones obsoletas');
+      }
     }
   },
 
@@ -158,7 +167,7 @@ export const TransactionRepository = {
     const workspaceId = await getActiveWorkspaceId();
     if (!workspaceId) return;
 
-    await supabase
+    const { error } = await supabase
       .from('transactions')
       .update({
         type: tx.type,
@@ -174,19 +183,41 @@ export const TransactionRepository = {
       })
       .eq('id', tx.id)
       .eq('workspace_id', workspaceId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudo actualizar la transaccion');
+    }
   },
 
   async remove(id: string): Promise<void> {
     const workspaceId = await getActiveWorkspaceId();
     if (!workspaceId) return;
-    await supabase.from('transactions').delete().eq('id', id).eq('workspace_id', workspaceId);
+
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
+      .eq('workspace_id', workspaceId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudo eliminar la transaccion');
+    }
   },
 
   async removeAll(): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
     if (!userId || !workspaceId) return;
-    await supabase.from('transactions').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
+
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudieron eliminar las transacciones');
+    }
   },
 
   async clear(): Promise<void> {

@@ -63,6 +63,13 @@ function CategoryRow({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(cat);
   const inputRef = useRef<TextInput>(null);
+  const showError = (message: string) => {
+    if (Platform.OS === "web") {
+      alert(message);
+    } else {
+      Alert.alert("Error", message);
+    }
+  };
 
   useEffect(() => {
     if (editing) {
@@ -91,15 +98,26 @@ function CategoryRow({
       ...pnlStructure,
       [segment]: pnlStructure[segment].map((c) => (c === cat ? trimmed : c)),
     };
-    await updatePnlStructure(updated);
-    setEditing(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      await updatePnlStructure(updated);
+      setEditing(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "No se pudo guardar la categoria";
+      showError(msg);
+      setEditText(cat);
+    }
   };
 
   const handleDelete = async () => {
     const doDelete = async () => {
-      await deleteCategoryAndRelatedData(segment, cat);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      try {
+        await deleteCategoryAndRelatedData(segment, cat);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo eliminar la categoria";
+        showError(msg);
+      }
     };
     if (Platform.OS === "web") {
       if (confirm(`Eliminar la categoria "${cat}"?`)) doDelete();
@@ -167,6 +185,10 @@ export default function SettingsScreen() {
   const topPadding = insets.top + webTopInset + 16;
   const keyboardBehavior = Platform.OS === "ios" ? "padding" : "height";
   const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
+  const showError = useCallback((message: string) => {
+    if (Platform.OS === "web") alert(message);
+    else Alert.alert("Error", message);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -210,12 +232,17 @@ export default function SettingsScreen() {
         ...pnlStructure,
         [segment]: [...pnlStructure[segment], trimmed],
       };
-      await updatePnlStructure(updated);
-      setNewCategoryText("");
-      setAddingToSegment(null);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      try {
+        await updatePnlStructure(updated);
+        setNewCategoryText("");
+        setAddingToSegment(null);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "No se pudo guardar la categoria";
+        showError(msg);
+      }
     },
-    [newCategoryText, pnlStructure, updatePnlStructure]
+    [newCategoryText, pnlStructure, showError, updatePnlStructure]
   );
 
   return (

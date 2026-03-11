@@ -32,14 +32,18 @@ export const BudgetRepository = {
 
     const entries = Object.entries(budgets);
     const nextCategories = new Set(entries.map(([category]) => category));
-    const { data: existingRows } = await supabase
+    const { data: existingRows, error: existingRowsError } = await supabase
       .from('budgets')
       .select('category')
       .eq('user_id', userId)
       .eq('workspace_id', workspaceId);
 
+    if (existingRowsError) {
+      throw new Error(existingRowsError.message || 'No se pudieron leer los presupuestos actuales');
+    }
+
     if (entries.length > 0) {
-      await supabase.from('budgets').upsert(
+      const { error } = await supabase.from('budgets').upsert(
         entries.map(([category, amount]) => ({
           user_id: userId,
           workspace_id: workspaceId,
@@ -48,6 +52,10 @@ export const BudgetRepository = {
         })),
         { onConflict: 'user_id,workspace_id,category' },
       );
+
+      if (error) {
+        throw new Error(error.message || 'No se pudieron guardar los presupuestos');
+      }
     }
 
     const staleCategories = ((existingRows ?? []) as { category: string }[])
@@ -55,12 +63,16 @@ export const BudgetRepository = {
       .filter((category) => !nextCategories.has(category));
 
     if (staleCategories.length > 0) {
-      await supabase
+      const { error } = await supabase
         .from('budgets')
         .delete()
         .eq('user_id', userId)
         .eq('workspace_id', workspaceId)
         .in('category', staleCategories);
+
+      if (error) {
+        throw new Error(error.message || 'No se pudieron eliminar los presupuestos obsoletos');
+      }
     }
   },
 
@@ -68,6 +80,15 @@ export const BudgetRepository = {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
     if (!userId || !workspaceId) return;
-    await supabase.from('budgets').delete().eq('user_id', userId).eq('workspace_id', workspaceId);
+
+    const { error } = await supabase
+      .from('budgets')
+      .delete()
+      .eq('user_id', userId)
+      .eq('workspace_id', workspaceId);
+
+    if (error) {
+      throw new Error(error.message || 'No se pudieron limpiar los presupuestos');
+    }
   },
 };
