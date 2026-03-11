@@ -8,8 +8,8 @@ import { Platform } from 'react-native';
 import { ProfileRepository } from './ProfileRepository';
 import { WorkspaceRepository } from './WorkspaceRepository';
 import type { UserProfile } from '../domain/types';
+import { authStorage, AUTH_USER_CACHE_KEY, clearSupabaseAuthStorage } from '../auth/authStorage';
 
-const SESSION_KEY = '@sencillo/auth_user';
 const APP_STORAGE_PREFIX = '@sencillo/';
 const OAUTH_CALLBACK_PATH = 'auth/callback';
 const NATIVE_OAUTH_REDIRECT = 'sencillo://auth/callback';
@@ -141,14 +141,14 @@ async function clearLocalAppStorage(): Promise<void> {
 
 export const AuthRepository = {
   async getSession(): Promise<AuthUser | null> {
-    const cached = await AsyncStorage.getItem(SESSION_KEY);
+    const cached = await authStorage.getItem(AUTH_USER_CACHE_KEY);
     const cachedUser: AuthUser | null = cached ? JSON.parse(cached) : null;
 
     const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
 
     const supabaseCheck = supabase.auth.getUser().then(async ({ data, error }) => {
       if (error || !data.user) {
-        await AsyncStorage.removeItem(SESSION_KEY);
+        await authStorage.removeItem(AUTH_USER_CACHE_KEY);
         return null;
       }
       return syncAuthenticatedUser(data.user);
@@ -161,11 +161,11 @@ export const AuthRepository = {
   },
 
   async persistSession(user: AuthUser): Promise<void> {
-    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    await authStorage.setItem(AUTH_USER_CACHE_KEY, JSON.stringify(user));
   },
 
   async clearSession(): Promise<void> {
-    await AsyncStorage.removeItem(SESSION_KEY);
+    await authStorage.removeItem(AUTH_USER_CACHE_KEY);
   },
 
   async syncFromSupabaseSessionUser(user: User): Promise<AuthUser> {
@@ -372,7 +372,7 @@ export const AuthRepository = {
     }
 
     await clearLocalAppStorage();
-    await this.clearSession();
+    await clearSupabaseAuthStorage();
     return { success: true };
   },
 
