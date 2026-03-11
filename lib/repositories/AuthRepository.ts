@@ -9,6 +9,7 @@ import { ProfileRepository } from './ProfileRepository';
 import { WorkspaceRepository } from './WorkspaceRepository';
 import type { UserProfile } from '../domain/types';
 import { authStorage, AUTH_USER_CACHE_KEY, clearSupabaseAuthStorage } from '../auth/authStorage';
+import { validatePasswordLength } from '../auth/passwordPolicy';
 
 const APP_STORAGE_PREFIX = '@sencillo/';
 const OAUTH_CALLBACK_PATH = 'auth/callback';
@@ -216,8 +217,8 @@ export const AuthRepository = {
     if (!normalizedName) return { success: false, error: 'Ingresa tu nombre' };
     if (!normalizedEmail || !normalizedEmail.includes('@'))
       return { success: false, error: 'Email invalido' };
-    if (password.length < 4)
-      return { success: false, error: 'La contrasena debe tener al menos 4 caracteres' };
+    const passwordError = validatePasswordLength(password);
+    if (passwordError) return { success: false, error: passwordError };
 
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
@@ -377,9 +378,8 @@ export const AuthRepository = {
   },
 
   async updatePassword(password: string): Promise<{ success: boolean; error?: string }> {
-    if (!password || password.length < 4) {
-      return { success: false, error: 'La nueva contrasena debe tener al menos 4 caracteres' };
-    }
+    const passwordError = validatePasswordLength(password, 'La nueva contrasena');
+    if (passwordError) return { success: false, error: passwordError };
 
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {

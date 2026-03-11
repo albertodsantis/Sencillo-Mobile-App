@@ -20,6 +20,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useApp } from "@/lib/context/AppContext";
+import { MIN_PASSWORD_LENGTH, validatePasswordLength } from "@/lib/auth/passwordPolicy";
 import {
   getNotificationPreferences,
   saveNotificationPreferences,
@@ -27,12 +28,10 @@ import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   type NotificationPreferences,
 } from "@/lib/notifications";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PHONE_PREFIXES = [
   "+58", "+1", "+34", "+57", "+52", "+56", "+51", "+55", "+44", "+33",
 ];
-const FACE_ID_KEY = "@sencillo/face_id_enabled";
 const WORKSPACE_MODAL_ACCENT = "#cbd5e1";
 const WORKSPACE_MODAL_PRIMARY = "#334155";
 const WORKSPACE_MODAL_PRIMARY_PRESSED = "#1e293b";
@@ -56,7 +55,6 @@ export default function ProfileScreen() {
   const [lastName, setLastName] = useState(profile.lastName);
   const [phonePrefix, setPhonePrefix] = useState(profile.phonePrefix);
   const [phoneNumber, setPhoneNumber] = useState(profile.phoneNumber);
-  const [email, setEmail] = useState(profile.email);
 
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -71,8 +69,6 @@ export default function ProfileScreen() {
     DEFAULT_NOTIFICATION_PREFERENCES
   );
   const [notificationLoading, setNotificationLoading] = useState(true);
-  const [faceIdEnabled, setFaceIdEnabled] = useState(false);
-  const [faceIdLoading, setFaceIdLoading] = useState(true);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -89,20 +85,15 @@ export default function ProfileScreen() {
       firstName !== profile.firstName ||
       lastName !== profile.lastName ||
       phonePrefix !== profile.phonePrefix ||
-      phoneNumber !== profile.phoneNumber ||
-      email !== profile.email;
+      phoneNumber !== profile.phoneNumber;
     setHasChanges(changed);
-  }, [firstName, lastName, phonePrefix, phoneNumber, email, profile]);
+  }, [firstName, lastName, phonePrefix, phoneNumber, profile]);
 
   useEffect(() => {
     const loadSettings = async () => {
       const prefs = await getNotificationPreferences();
       setNotificationPrefs(prefs);
       setNotificationLoading(false);
-
-      const isFaceIdEnabled = (await AsyncStorage.getItem(FACE_ID_KEY)) === "true";
-      setFaceIdEnabled(isFaceIdEnabled);
-      setFaceIdLoading(false);
     };
 
     loadSettings();
@@ -132,14 +123,6 @@ export default function ProfileScreen() {
     }
   }, []);
 
-  const handleToggleFaceId = useCallback(async (value: boolean) => {
-    setFaceIdLoading(true);
-    await AsyncStorage.setItem(FACE_ID_KEY, value ? "true" : "false");
-    setFaceIdEnabled(value);
-    Haptics.selectionAsync();
-    setFaceIdLoading(false);
-  }, []);
-
   const handleSaveProfile = useCallback(async () => {
     try {
       await updateProfile({
@@ -148,7 +131,6 @@ export default function ProfileScreen() {
         lastName,
         phonePrefix,
         phoneNumber,
-        email,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setHasChanges(false);
@@ -156,11 +138,12 @@ export default function ProfileScreen() {
       const msg = error instanceof Error ? error.message : "No se pudo guardar el perfil";
       showError(msg);
     }
-  }, [email, firstName, lastName, phoneNumber, phonePrefix, profile, showError, updateProfile]);
+  }, [firstName, lastName, phoneNumber, phonePrefix, profile, showError, updateProfile]);
 
   const handleChangePassword = useCallback(async () => {
-    if (!newPassword || newPassword.length < 4) {
-      const msg = "La nueva contrasena debe tener al menos 4 caracteres";
+    const passwordError = validatePasswordLength(newPassword, "La nueva contrasena");
+    if (passwordError) {
+      const msg = passwordError;
       if (Platform.OS === "web") alert(msg);
       else Alert.alert("Error", msg);
       return;
@@ -392,15 +375,13 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <TextInput
-          style={styles.fieldInput}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Tu email"
-          placeholderTextColor={Colors.text.disabled}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <View style={styles.readOnlyField}>
+          <Text style={styles.readOnlyLabel}>Email de acceso</Text>
+          <Text style={styles.readOnlyValue}>{profile.email || "No disponible"}</Text>
+          <Text style={styles.readOnlyHint}>
+            El cambio de email llegara mas adelante desde Cuenta y seguridad.
+          </Text>
+        </View>
 
         {hasChanges && (
           <Pressable
@@ -578,20 +559,13 @@ export default function ProfileScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowLabel}>Face ID</Text>
                 <Text style={styles.rowSub}>
-                  {faceIdEnabled ? "Proteccion biometrica activada" : "Activa desbloqueo rapido en este dispositivo"}
+                  Disponible proximamente. Cuando activemos biometria real, podras desbloquear la app con Face ID.
                 </Text>
               </View>
             </View>
-            {faceIdLoading ? (
-              <ActivityIndicator size="small" color={Colors.brand.DEFAULT} />
-            ) : (
-              <Switch
-                value={faceIdEnabled}
-                onValueChange={handleToggleFaceId}
-                trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
-                thumbColor={faceIdEnabled ? Colors.brand.DEFAULT : "#555"}
-              />
-            )}
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonBadgeText}>Proximamente</Text>
+            </View>
           </View>
 
           {showPasswordChange && (
@@ -600,7 +574,7 @@ export default function ProfileScreen() {
                 style={styles.pwInput}
                 value={newPassword}
                 onChangeText={setNewPassword}
-                placeholder="Nueva contrasena (min. 4)"
+                placeholder={`Nueva contrasena (min. ${MIN_PASSWORD_LENGTH})`}
                 placeholderTextColor={Colors.text.disabled}
                 secureTextEntry
                 autoCapitalize="none"
@@ -889,6 +863,35 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.border,
     marginBottom: 10,
   },
+  readOnlyField: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+  readOnlyLabel: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: Colors.text.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+    marginBottom: 8,
+  },
+  readOnlyValue: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 15,
+    color: Colors.text.primary,
+  },
+  readOnlyHint: {
+    fontFamily: "Outfit_400Regular",
+    fontSize: 12,
+    lineHeight: 18,
+    color: Colors.text.muted,
+    marginTop: 8,
+  },
   phoneRow: {
     flexDirection: "row" as const,
     gap: 8,
@@ -1019,6 +1022,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.text.muted,
     marginTop: 1,
+  },
+  comingSoonBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(45,212,191,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(45,212,191,0.24)",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  comingSoonBadgeText: {
+    fontFamily: "Outfit_700Bold",
+    fontSize: 11,
+    color: "#2dd4bf",
+    letterSpacing: 0.3,
   },
   passwordArea: {
     paddingHorizontal: 16,
