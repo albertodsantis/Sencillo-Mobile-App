@@ -153,6 +153,25 @@ export default function BudgetScreen() {
   const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
+  const toEditableDisplay = useCallback((value: number) => {
+    if (displayCurrency !== "EUR" || rates.eurCross <= 0) return value;
+    return value / rates.eurCross;
+  }, [displayCurrency, rates.eurCross]);
+  const fromDisplayToUSD = useCallback((value: number) => {
+    if (displayCurrency !== "EUR") return value;
+    if (rates.eurCross <= 0) {
+      throw new Error("No hay una tasa EUR/USD disponible para guardar este valor.");
+    }
+    return value * rates.eurCross;
+  }, [displayCurrency, rates.eurCross]);
+  const formatEditableValue = useCallback((value: number) => {
+    const normalizedValue = toEditableDisplay(value);
+    if (!Number.isFinite(normalizedValue)) return "";
+    return normalizedValue
+      .toFixed(2)
+      .replace(/\.00$/, "")
+      .replace(/(\.\d*[1-9])0+$/, "$1");
+  }, [toEditableDisplay]);
   const showError = useCallback((message: string) => {
     if (Platform.OS === "web") alert(message);
     else Alert.alert("Error", message);
@@ -230,8 +249,8 @@ export default function BudgetScreen() {
         setEditingCategory(null);
         return;
       }
-      const updated = { ...budgets, [category]: value };
       try {
+        const updated = { ...budgets, [category]: fromDisplayToUSD(value) };
         await updateBudgets(updated);
         setEditingCategory(null);
       } catch (error) {
@@ -239,7 +258,7 @@ export default function BudgetScreen() {
         showError(msg);
       }
     },
-    [budgets, editValue, showError, updateBudgets],
+    [budgets, editValue, fromDisplayToUSD, showError, updateBudgets],
   );
 
   const handleRemoveBudget = useCallback(
@@ -263,8 +282,8 @@ export default function BudgetScreen() {
         setEditingGoal(null);
         return;
       }
-      const updated = { ...savingsGoals, [category]: value };
       try {
+        const updated = { ...savingsGoals, [category]: fromDisplayToUSD(value) };
         await updateSavingsGoals(updated);
         setEditingGoal(null);
       } catch (error) {
@@ -272,7 +291,7 @@ export default function BudgetScreen() {
         showError(msg);
       }
     },
-    [goalValue, savingsGoals, showError, updateSavingsGoals],
+    [fromDisplayToUSD, goalValue, savingsGoals, showError, updateSavingsGoals],
   );
 
   const handleRemoveGoal = useCallback(
@@ -485,7 +504,7 @@ export default function BudgetScreen() {
                 ) : budget > 0 ? (
                   <Pressable
                     onPress={() => {
-                      setEditValue(budget.toString());
+                      setEditValue(formatEditableValue(budget));
                       setEditingCategory(cat);
                     }}
                   >
@@ -630,7 +649,7 @@ export default function BudgetScreen() {
                 ) : goal > 0 ? (
                   <Pressable
                     onPress={() => {
-                      setGoalValue(goal.toString());
+                      setGoalValue(formatEditableValue(goal));
                       setEditingGoal(cat);
                     }}
                   >

@@ -6,13 +6,15 @@ type BudgetRow = { category: string; amount: number | string };
 
 export const BudgetRepository = {
   async get(): Promise<Budgets> {
+    const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!workspaceId) return {};
+    if (!userId || !workspaceId) return {};
 
     try {
       const { data, error } = await supabase
         .from('budgets')
         .select('category, amount')
+        .eq('user_id', userId)
         .eq('workspace_id', workspaceId);
       if (error || !data) return {};
 
@@ -28,7 +30,9 @@ export const BudgetRepository = {
   async save(budgets: Budgets): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para guardar presupuestos');
+    }
 
     const entries = Object.entries(budgets);
     const nextCategories = new Set(entries.map(([category]) => category));
@@ -79,7 +83,9 @@ export const BudgetRepository = {
   async clear(): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para limpiar presupuestos');
+    }
 
     const { error } = await supabase
       .from('budgets')

@@ -123,7 +123,7 @@ function RootLayoutNav() {
 }
 
 function AppNavigatorGate() {
-  const { isLoading, needsOnboarding } = useApp();
+  const { isLoading, needsOnboarding, bootstrapError } = useApp();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -143,6 +143,10 @@ function AppNavigatorGate() {
 
   if (isLoading) {
     return <BrandedSplash />;
+  }
+
+  if (bootstrapError) {
+    throw new Error(bootstrapError);
   }
 
   return <RootLayoutNav />;

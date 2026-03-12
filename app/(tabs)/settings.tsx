@@ -50,14 +50,14 @@ function CategoryRow({
   segment,
   segColor,
   pnlStructure,
-  updatePnlStructure,
+  renameCategory,
   deleteCategoryAndRelatedData,
 }: {
   cat: string;
   segment: Segment;
   segColor: string;
   pnlStructure: PnlStructure;
-  updatePnlStructure: (s: PnlStructure) => Promise<void>;
+  renameCategory: (segment: Segment, currentCategory: string, nextCategory: string) => Promise<void>;
   deleteCategoryAndRelatedData: (segment: Segment, category: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
@@ -94,12 +94,8 @@ function CategoryRow({
       setEditing(false);
       return;
     }
-    const updated = {
-      ...pnlStructure,
-      [segment]: pnlStructure[segment].map((c) => (c === cat ? trimmed : c)),
-    };
     try {
-      await updatePnlStructure(updated);
+      await renameCategory(segment, cat, trimmed);
       setEditing(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
@@ -174,7 +170,7 @@ function CategoryRow({
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const { pnlStructure, updatePnlStructure, deleteCategoryAndRelatedData } = useApp();
+  const { pnlStructure, updatePnlStructure, renameCategory, deleteCategoryAndRelatedData } = useApp();
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
@@ -315,7 +311,7 @@ export default function SettingsScreen() {
                     segment={seg}
                     segColor={config.color}
                     pnlStructure={pnlStructure}
-                    updatePnlStructure={updatePnlStructure}
+                    renameCategory={renameCategory}
                     deleteCategoryAndRelatedData={deleteCategoryAndRelatedData}
                   />
                 ))}

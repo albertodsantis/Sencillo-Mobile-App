@@ -34,13 +34,15 @@ function mapTransactionRow(row: TransactionRow): Transaction {
 
 export const TransactionRepository = {
   async getAll(): Promise<Transaction[]> {
+    const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!workspaceId) return [];
+    if (!userId || !workspaceId) return [];
 
     try {
       const { data, error } = await supabase
         .from('transactions')
         .select('id, type, segment, amount, currency, original_rate, amount_usd, category, description, date, profile_id')
+        .eq('user_id', userId)
         .eq('workspace_id', workspaceId)
         .order('date', { ascending: false });
 
@@ -54,7 +56,9 @@ export const TransactionRepository = {
   async save(transactions: Transaction[]): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para guardar transacciones');
+    }
 
     const rows = transactions.map((tx) => ({
       id: tx.id,
@@ -109,7 +113,9 @@ export const TransactionRepository = {
   async add(tx: Omit<Transaction, 'id'>): Promise<Transaction> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return { ...tx, id: '' };
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para guardar transacciones');
+    }
 
     const { data, error } = await supabase
       .from('transactions')
@@ -137,7 +143,10 @@ export const TransactionRepository = {
   async addMany(txList: Omit<Transaction, 'id'>[]): Promise<Transaction[]> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId || txList.length === 0) return [];
+    if (txList.length === 0) return [];
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para guardar transacciones');
+    }
 
     const payload = txList.map((tx) => ({
       user_id: userId,
@@ -164,8 +173,11 @@ export const TransactionRepository = {
   },
 
   async update(tx: Transaction): Promise<void> {
+    const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para actualizar transacciones');
+    }
 
     const { error } = await supabase
       .from('transactions')
@@ -182,6 +194,7 @@ export const TransactionRepository = {
         profile_id: tx.profileId || null,
       })
       .eq('id', tx.id)
+      .eq('user_id', userId)
       .eq('workspace_id', workspaceId);
 
     if (error) {
@@ -190,13 +203,17 @@ export const TransactionRepository = {
   },
 
   async remove(id: string): Promise<void> {
+    const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para eliminar transacciones');
+    }
 
     const { error } = await supabase
       .from('transactions')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
       .eq('workspace_id', workspaceId);
 
     if (error) {
@@ -207,7 +224,9 @@ export const TransactionRepository = {
   async removeAll(): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para eliminar transacciones');
+    }
 
     const { error } = await supabase
       .from('transactions')

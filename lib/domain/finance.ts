@@ -275,6 +275,7 @@ export async function fetchRates(): Promise<Rates | null> {
   try {
     const newRates: Rates = { bcv: 0, parallel: 0, eur: 0, eurCross: 0 };
     let bcvRate = 0;
+    let cotizacionesData: any[] | null = null;
 
     const [cotizacionesRes, parallelRes, globalRes] = await Promise.all([
       fetch('https://ve.dolarapi.com/v1/cotizaciones').catch(() => null),
@@ -283,8 +284,9 @@ export async function fetchRates(): Promise<Rates | null> {
     ]);
 
     if (cotizacionesRes && cotizacionesRes.ok) {
-      const data = await cotizacionesRes.json();
-      const usd = data.find((item: any) => item.moneda === 'USD');
+      const parsedCotizacionesData = (await cotizacionesRes.json()) as any[];
+      cotizacionesData = parsedCotizacionesData;
+      const usd = parsedCotizacionesData.find((item: any) => item.moneda === 'USD');
       if (usd && usd.promedio) {
         bcvRate = parseFloat(usd.promedio);
         newRates.bcv = bcvRate;
@@ -305,9 +307,8 @@ export async function fetchRates(): Promise<Rates | null> {
         newRates.eur = parseFloat(bcvEur.toFixed(4));
         newRates.eurCross = parseFloat(eurToUsd.toFixed(4));
       }
-    } else if (bcvRate > 0 && cotizacionesRes && cotizacionesRes.ok) {
-      const data = await cotizacionesRes.json();
-      const eurItem = data.find((item: any) => item.moneda === 'EUR');
+    } else if (bcvRate > 0 && cotizacionesData) {
+      const eurItem = cotizacionesData.find((item: any) => item.moneda === 'EUR');
       if (eurItem && eurItem.promedio) newRates.eur = parseFloat(eurItem.promedio);
     }
 

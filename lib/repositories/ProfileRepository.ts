@@ -11,8 +11,9 @@ type ProfileRow = {
 };
 
 async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  const { data, error } = await supabase.auth.getSession();
+  if (error) return null;
+  return data.session?.user?.id ?? null;
 }
 
 function mapProfile(row: ProfileRow): UserProfile {
@@ -47,7 +48,9 @@ export const ProfileRepository = {
 
   async save(profile: UserProfile): Promise<void> {
     const userId = await getCurrentUserId();
-    if (!userId) return;
+    if (!userId) {
+      throw new Error('No autenticado');
+    }
 
     const { error } = await supabase.from('profiles').upsert(
       {
@@ -69,7 +72,9 @@ export const ProfileRepository = {
 
   async clear(): Promise<void> {
     const userId = await getCurrentUserId();
-    if (!userId) return;
+    if (!userId) {
+      throw new Error('No autenticado');
+    }
 
     const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
     if (error) {

@@ -24,6 +24,8 @@ import {
   type Currency,
   type RateType,
   type RecurrenceType,
+  type Rates,
+  type Transaction,
   SEGMENT_CONFIG,
   RECURRENCE_OPTIONS,
 } from "@/lib/domain/types";
@@ -81,6 +83,42 @@ function parseDateString(dateStr: string): { day: number; month: number; year: n
 
 function daysInMonth(month: number, year: number): number {
   return new Date(year, month, 0).getDate();
+}
+
+function areRatesEquivalent(left: number, right: number): boolean {
+  return Math.abs(left - right) < 0.0001;
+}
+
+function resolveInitialRateType(
+  editingTx: Transaction | null,
+  rates: Rates,
+): RateType {
+  if (!editingTx || editingTx.currency !== "VES") return "bcv";
+  if (areRatesEquivalent(editingTx.originalRate, rates.bcv)) return "bcv";
+  if (areRatesEquivalent(editingTx.originalRate, rates.parallel)) return "parallel";
+  return "manual";
+}
+
+function resolveInitialCustomRate(
+  editingTx: Transaction | null,
+  initialRateType: RateType,
+): string {
+  if (!editingTx || editingTx.currency !== "VES" || initialRateType !== "manual") {
+    return "";
+  }
+
+  return editingTx.originalRate > 0 ? editingTx.originalRate.toString() : "";
+}
+
+function convertUsingOriginalRate(
+  amount: number,
+  currency: Currency,
+  originalRate: number,
+): number {
+  if (currency === "USD") return amount;
+  if (currency === "EUR") return amount * originalRate;
+  if (!originalRate || originalRate <= 0) return 0;
+  return amount / originalRate;
 }
 
 function BottomSheetPicker({
@@ -353,16 +391,18 @@ export default function TransactionModal() {
   const [currency, setCurrency] = useState<Currency>(
     editingTx?.currency || "VES"
   );
-  const [rateType, setRateType] = useState<RateType>(
-    editingTx?.currency === "VES"
-      ? editingTx?.originalRate === rates.bcv
-        ? "bcv"
-        : editingTx?.originalRate === rates.parallel
-          ? "parallel"
-          : "manual"
-      : "bcv"
+  const initialRateType = useMemo(
+    () => resolveInitialRateType(editingTx, rates),
+    [editingTx, rates]
   );
-  const [customRate, setCustomRate] = useState("");
+  const initialCustomRate = useMemo(
+    () => resolveInitialCustomRate(editingTx, initialRateType),
+    [editingTx, initialRateType]
+  );
+  const [rateType, setRateType] = useState<RateType>(
+    initialRateType
+  );
+  const [customRate, setCustomRate] = useState(initialCustomRate);
   const [category, setCategory] = useState(editingTx?.category || "");
   const [description, setDescription] = useState(editingTx?.description || "");
   const [date, setDate] = useState(
@@ -393,8 +433,35 @@ export default function TransactionModal() {
     );
   }, [currency, rates, rateType, customRate]);
 
+  const preservesHistoricalRate = useMemo(() => {
+    if (!editingTx || currency !== editingTx.currency) return false;
+    if (currency === "EUR") return true;
+    if (currency !== "VES") return false;
+    if (rateType !== initialRateType) return false;
+    if (rateType !== "manual") return true;
+
+    const parsedCustomRate = parseFloat(customRate);
+    const parsedInitialCustomRate = parseFloat(initialCustomRate);
+    if (!Number.isFinite(parsedCustomRate) || !Number.isFinite(parsedInitialCustomRate)) {
+      return false;
+    }
+
+    return areRatesEquivalent(parsedCustomRate, parsedInitialCustomRate);
+  }, [currency, customRate, editingTx, initialCustomRate, initialRateType, rateType]);
+
+  const resolvedOriginalRate = useMemo(() => {
+    if (!editingTx || currency !== editingTx.currency) return currentRate;
+    if (currency === "USD") return 1;
+    if (preservesHistoricalRate) return editingTx.originalRate;
+    return currentRate;
+  }, [currency, currentRate, editingTx, preservesHistoricalRate]);
+
   const amountUSD = useMemo(() => {
     const amt = parseFloat(amount) || 0;
+    if (editingTx && currency === editingTx.currency && preservesHistoricalRate) {
+      return convertUsingOriginalRate(amt, currency, editingTx.originalRate);
+    }
+
     return convertToUSD(
       amt,
       currency,
@@ -402,7 +469,7 @@ export default function TransactionModal() {
       rateType,
       customRate ? parseFloat(customRate) : undefined
     );
-  }, [amount, currency, rates, rateType, customRate]);
+  }, [amount, currency, customRate, editingTx, preservesHistoricalRate, rateType, rates]);
 
   const displayAmount = useMemo(
     () => convertUSDToDisplayCurrency(amountUSD, displayCurrency, rates),
@@ -430,7 +497,7 @@ export default function TransactionModal() {
       segment,
       amount: amt,
       currency,
-      originalRate: currentRate,
+      originalRate: resolvedOriginalRate,
       amountUSD,
       category,
       description,
@@ -480,7 +547,7 @@ export default function TransactionModal() {
     router.back();
   }, [
     amount, category, segmentType, segment, currency,
-    currentRate, amountUSD, description, date, recurrence,
+    resolvedOriginalRate, amountUSD, description, date, recurrence,
     editingTx, addTx, addMultipleTx, updateTx, registerAsSavings, pnlStructure.ahorro, router,
   ]);
 

@@ -3,7 +3,9 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const REMINDER_KEY = "@sencillo/daily_reminder";
+const REMINDER_NOTIFICATION_ID_KEY = "@sencillo/daily_reminder_id";
 const NOTIFICATION_PREFS_KEY = "@sencillo/notification_preferences";
+const DAILY_REMINDER_NOTIFICATION_TYPE = "daily-reminder";
 
 export interface NotificationPreferences {
   allEnabled: boolean;
@@ -16,9 +18,9 @@ export interface NotificationPreferences {
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   allEnabled: true,
   dailyReminder: true,
-  budgetAlerts: true,
+  budgetAlerts: false,
   weeklySummary: false,
-  fixedExpenseReminders: true,
+  fixedExpenseReminders: false,
 };
 
 Notifications.setNotificationHandler({
@@ -47,11 +49,14 @@ export async function scheduleDailyReminder(): Promise<boolean> {
 
   await cancelDailyReminder();
 
-  await Notifications.scheduleNotificationAsync({
+  const identifier = await Notifications.scheduleNotificationAsync({
     content: {
       title: "Sencillo",
       body: "No olvides registrar tus movimientos de hoy!",
       sound: true,
+      data: {
+        type: DAILY_REMINDER_NOTIFICATION_TYPE,
+      },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -61,12 +66,29 @@ export async function scheduleDailyReminder(): Promise<boolean> {
   });
 
   await AsyncStorage.setItem(REMINDER_KEY, "true");
+  await AsyncStorage.setItem(REMINDER_NOTIFICATION_ID_KEY, identifier);
   return true;
 }
 
 export async function cancelDailyReminder(): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  const identifier = await AsyncStorage.getItem(REMINDER_NOTIFICATION_ID_KEY);
+  if (identifier) {
+    await Notifications.cancelScheduledNotificationAsync(identifier);
+  }
+
+  const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+  const reminderIdentifiers = scheduledNotifications
+    .filter((notification) => notification.content.data?.type === DAILY_REMINDER_NOTIFICATION_TYPE)
+    .map((notification) => notification.identifier);
+
+  await Promise.all(
+    reminderIdentifiers.map((notificationId) =>
+      Notifications.cancelScheduledNotificationAsync(notificationId)
+    )
+  );
+
   await AsyncStorage.setItem(REMINDER_KEY, "false");
+  await AsyncStorage.removeItem(REMINDER_NOTIFICATION_ID_KEY);
 }
 
 export async function isReminderEnabled(): Promise<boolean> {

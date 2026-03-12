@@ -142,23 +142,22 @@ async function clearLocalAppStorage(): Promise<void> {
 
 export const AuthRepository = {
   async getSession(): Promise<AuthUser | null> {
-    const cached = await authStorage.getItem(AUTH_USER_CACHE_KEY);
-    const cachedUser: AuthUser | null = cached ? JSON.parse(cached) : null;
+    const { data, error } = await supabase.auth.getSession();
+    const sessionUser = data.session?.user ?? null;
 
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+    if (error || !sessionUser) {
+      await authStorage.removeItem(AUTH_USER_CACHE_KEY);
+      return null;
+    }
 
-    const supabaseCheck = supabase.auth.getUser().then(async ({ data, error }) => {
-      if (error || !data.user) {
-        await authStorage.removeItem(AUTH_USER_CACHE_KEY);
-        return null;
-      }
-      return syncAuthenticatedUser(data.user);
-    }).catch(() => null);
-
-    const result = await Promise.race([supabaseCheck, timeout]);
-
-    if (result !== null) return result;
-    return cachedUser;
+    try {
+      return await syncAuthenticatedUser(sessionUser);
+    } catch (sessionError) {
+      console.warn('No se pudo sincronizar la sesion persistida:', sessionError);
+      const user = mapSupabaseUserToAuthUser(sessionUser);
+      await this.persistSession(user);
+      return user;
+    }
   },
 
   async persistSession(user: AuthUser): Promise<void> {

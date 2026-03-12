@@ -9,8 +9,9 @@ type WorkspaceRow = {
 };
 
 async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  const { data, error } = await supabase.auth.getSession();
+  if (error) return null;
+  return data.session?.user?.id ?? null;
 }
 
 function mapWorkspace(row: WorkspaceRow): Workspace {
@@ -57,13 +58,17 @@ export const WorkspaceRepository = {
       .order('is_default', { ascending: false })
       .order('created_at', { ascending: true });
 
-    if (error) return [];
+    if (error) {
+      throw new Error(error.message || 'No se pudieron cargar los espacios');
+    }
 
     const workspaces = ((data ?? []) as WorkspaceRow[]).map(mapWorkspace);
     if (workspaces.length > 0) return workspaces;
 
     const personal = await ensurePersonalWorkspace(userId);
-    return personal ? [personal] : [];
+    if (personal) return [personal];
+
+    throw new Error('No se pudo asegurar el espacio personal');
   },
 
   async create(name: string): Promise<Workspace> {

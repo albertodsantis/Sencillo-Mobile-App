@@ -47,6 +47,7 @@ interface AppContextValue {
   budgetSummary: BudgetSummary;
   ratesTimestamp: number | null;
   isLoading: boolean;
+  bootstrapError: string | null;
   isRefreshingRates: boolean;
   historyFilter: string;
   displayCurrency: DisplayCurrency;
@@ -75,6 +76,11 @@ interface AppContextValue {
   savingsGoals: SavingsGoals;
   refreshRates: () => Promise<void>;
   updatePnlStructure: (pnl: PnlStructure) => Promise<void>;
+  renameCategory: (
+    segment: Transaction['segment'],
+    currentCategory: string,
+    nextCategory: string,
+  ) => Promise<void>;
   deleteCategoryAndRelatedData: (segment: Transaction['segment'], category: string) => Promise<void>;
   updateBudgets: (budgets: Budgets) => Promise<void>;
   updateSavingsGoals: (goals: SavingsGoals) => Promise<void>;
@@ -132,6 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoals>({});
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [isLoading, setIsLoading] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [isRefreshingRates, setIsRefreshingRates] = useState(false);
   const [ratesTimestamp, setRatesTimestamp] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -170,6 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const snapshot = await loadAppBootstrapSnapshot();
+        setBootstrapError(null);
         setWorkspaces(snapshot.workspaces);
         setActiveWorkspaceId(snapshot.activeWorkspaceId);
 
@@ -184,6 +192,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setNeedsOnboarding(shouldPromptOperationalOnboarding(snapshot.profile, workspaceSnapshot));
       } catch (e) {
         console.error('Error loading data:', e);
+        setBootstrapError(
+          e instanceof Error ? e.message : 'No se pudo cargar la informacion inicial',
+        );
       } finally {
         setIsLoading(false);
       }
@@ -206,8 +217,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!activeWorkspaceId) return;
-    loadWorkspaceScopedData();
-  }, [activeWorkspaceId, loadWorkspaceScopedData]);
+
+    void loadWorkspaceScopedData()
+      .then((workspaceSnapshot) => {
+        setBootstrapError(null);
+        setNeedsOnboarding(shouldPromptOperationalOnboarding(profile, workspaceSnapshot));
+      })
+      .catch((error) => {
+        setBootstrapError(
+          error instanceof Error ? error.message : 'No se pudo cargar el espacio activo',
+        );
+      });
+  }, [activeWorkspaceId, loadWorkspaceScopedData, profile]);
 
   const setActiveWorkspace = useCallback(async (workspaceId: string) => {
     await AsyncStorage.setItem(ACTIVE_WORKSPACE_STORAGE_KEY, workspaceId);
@@ -282,6 +303,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPnlStructure(pnl);
   }, []);
 
+  const renameCategory = useCallback(
+    async (
+      segment: Transaction['segment'],
+      currentCategory: string,
+      nextCategory: string,
+    ) => {
+      const trimmedNextCategory = nextCategory.trim();
+      if (!trimmedNextCategory || trimmedNextCategory === currentCategory) {
+        return;
+      }
+
+      if (pnlStructure[segment].includes(trimmedNextCategory)) {
+        throw new Error('Esta categoria ya existe');
+      }
+
+      const updatedPnl = {
+        ...pnlStructure,
+        [segment]: pnlStructure[segment].map((item) =>
+          item === currentCategory ? trimmedNextCategory : item,
+        ),
+      };
+
+      const renamedTransactions = transactions.map((tx) =>
+        tx.segment === segment && tx.category === currentCategory
+          ? { ...tx, category: trimmedNextCategory }
+          : tx,
+      );
+
+      let nextBudgets = budgets;
+      if (segment === 'gastos_variables' && currentCategory in budgets) {
+        nextBudgets = { ...budgets, [trimmedNextCategory]: budgets[currentCategory] };
+        delete nextBudgets[currentCategory];
+      }
+
+      let nextSavingsGoals = savingsGoals;
+      if (segment === 'ahorro' && currentCategory in savingsGoals) {
+        nextSavingsGoals = {
+          ...savingsGoals,
+          [trimmedNextCategory]: savingsGoals[currentCategory],
+        };
+        delete nextSavingsGoals[currentCategory];
+      }
+
+      await Promise.all([
+        PnlRepository.save(updatedPnl),
+        TransactionRepository.save(renamedTransactions),
+        BudgetRepository.save(nextBudgets),
+        SavingsRepository.save(nextSavingsGoals),
+      ]);
+
+      setPnlStructure(updatedPnl);
+      setTransactions(renamedTransactions);
+      setBudgets(nextBudgets);
+      setSavingsGoals(nextSavingsGoals);
+    },
+    [budgets, pnlStructure, savingsGoals, transactions],
+  );
+
   const deleteCategoryAndRelatedData = useCallback(
     async (segment: Transaction['segment'], category: string) => {
       const updatedPnl = {
@@ -332,14 +411,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const previousBudgets = await getStoredPreviousBudgets(activeWorkspaceId);
     if (!previousBudgets) return;
 
-    try {
-      await updateBudgets(previousBudgets);
-      await clearStoredPreviousBudgets(activeWorkspaceId);
-      setCanCopyPreviousBudgets(false);
-    } catch {
-      await clearStoredPreviousBudgets(activeWorkspaceId);
-      setCanCopyPreviousBudgets(false);
-    }
+    await updateBudgets(previousBudgets);
+    await clearStoredPreviousBudgets(activeWorkspaceId);
+    setCanCopyPreviousBudgets(false);
   }, [activeWorkspaceId, updateBudgets]);
 
   const updateSavingsGoals = useCallback(async (g: SavingsGoals) => {
@@ -453,6 +527,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       budgetSummary,
       ratesTimestamp,
       isLoading,
+      bootstrapError,
       isRefreshingRates,
       historyFilter,
       displayCurrency,
@@ -478,6 +553,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       deleteAllTx,
       refreshRates,
       updatePnlStructure,
+      renameCategory,
       deleteCategoryAndRelatedData,
       updateBudgets,
       updateSavingsGoals,
@@ -488,12 +564,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [
       transactions, rates, pnlStructure, budgets, savingsGoals, viewMode,
       currentMonth, currentYear, dashboardData, budgetSummary, ratesTimestamp,
-      isLoading, isRefreshingRates, historyFilter, displayCurrency, profile,
+      isLoading, bootstrapError, isRefreshingRates, historyFilter, displayCurrency, profile,
       workspaces, activeWorkspaceId,
       currentBudgetPeriodLabel, canCopyPreviousBudgets, needsOnboarding,
       addTx, addMultipleTx, updateTx, deleteTx, deleteAllTx,
       refreshRates, updatePnlStructure, updateBudgets, updateSavingsGoals,
-      deleteCategoryAndRelatedData,
+      renameCategory, deleteCategoryAndRelatedData,
       updateProfile, setDisplayCurrency, setActiveWorkspace, createWorkspace,
       deleteWorkspace, copyPreviousBudgets, completeOnboarding,
     ],

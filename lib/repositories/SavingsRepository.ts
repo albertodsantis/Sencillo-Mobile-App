@@ -6,13 +6,15 @@ type SavingsGoalRow = { category: string; amount: number | string };
 
 export const SavingsRepository = {
   async get(): Promise<SavingsGoals> {
+    const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!workspaceId) return {};
+    if (!userId || !workspaceId) return {};
 
     try {
       const { data, error } = await supabase
         .from('savings_goals')
         .select('category, amount')
+        .eq('user_id', userId)
         .eq('workspace_id', workspaceId);
       if (error || !data) return {};
 
@@ -28,7 +30,9 @@ export const SavingsRepository = {
   async save(goals: SavingsGoals): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para guardar metas');
+    }
 
     const entries = Object.entries(goals);
     const nextCategories = new Set(entries.map(([category]) => category));
@@ -79,7 +83,9 @@ export const SavingsRepository = {
   async clear(): Promise<void> {
     const userId = await getCurrentUserId();
     const workspaceId = await getActiveWorkspaceId();
-    if (!userId || !workspaceId) return;
+    if (!userId || !workspaceId) {
+      throw new Error('No hay una sesion activa para limpiar metas');
+    }
 
     const { error } = await supabase
       .from('savings_goals')

@@ -4,8 +4,13 @@ import { supabase } from '../../utils/supabase';
 export const ACTIVE_WORKSPACE_STORAGE_KEY = '@sencillo/active_workspace_id';
 
 export async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) return null;
+    return data.session?.user?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getActiveWorkspaceId(): Promise<string | null> {

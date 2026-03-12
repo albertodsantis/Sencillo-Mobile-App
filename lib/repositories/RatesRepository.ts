@@ -9,12 +9,22 @@ type RatesRow = {
   rates_timestamp: string;
 };
 
+async function getCurrentUserId(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) return null;
+  return data.session?.user?.id ?? null;
+}
+
 export const RatesRepository = {
   async get(): Promise<Rates | null> {
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) return null;
+
       const { data, error } = await supabase
         .from('rates')
         .select('bcv, parallel, eur, eur_cross, rates_timestamp')
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error || !data) return null;
@@ -32,8 +42,7 @@ export const RatesRepository = {
   },
 
   async save(rates: Rates): Promise<void> {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id;
+    const userId = await getCurrentUserId();
     if (!userId) return;
 
     await supabase.from('rates').upsert(
@@ -61,7 +70,14 @@ export const RatesRepository = {
 
   async getTimestamp(): Promise<number | null> {
     try {
-      const { data, error } = await supabase.from('rates').select('rates_timestamp').maybeSingle();
+      const userId = await getCurrentUserId();
+      if (!userId) return null;
+
+      const { data, error } = await supabase
+        .from('rates')
+        .select('rates_timestamp')
+        .eq('user_id', userId)
+        .maybeSingle();
       if (error || !data?.rates_timestamp) return null;
 
       const parsed = Date.parse(data.rates_timestamp as string);
@@ -72,8 +88,7 @@ export const RatesRepository = {
   },
 
   async clear(): Promise<void> {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id;
+    const userId = await getCurrentUserId();
     if (!userId) return;
     await supabase.from('rates').delete().eq('user_id', userId);
   },

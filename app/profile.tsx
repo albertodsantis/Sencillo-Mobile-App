@@ -415,11 +415,8 @@ export default function ProfileScreen() {
                 value={notificationPrefs.allEnabled}
                 onValueChange={(value) =>
                   handleToggleNotifications({
+                    ...notificationPrefs,
                     allEnabled: value,
-                    dailyReminder: value,
-                    budgetAlerts: value,
-                    weeklySummary: value,
-                    fixedExpenseReminders: value,
                   })
                 }
                 trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
@@ -452,76 +449,21 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <View style={styles.rowItem}>
+          <View style={styles.rowItemNoBorder}>
             <View style={styles.rowLeft}>
               <View style={[styles.rowIcon, { backgroundColor: "rgba(251,146,60,0.12)" }]}>
                 <Ionicons name="wallet" size={18} color="#fb923c" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>Alertas de presupuesto</Text>
-                <Text style={styles.rowSub}>Avisos cuando estes cerca de tus limites</Text>
+                <Text style={styles.rowLabel}>Alertas avanzadas</Text>
+                <Text style={styles.rowSub}>
+                  Presupuesto, gastos fijos y resumen semanal siguen en desarrollo.
+                </Text>
               </View>
             </View>
-            <Switch
-              value={notificationPrefs.budgetAlerts}
-              disabled={notificationLoading || !notificationPrefs.allEnabled}
-              onValueChange={(value) =>
-                handleToggleNotifications({
-                  ...notificationPrefs,
-                  budgetAlerts: value,
-                })
-              }
-              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
-              thumbColor={notificationPrefs.budgetAlerts ? Colors.brand.DEFAULT : "#555"}
-            />
-          </View>
-
-          <View style={styles.rowItem}>
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: "rgba(96,165,250,0.12)" }]}>
-                <Ionicons name="calendar" size={18} color="#60a5fa" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>Recordatorios de gastos fijos</Text>
-                <Text style={styles.rowSub}>No olvides tus compromisos recurrentes</Text>
-              </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonBadgeText}>Proximamente</Text>
             </View>
-            <Switch
-              value={notificationPrefs.fixedExpenseReminders}
-              disabled={notificationLoading || !notificationPrefs.allEnabled}
-              onValueChange={(value) =>
-                handleToggleNotifications({
-                  ...notificationPrefs,
-                  fixedExpenseReminders: value,
-                })
-              }
-              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
-              thumbColor={notificationPrefs.fixedExpenseReminders ? Colors.brand.DEFAULT : "#555"}
-            />
-          </View>
-
-          <View style={styles.rowItemNoBorder}>
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: "rgba(244,114,182,0.12)" }]}>
-                <Ionicons name="stats-chart" size={18} color="#f472b6" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>Resumen semanal</Text>
-                <Text style={styles.rowSub}>Recibe un resumen del avance de tus finanzas</Text>
-              </View>
-            </View>
-            <Switch
-              value={notificationPrefs.weeklySummary}
-              disabled={notificationLoading || !notificationPrefs.allEnabled}
-              onValueChange={(value) =>
-                handleToggleNotifications({
-                  ...notificationPrefs,
-                  weeklySummary: value,
-                })
-              }
-              trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(16,185,129,0.4)" }}
-              thumbColor={notificationPrefs.weeklySummary ? Colors.brand.DEFAULT : "#555"}
-            />
           </View>
         </View>
 
