@@ -9,15 +9,15 @@ import {
   Platform,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Keyboard,
-  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import BottomSheetPicker from "@/components/BottomSheetPicker";
+import DatePickerSheet from "@/components/DatePickerSheet";
 import { useApp } from "@/lib/context/AppContext";
 import {
   type Segment,
@@ -30,7 +30,6 @@ import {
 import {
   convertToUSD,
   getFinalRate,
-  generateRecurrences,
   getLocalDateString,
   formatCurrency,
   convertUSDToDisplayCurrency,
@@ -42,6 +41,10 @@ import {
   resolveInitialRateType,
   shouldPreserveHistoricalRate,
 } from "@/lib/domain/transactionEditing";
+import {
+  buildTransactionDraft,
+  expandTransactionDrafts,
+} from "@/lib/domain/transactionDrafts";
 
 const CURRENCIES: { id: Currency; label: string; symbol: string; fullLabel: string }[] = [
   { id: "VES", label: "Bs", symbol: "Bs", fullLabel: "BOLIVARES (VES)" },
@@ -52,11 +55,6 @@ const CURRENCIES: { id: Currency; label: string; symbol: string; fullLabel: stri
 const MONTHS_ES = [
   "Ene", "Feb", "Mar", "Abr", "May", "Jun",
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-];
-
-const MONTHS_FULL = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
 function formatDisplayDate(dateStr: string): string {
@@ -70,262 +68,6 @@ function formatDisplayDate(dateStr: string): string {
     return dateStr;
   }
 }
-
-function parseDateString(dateStr: string): { day: number; month: number; year: number } {
-  try {
-    const parts = dateStr.split("-");
-    return {
-      year: parseInt(parts[0], 10),
-      month: parseInt(parts[1], 10),
-      day: parseInt(parts[2], 10),
-    };
-  } catch {
-    const now = new Date();
-    return { day: now.getDate(), month: now.getMonth() + 1, year: now.getFullYear() };
-  }
-}
-
-function daysInMonth(month: number, year: number): number {
-  return new Date(year, month, 0).getDate();
-}
-
-function BottomSheetPicker({
-  visible,
-  onClose,
-  title,
-  children,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) {
-  const { width, height } = useWindowDimensions();
-  const isTablet = width >= 768;
-
-  const sheetStyles = useMemo(
-    () =>
-      StyleSheet.create({
-        overlay: {
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.6)",
-          justifyContent: "flex-end" as const,
-          paddingHorizontal: isTablet ? 16 : 0,
-          paddingBottom: isTablet ? 16 : 0,
-        },
-        sheet: {
-          alignSelf: "center" as const,
-          width: "100%",
-          maxWidth: isTablet ? 560 : undefined,
-          backgroundColor: Colors.dark.surface,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          borderBottomLeftRadius: isTablet ? 24 : 0,
-          borderBottomRightRadius: isTablet ? 24 : 0,
-          paddingBottom: 40,
-          maxHeight: height * 0.65,
-        },
-        handle: {
-          width: 36,
-          height: 4,
-          borderRadius: 2,
-          backgroundColor: Colors.dark.highlight,
-          alignSelf: "center" as const,
-          marginTop: 10,
-          marginBottom: 8,
-        },
-        header: {
-          flexDirection: "row" as const,
-          justifyContent: "space-between" as const,
-          alignItems: "center" as const,
-          paddingHorizontal: 20,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors.dark.borderSubtle,
-        },
-        title: {
-          fontFamily: "Outfit_700Bold",
-          fontSize: 16,
-          color: Colors.text.primary,
-        },
-        closeBtn: {
-          width: 32,
-          height: 32,
-          borderRadius: 16,
-          backgroundColor: "rgba(255,255,255,0.06)",
-          alignItems: "center" as const,
-          justifyContent: "center" as const,
-        },
-      }),
-    [height, isTablet],
-  );
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <Pressable style={sheetStyles.overlay} onPress={onClose}>
-        <Pressable style={sheetStyles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={sheetStyles.handle} />
-          <View style={sheetStyles.header}>
-            <Text style={sheetStyles.title}>{title}</Text>
-            <Pressable onPress={onClose} style={sheetStyles.closeBtn}>
-              <Ionicons name="close" size={20} color={Colors.text.secondary} />
-            </Pressable>
-          </View>
-          {children}
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
-function DatePickerSheet({
-  visible,
-  onClose,
-  dateStr,
-  onConfirm,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  dateStr: string;
-  onConfirm: (dateStr: string) => void;
-}) {
-  const parsed = parseDateString(dateStr);
-  const [day, setDay] = useState(parsed.day);
-  const [month, setMonth] = useState(parsed.month);
-  const [year, setYear] = useState(parsed.year);
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
-  const maxDay = daysInMonth(month, year);
-  const effectiveDay = Math.min(day, maxDay);
-
-  const handleConfirm = () => {
-    const d = String(effectiveDay).padStart(2, "0");
-    const m = String(month).padStart(2, "0");
-    onConfirm(`${year}-${m}-${d}`);
-    onClose();
-  };
-
-  return (
-    <BottomSheetPicker visible={visible} onClose={onClose} title="Seleccionar Fecha">
-      <View style={dateStyles.container}>
-        <View style={dateStyles.columnsRow}>
-          <View style={dateStyles.column}>
-            <Text style={dateStyles.columnLabel}>DIA</Text>
-            <ScrollView style={dateStyles.scroll} showsVerticalScrollIndicator={false}>
-              {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
-                <Pressable
-                  key={d}
-                  onPress={() => { setDay(d); Haptics.selectionAsync(); }}
-                  style={[dateStyles.option, effectiveDay === d && dateStyles.optionActive]}
-                >
-                  <Text style={[dateStyles.optionText, effectiveDay === d && dateStyles.optionTextActive]}>
-                    {d}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-          <View style={dateStyles.column}>
-            <Text style={dateStyles.columnLabel}>MES</Text>
-            <ScrollView style={dateStyles.scroll} showsVerticalScrollIndicator={false}>
-              {MONTHS_FULL.map((m, i) => (
-                <Pressable
-                  key={i}
-                  onPress={() => { setMonth(i + 1); Haptics.selectionAsync(); }}
-                  style={[dateStyles.option, month === i + 1 && dateStyles.optionActive]}
-                >
-                  <Text style={[dateStyles.optionText, month === i + 1 && dateStyles.optionTextActive]}>
-                    {m}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-          <View style={dateStyles.column}>
-            <Text style={dateStyles.columnLabel}>ANO</Text>
-            <ScrollView style={dateStyles.scroll} showsVerticalScrollIndicator={false}>
-              {years.map((y) => (
-                <Pressable
-                  key={y}
-                  onPress={() => { setYear(y); Haptics.selectionAsync(); }}
-                  style={[dateStyles.option, year === y && dateStyles.optionActive]}
-                >
-                  <Text style={[dateStyles.optionText, year === y && dateStyles.optionTextActive]}>
-                    {y}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-        <Pressable onPress={handleConfirm} style={dateStyles.confirmBtn}>
-          <Text style={dateStyles.confirmText}>Confirmar</Text>
-        </Pressable>
-      </View>
-    </BottomSheetPicker>
-  );
-}
-
-const dateStyles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
-  columnsRow: {
-    flexDirection: "row" as const,
-    gap: 8,
-    marginBottom: 20,
-  },
-  column: {
-    flex: 1,
-  },
-  columnLabel: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 10,
-    color: Colors.text.muted,
-    letterSpacing: 1,
-    textAlign: "center" as const,
-    marginBottom: 8,
-  },
-  scroll: {
-    maxHeight: 200,
-  },
-  option: {
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    alignItems: "center" as const,
-    marginBottom: 2,
-  },
-  optionActive: {
-    backgroundColor: Colors.brand.dark,
-  },
-  optionText: {
-    fontFamily: "Outfit_500Medium",
-    fontSize: 15,
-    color: Colors.text.secondary,
-  },
-  optionTextActive: {
-    color: Colors.brand.light,
-    fontFamily: "Outfit_700Bold",
-  },
-  confirmBtn: {
-    backgroundColor: Colors.brand.DEFAULT,
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center" as const,
-  },
-  confirmText: {
-    fontFamily: "Outfit_700Bold",
-    fontSize: 15,
-    color: "#fff",
-  },
-});
 
 export default function TransactionModal() {
   const insets = useSafeAreaInsets();
@@ -455,7 +197,7 @@ export default function TransactionModal() {
     }
 
     const txDate = new Date(date + "T12:00:00").toISOString();
-    const txData = {
+    const txData = buildTransactionDraft({
       type: segmentType,
       segment,
       amount: amt,
@@ -465,35 +207,23 @@ export default function TransactionModal() {
       category,
       description,
       date: txDate,
-      profileId: "",
-    };
+    });
 
     try {
       if (editingTx) {
         await updateTx({ ...editingTx, ...txData });
       } else {
-        const baseDates = recurrence !== "none"
-          ? [txDate, ...generateRecurrences(txDate, recurrence)]
-          : [txDate];
+        const drafts = expandTransactionDrafts({
+          draft: txData,
+          recurrence,
+          registerAsSavings,
+          savingsCategory: pnlStructure.ahorro[0] || "Ahorro General",
+        });
 
-        if (segment === "ingresos" && registerAsSavings) {
-          const savingsCategory = pnlStructure.ahorro[0] || "Ahorro General";
-          const allTxs = baseDates.flatMap((txd) => {
-            const incomeTx = { ...txData, date: txd };
-            const savingsTx = {
-              ...txData,
-              date: txd,
-              type: SEGMENT_CONFIG.ahorro.type,
-              segment: "ahorro" as const,
-              category: savingsCategory,
-            };
-            return [incomeTx, savingsTx];
-          });
-          await addMultipleTx(allTxs);
-        } else if (baseDates.length > 1) {
-          await addMultipleTx(baseDates.map((txd) => ({ ...txData, date: txd })));
+        if (drafts.length > 1) {
+          await addMultipleTx(drafts);
         } else {
-          await addTx(txData);
+          await addTx(drafts[0]);
         }
       }
     } catch (error) {
@@ -522,11 +252,11 @@ export default function TransactionModal() {
       router.back();
     };
     if (Platform.OS === "web") {
-      if (confirm("¿Eliminar movimiento?\nEsta acción no se puede deshacer.")) doDelete();
+      if (confirm("Eliminar movimiento?\nEsta accion no se puede deshacer.")) doDelete();
     } else {
       Alert.alert(
-        "¿Eliminar movimiento?",
-        "Esta acción no se puede deshacer.",
+        "Eliminar movimiento?",
+        "Esta accion no se puede deshacer.",
         [
           { text: "Cancelar", style: "cancel" },
           { text: "Eliminar", style: "destructive", onPress: doDelete },
@@ -561,7 +291,12 @@ export default function TransactionModal() {
           <Text style={styles.title}>
             {editingTx ? "Editar Movimiento" : "Registrar Movimiento"}
           </Text>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.closeBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar modal de movimiento"
+          >
             <Ionicons name="close" size={22} color={Colors.text.secondary} />
           </Pressable>
         </View>
@@ -583,6 +318,9 @@ export default function TransactionModal() {
                   setCategory("");
                   Haptics.selectionAsync();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Seleccionar segmento ${config.label}`}
+                accessibilityState={{ selected: isActive }}
                 style={[
                   styles.segmentChip,
                   isActive && {
@@ -608,6 +346,8 @@ export default function TransactionModal() {
         <Pressable
           style={styles.amountSection}
           onPress={() => amountInputRef.current?.focus()}
+          accessibilityRole="button"
+          accessibilityLabel="Editar monto"
         >
           <View style={styles.amountRow}>
             <Text style={[styles.amountSymbol, { color: segColor }]}>
@@ -661,6 +401,9 @@ export default function TransactionModal() {
                   setCurrency(c.id);
                   Haptics.selectionAsync();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Seleccionar moneda ${c.label}`}
+                accessibilityState={{ selected: isActive }}
                 style={[
                   styles.currencySelectorButton,
                   isActive && styles.currencySelectorButtonActive,
@@ -685,6 +428,8 @@ export default function TransactionModal() {
             <Pressable
               onPress={() => setShowDateSheet(true)}
               style={styles.inlineValueBox}
+              accessibilityRole="button"
+              accessibilityLabel="Seleccionar fecha"
             >
               <View style={styles.inlineValueInner}>
                 <Text style={styles.inlineValueText}>
@@ -707,6 +452,8 @@ export default function TransactionModal() {
                   backgroundColor: `${segColor}12`,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={category ? `Categoria seleccionada ${category}` : "Seleccionar categoria"}
             >
               <View style={styles.inlineValueInner}>
                 <Text
@@ -734,6 +481,8 @@ export default function TransactionModal() {
             <Pressable
               onPress={() => setShowRecurrenceSheet(true)}
               style={[styles.dropdownBtn, styles.repeatField]}
+              accessibilityRole="button"
+              accessibilityLabel={`Seleccionar repeticion. Actual ${recurrenceLabel}`}
             >
               <Text style={styles.dropdownBtnText}>{recurrenceLabel}</Text>
               <Ionicons name="chevron-down" size={18} color={Colors.text.muted} />
@@ -746,6 +495,9 @@ export default function TransactionModal() {
                   styles.savingsChip,
                   registerAsSavings && styles.savingsChipActive,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel="Registrar ingreso tambien como ahorro"
+                accessibilityState={{ selected: registerAsSavings }}
               >
                 <Text
                   style={[
@@ -771,6 +523,9 @@ export default function TransactionModal() {
             <Pressable
               onPress={() => { setRateType("bcv"); Haptics.selectionAsync(); }}
               style={[styles.rateButton, rateType === "bcv" && styles.rateButtonActive]}
+              accessibilityRole="button"
+              accessibilityLabel="Usar tasa BCV"
+              accessibilityState={{ selected: rateType === "bcv" }}
             >
               <Text style={[styles.rateButtonLabel, rateType === "bcv" && styles.rateButtonLabelActive]}>
                 BCV
@@ -782,6 +537,9 @@ export default function TransactionModal() {
             <Pressable
               onPress={() => { setRateType("parallel"); Haptics.selectionAsync(); }}
               style={[styles.rateButton, rateType === "parallel" && styles.rateButtonActive]}
+              accessibilityRole="button"
+              accessibilityLabel="Usar tasa USDC"
+              accessibilityState={{ selected: rateType === "parallel" }}
             >
               <Text style={[styles.rateButtonLabel, rateType === "parallel" && styles.rateButtonLabelActive]}>
                 USDC
@@ -793,6 +551,9 @@ export default function TransactionModal() {
             <Pressable
               onPress={() => { setRateType("manual"); Haptics.selectionAsync(); }}
               style={[styles.rateButton, rateType === "manual" && styles.rateButtonActive]}
+              accessibilityRole="button"
+              accessibilityLabel="Usar tasa manual"
+              accessibilityState={{ selected: rateType === "manual" }}
             >
               <Text style={[styles.rateButtonLabel, rateType === "manual" && styles.rateButtonLabelActive]}>
                 Manual
