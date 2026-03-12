@@ -22,7 +22,6 @@ import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol }
 import {
   formatEditableDisplayValue,
   fromDisplayValueToUSD,
-  toEditableDisplayValue,
 } from "@/lib/domain/displayCurrency";
 import dayjs from "dayjs";
 
@@ -158,10 +157,6 @@ export default function BudgetScreen() {
   const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
-  const toEditableDisplay = useCallback(
-    (value: number) => toEditableDisplayValue(value, displayCurrency, rates.eurCross),
-    [displayCurrency, rates.eurCross],
-  );
   const fromDisplayToUSD = useCallback(
     (value: number) => fromDisplayValueToUSD(value, displayCurrency, rates.eurCross),
     [displayCurrency, rates.eurCross],

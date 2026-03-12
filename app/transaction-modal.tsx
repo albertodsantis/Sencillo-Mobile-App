@@ -24,8 +24,6 @@ import {
   type Currency,
   type RateType,
   type RecurrenceType,
-  type Rates,
-  type Transaction,
   SEGMENT_CONFIG,
   RECURRENCE_OPTIONS,
 } from "@/lib/domain/types";

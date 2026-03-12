@@ -77,7 +77,7 @@ test("preserves historical EUR conversion when amount is unchanged", () => {
     }),
     true,
   );
-  assert.equal(convertUsingOriginalRate(10, "EUR", editingTx.originalRate), 11.8);
+  assert.ok(Math.abs(convertUsingOriginalRate(10, "EUR", editingTx.originalRate) - 11.8) < 0.0001);
 });
 
 test("recomputes VES conversion when the user changes the selected rate", () => {
