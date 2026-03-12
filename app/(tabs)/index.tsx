@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -16,14 +16,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import GlowRingChart from "@/components/GlowRingChart";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
+import { useGuidePreference } from "@/lib/hooks/useGuidePreference";
+import { type CategoryStat, computeHomeSegmentStats } from "@/lib/domain/homeStats";
 import {
   type ViewMode,
-  type Segment,
   type DisplayCurrency,
   type Rates,
 } from "@/lib/domain/types";
@@ -87,13 +87,6 @@ const SEGMENT_PALETTES: Record<string, string[]> = {
   ],
 };
 
-interface CategoryStat {
-  name: string;
-  total: number;
-  count: number;
-  pct: number;
-}
-
 function KpiCard({
   label,
   total,
@@ -133,6 +126,8 @@ function KpiCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir detalle de ${label}`}
       style={({ pressed }) => [
         styles.kpiCard,
         { width: cardWidth },
@@ -152,7 +147,7 @@ function KpiCard({
         <View>
           <Text style={[styles.kpiCardTotal, { color }]} numberOfLines={1}>
             {hidden
-              ? `${currencySymbol} ••••`
+              ? `${currencySymbol} ****`
               : `${currencySymbol}${Math.round(totalDisplay).toLocaleString("en-US")}`}
           </Text>
         </View>
@@ -165,7 +160,7 @@ function KpiCard({
           </Text>
           <Text style={styles.kpiCurrencyVal}>
             {hidden
-              ? "••••"
+              ? "****"
               : `${currencySymbol}${Math.round(hardDisplay).toLocaleString("en-US")}`}
           </Text>
         </View>
@@ -174,7 +169,7 @@ function KpiCard({
             Bs
           </Text>
           <Text style={styles.kpiCurrencyVal}>
-            {hidden ? "••••" : Math.round(vesAmount).toLocaleString("en-US")}
+            {hidden ? "****" : Math.round(vesAmount).toLocaleString("en-US")}
           </Text>
         </View>
       </View>
@@ -236,7 +231,7 @@ function KpiCard({
                     </Text>
                     <Text style={styles.kpiAvgVal}>
                       {hidden
-                        ? `${currencySymbol} ••••`
+                        ? `${currencySymbol} ****`
                         : `${currencySymbol}${Math.round(convertUSDToDisplayCurrency(cat.total / cat.count, displayCurrency, rates)).toLocaleString("en-US")}`}
                     </Text>
                     <Text style={styles.kpiAvgCount}>x{cat.count}</Text>
@@ -280,87 +275,24 @@ export default function HomeScreen() {
 
   const { width: windowWidth } = useWindowDimensions();
 
-  const [showGuide, setShowGuide] = useState(false);
-  const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
+  const {
+    showGuide,
+    setShowGuide,
+    dontShowGuideAgain,
+    setDontShowGuideAgain,
+    closeGuide,
+  } = useGuidePreference(HOME_GUIDE_DISMISSED_KEY);
   const [activeCardIdx, setActiveCardIdx] = useState(0);
   const [hiddenBalances, setHiddenBalances] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadGuidePreference = async () => {
-      const dismissed = await AsyncStorage.getItem(HOME_GUIDE_DISMISSED_KEY);
-      if (!mounted) return;
-      const isDismissed = dismissed === "true";
-      setDontShowGuideAgain(isDismissed);
-      setShowGuide(!isDismissed);
-    };
-
-    loadGuidePreference();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const closeGuide = useCallback(async () => {
-    if (dontShowGuideAgain) {
-      await AsyncStorage.setItem(HOME_GUIDE_DISMISSED_KEY, "true");
-    } else {
-      await AsyncStorage.removeItem(HOME_GUIDE_DISMISSED_KEY);
-    }
-    setShowGuide(false);
-  }, [dontShowGuideAgain]);
-  const filteredByPeriod = useMemo(() => {
-    return transactions.filter((t) => {
-      const d = new Date(t.date);
-      if (viewMode === "month") {
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-      } else if (viewMode === "ytd") {
-        return d.getFullYear() === currentYear && d.getMonth() <= currentMonth;
-      }
-      return d.getFullYear() === currentYear;
-    });
-  }, [transactions, viewMode, currentMonth, currentYear]);
-
-  const buildCategoryStats = useCallback(
-    (segment: Segment): { count: number; categories: CategoryStat[] } => {
-      const items = filteredByPeriod.filter((t) => t.segment === segment);
-      const catMap: Record<string, { total: number; count: number }> = {};
-      items.forEach((t) => {
-        if (!catMap[t.category]) catMap[t.category] = { total: 0, count: 0 };
-        catMap[t.category].total += t.amountUSD;
-        catMap[t.category].count += 1;
-      });
-      const totalUSD = items.reduce((s, t) => s + t.amountUSD, 0);
-      const categories = Object.entries(catMap)
-        .sort((a, b) => b[1].total - a[1].total)
-        .map(([name, { total, count }]) => ({
-          name,
-          total,
-          count,
-          pct: totalUSD > 0 ? (total / totalUSD) * 100 : 0,
-        }));
-      return { count: items.length, categories };
-    },
-    [filteredByPeriod],
+  const segmentStats = useMemo(
+    () => computeHomeSegmentStats(transactions, viewMode, currentMonth, currentYear),
+    [transactions, viewMode, currentMonth, currentYear],
   );
 
-  const ingresosStats = useMemo(
-    () => buildCategoryStats("ingresos"),
-    [buildCategoryStats],
-  );
-  const fijoStats = useMemo(
-    () => buildCategoryStats("gastos_fijos"),
-    [buildCategoryStats],
-  );
-  const varStats = useMemo(
-    () => buildCategoryStats("gastos_variables"),
-    [buildCategoryStats],
-  );
-  const ahorroStats = useMemo(
-    () => buildCategoryStats("ahorro"),
-    [buildCategoryStats],
-  );
+  const ingresosStats = segmentStats.ingresos;
+  const fijoStats = segmentStats.gastos_fijos;
+  const varStats = segmentStats.gastos_variables;
+  const ahorroStats = segmentStats.ahorro;
 
   const cardWidth = Math.min(Math.max(windowWidth - 56, 280), 460);
   const kpiRowPaddingRight = 24 + Math.max(windowWidth - cardWidth - 48, 0);
@@ -464,6 +396,8 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <Pressable
             onPress={() => router.push("/profile")}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir perfil"
             style={({ pressed }) => [styles.profileLink, pressed && styles.profileLinkPressed]}
           >
             <Ionicons name="chevron-back" size={16} color={Colors.text.muted} />
@@ -477,6 +411,8 @@ export default function HomeScreen() {
         <View style={styles.toolbarRow}>
           <Pressable
             onPress={() => setDisplayCurrency(displayCurrency === "USD" ? "EUR" : "USD")}
+            accessibilityRole="button"
+            accessibilityLabel={`Cambiar moneda de visualizacion a ${displayCurrency === "USD" ? "EUR" : "USD"}`}
             style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
               <MaterialCommunityIcons
@@ -487,6 +423,8 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => router.push("/currency-calculator-modal")}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir calculadora de divisas"
             style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <Ionicons
@@ -497,6 +435,8 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => setHiddenBalances(!hiddenBalances)}
+            accessibilityRole="button"
+            accessibilityLabel={hiddenBalances ? "Mostrar montos" : "Ocultar montos"}
             style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <Ionicons
@@ -507,6 +447,8 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => router.push("/report")}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir reporte"
             style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <MaterialCommunityIcons
@@ -517,6 +459,8 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() => setShowGuide(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir ayuda"
             style={({ pressed }) => [styles.toolbarBtn, pressed && styles.toolbarBtnPressed]}
           >
             <Ionicons
@@ -572,7 +516,7 @@ export default function HomeScreen() {
         <View style={styles.balanceSection}>
           <Text style={styles.balanceLabel}>{balanceLabel}</Text>
           {hiddenBalances ? (
-            <Text style={styles.balanceValue}>{`${getDisplayCurrencySymbol(displayCurrency)} ••••••`}</Text>
+            <Text style={styles.balanceValue}>{`${getDisplayCurrencySymbol(displayCurrency)} ******`}</Text>
           ) : (
             <View style={styles.balanceRow}>
               <Text style={styles.balanceValue}>

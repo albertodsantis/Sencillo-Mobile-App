@@ -19,27 +19,13 @@ import AmbientGlow from "@/components/AmbientGlow";
 import Colors from "@/constants/colors";
 import { useApp } from "@/lib/context/AppContext";
 import { getDisplayCurrencySymbol } from "@/lib/domain/finance";
-
-const TOTAL_STEPS = 4;
-
-const FIXED_EXPENSE_OPTIONS = [
-  { id: "Alquiler/Hipoteca", emoji: "🏠" },
-  { id: "Luz", emoji: "⚡" },
-  { id: "Agua", emoji: "💧" },
-  { id: "Internet", emoji: "🌐" },
-  { id: "Teléfono", emoji: "📱" },
-  { id: "Gimnasio", emoji: "💪" },
-  { id: "Suscripciones", emoji: "🎬" },
-] as const;
-
-const VARIABLE_EXPENSE_OPTIONS = [
-  { id: "Supermercado", emoji: "🛒" },
-  { id: "Cafeterías", emoji: "☕" },
-  { id: "Restaurantes", emoji: "🍽️" },
-  { id: "Transporte", emoji: "🚗" },
-  { id: "Ropa", emoji: "👕" },
-  { id: "Farmacia", emoji: "💊" },
-] as const;
+import {
+  FIXED_EXPENSE_OPTIONS,
+  getOnboardingStepDescription,
+  getOnboardingStepTitle,
+  TOTAL_ONBOARDING_STEPS,
+  VARIABLE_EXPENSE_OPTIONS,
+} from "@/lib/domain/onboarding";
 
 function sanitizeNumericInput(value: string): string {
   const cleaned = value.replace(/[^0-9.,]/g, "").replace(",", ".");
@@ -72,6 +58,9 @@ function SelectionChip({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
       style={({ pressed }) => [
         styles.chip,
         { width },
@@ -169,7 +158,7 @@ export default function OnboardingScreen() {
   }, []);
 
   const goToNextStep = useCallback(() => {
-    setStep((prev) => Math.min(prev + 1, TOTAL_STEPS - 1));
+    setStep((prev) => Math.min(prev + 1, TOTAL_ONBOARDING_STEPS - 1));
   }, []);
 
   const handleFinish = useCallback(
@@ -191,7 +180,7 @@ export default function OnboardingScreen() {
         const message =
           error instanceof Error
             ? error.message
-            : "No se pudo guardar la configuración inicial.";
+            : "No se pudo guardar la configuracion inicial.";
 
         if (Platform.OS === "web") {
           alert(message);
@@ -214,7 +203,7 @@ export default function OnboardingScreen() {
   );
 
   const handleContinue = useCallback(() => {
-    if (step === TOTAL_STEPS - 1) {
+    if (step === TOTAL_ONBOARDING_STEPS - 1) {
       void handleFinish();
       return;
     }
@@ -247,34 +236,14 @@ export default function OnboardingScreen() {
     void handleFinish({ monthlyIncome: null });
   }, [goToNextStep, handleFinish, step]);
 
-  const stepTitle = useMemo(() => {
-    if (step === 0) return "¿Cuáles son tus gastos fijos mensuales?";
-    if (step === 1) return "¿En qué sueles gastar en el día a día?";
-    if (step === 2) {
-      return budgetCategory
-        ? `¿Cuánto es lo máximo que te gustaría gastar al mes en ${budgetCategory}?`
-        : "Define tu primer presupuesto cuando tengas una categoría variable.";
-    }
-    return "¿Cuál es tu ingreso mensual aproximado para calcular tu capacidad de ahorro?";
-  }, [budgetCategory, step]);
-
-  const stepDescription = useMemo(() => {
-    if (step === 0) {
-      return "Elige solo lo que realmente quieres ver como compromiso fijo dentro de tu presupuesto.";
-    }
-
-    if (step === 1) {
-      return "Esto nos ayuda a dejar listo el presupuesto de tus gastos más frecuentes desde el primer día.";
-    }
-
-    if (step === 2) {
-      return budgetCategory
-        ? "Este límite aparecerá en tu pantalla de Presupuesto y podrás ajustarlo más tarde."
-        : "Si todavía no elegiste una categoría variable, puedes saltar este paso y configurarlo luego.";
-    }
-
-    return "Este dato es opcional. Si lo completas, dejaremos un ingreso inicial para que tu tablero no arranque vacío.";
-  }, [budgetCategory, step]);
+  const stepTitle = useMemo(
+    () => getOnboardingStepTitle(step, budgetCategory),
+    [budgetCategory, step],
+  );
+  const stepDescription = useMemo(
+    () => getOnboardingStepDescription(step, budgetCategory),
+    [budgetCategory, step],
+  );
 
   return (
     <KeyboardAvoidingView
@@ -311,11 +280,13 @@ export default function OnboardingScreen() {
                   setStep((prev) => Math.max(prev - 1, 0));
                 }}
                 disabled={step === 0 || isSaving}
+                accessibilityRole="button"
+                accessibilityLabel="Volver al paso anterior"
                 style={[styles.backButton, step === 0 && styles.backButtonDisabled]}
               >
                 <Ionicons name="arrow-back" size={18} color={Colors.text.secondary} />
               </Pressable>
-              <Text style={styles.stepLabel}>Paso {step + 1} de {TOTAL_STEPS}</Text>
+              <Text style={styles.stepLabel}>Paso {step + 1} de {TOTAL_ONBOARDING_STEPS}</Text>
               <View style={styles.currencyBadge}>
                 <Text style={styles.currencyBadgeText}>{displayCurrency}</Text>
               </View>
@@ -325,7 +296,7 @@ export default function OnboardingScreen() {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${((step + 1) / TOTAL_STEPS) * 100}%`,
+                    width: `${((step + 1) / TOTAL_ONBOARDING_STEPS) * 100}%`,
                     backgroundColor: accentColor,
                   },
                 ]}
@@ -334,7 +305,7 @@ export default function OnboardingScreen() {
           </View>
 
           <View style={[styles.card, { padding: cardPadding }]}>
-            <Text style={styles.eyebrow}>Configuración inicial</Text>
+            <Text style={styles.eyebrow}>Configuracion inicial</Text>
             <Text style={styles.title}>{stepTitle}</Text>
             <Text style={styles.description}>{stepDescription}</Text>
 
@@ -374,7 +345,7 @@ export default function OnboardingScreen() {
               <View style={styles.inputStep}>
                 {variableCategories.length > 0 ? (
                   <>
-                    <Text style={styles.selectorLabel}>Categoría a presupuestar</Text>
+                    <Text style={styles.selectorLabel}>Categoria a presupuestar</Text>
                     <View style={[styles.chipGrid, { gap: chipGap }]}>
                       {variableCategories.map((category) => {
                         const chipConfig = VARIABLE_EXPENSE_OPTIONS.find((option) => option.id === category);
@@ -382,7 +353,7 @@ export default function OnboardingScreen() {
                           <SelectionChip
                             key={category}
                             label={category}
-                            emoji={chipConfig?.emoji ?? "✨"}
+                            emoji={chipConfig?.emoji ?? "Extra"}
                             active={budgetCategory === category}
                             accentColor={Colors.segments.gastos_variables.color}
                             width={chipWidth}
@@ -392,7 +363,7 @@ export default function OnboardingScreen() {
                       })}
                     </View>
                     <View style={styles.bigInputCard}>
-                      <Text style={styles.bigInputLabel}>Límite mensual en {displayCurrency}</Text>
+                      <Text style={styles.bigInputLabel}>Limite mensual en {displayCurrency}</Text>
                       <View style={styles.bigInputRow}>
                         <Text style={[styles.bigInputSymbol, { color: Colors.segments.gastos_variables.color }]}>
                           {currencySymbol}
@@ -416,7 +387,7 @@ export default function OnboardingScreen() {
                       size={28}
                       color={Colors.text.muted}
                     />
-                    <Text style={styles.emptyStateTitle}>Todavía no hay categoría seleccionada</Text>
+                    <Text style={styles.emptyStateTitle}>Todavia no hay categoria seleccionada</Text>
                     <Text style={styles.emptyStateText}>
                       Puedes volver al paso anterior para elegir una o seguir y configurarlo luego desde Presupuesto.
                     </Text>
@@ -445,7 +416,7 @@ export default function OnboardingScreen() {
                   </View>
                 </View>
                 <Text style={styles.helperText}>
-                  Si prefieres, puedes saltar este paso y registrar tus ingresos reales después.
+                  Si prefieres, puedes saltar este paso y registrar tus ingresos reales despues.
                 </Text>
               </View>
             ) : null}
@@ -454,6 +425,8 @@ export default function OnboardingScreen() {
               <Pressable
                 onPress={handleContinue}
                 disabled={isSaving}
+                accessibilityRole="button"
+                accessibilityLabel={step === TOTAL_ONBOARDING_STEPS - 1 ? "Guardar configuracion inicial" : "Continuar onboarding"}
                 style={({ pressed }) => [
                   styles.primaryButton,
                   { backgroundColor: accentColor },
@@ -465,7 +438,7 @@ export default function OnboardingScreen() {
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={styles.primaryButtonText}>
-                    {step === TOTAL_STEPS - 1 ? "Guardar configuración" : "Continuar"}
+                    {step === TOTAL_ONBOARDING_STEPS - 1 ? "Guardar configuracion" : "Continuar"}
                   </Text>
                 )}
               </Pressable>
@@ -473,6 +446,8 @@ export default function OnboardingScreen() {
               <Pressable
                 onPress={handleSkipStep}
                 disabled={isSaving}
+                accessibilityRole="button"
+                accessibilityLabel="Saltar este paso"
                 style={({ pressed }) => [
                   styles.skipButton,
                   pressed && !isSaving && styles.skipButtonPressed,

@@ -63,3 +63,45 @@ export function renameCategoryReferences({
     nextSavingsGoals,
   };
 }
+
+export function deleteCategoryReferences({
+  budgets,
+  category,
+  pnlStructure,
+  savingsGoals,
+  segment,
+  transactions,
+}: {
+  budgets: Budgets;
+  category: string;
+  pnlStructure: PnlStructure;
+  savingsGoals: SavingsGoals;
+  segment: Transaction["segment"];
+  transactions: Transaction[];
+}) {
+  const updatedPnl = {
+    ...pnlStructure,
+    [segment]: pnlStructure[segment].filter((item) => item !== category),
+  };
+
+  const filteredTransactions = transactions.filter(
+    (tx) => !(tx.segment === segment && tx.category === category),
+  );
+
+  const nextBudgets = { ...budgets };
+  if (segment === "gastos_variables" && category in nextBudgets) {
+    delete nextBudgets[category];
+  }
+
+  const nextSavingsGoals = { ...savingsGoals };
+  if (segment === "ahorro" && category in nextSavingsGoals) {
+    delete nextSavingsGoals[category];
+  }
+
+  return {
+    updatedPnl,
+    filteredTransactions,
+    nextBudgets,
+    nextSavingsGoals,
+  };
+}

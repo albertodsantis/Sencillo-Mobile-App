@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Alert,
   StyleSheet,
@@ -13,11 +13,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
+import { useGuidePreference } from "@/lib/hooks/useGuidePreference";
 import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol } from "@/lib/domain/finance";
 import {
   formatEditableDisplayValue,
@@ -144,8 +144,13 @@ export default function BudgetScreen() {
   const [editValue, setEditValue] = useState("");
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalValue, setGoalValue] = useState("");
-  const [showGuide, setShowGuide] = useState(false);
-  const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
+  const {
+    showGuide,
+    setShowGuide,
+    dontShowGuideAgain,
+    setDontShowGuideAgain,
+    closeGuide,
+  } = useGuidePreference(BUDGET_GUIDE_DISMISSED_KEY);
   const [activeTab, setActiveTab] = useState<"presupuestos" | "ahorro">(
     "presupuestos",
   );
@@ -208,32 +213,6 @@ export default function BudgetScreen() {
 
   const overallSavingsProgress =
     totalSavingsGoal > 0 ? (totalSaved / totalSavingsGoal) * 100 : 0;
-
-  useEffect(() => {
-    let mounted = true;
-    const loadGuidePreference = async () => {
-      const dismissed = await AsyncStorage.getItem(BUDGET_GUIDE_DISMISSED_KEY);
-      if (!mounted) return;
-      const isDismissed = dismissed === "true";
-      setDontShowGuideAgain(isDismissed);
-      setShowGuide(!isDismissed);
-    };
-
-    loadGuidePreference();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const closeGuide = useCallback(async () => {
-    if (dontShowGuideAgain) {
-      await AsyncStorage.setItem(BUDGET_GUIDE_DISMISSED_KEY, "true");
-    } else {
-      await AsyncStorage.removeItem(BUDGET_GUIDE_DISMISSED_KEY);
-    }
-    setShowGuide(false);
-  }, [dontShowGuideAgain]);
 
   const handleSaveBudget = useCallback(
     async (category: string) => {

@@ -13,11 +13,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
+import { useGuidePreference } from "@/lib/hooks/useGuidePreference";
 import { type Segment, type PnlStructure, SEGMENT_CONFIG } from "@/lib/domain/types";
 
 const SETTINGS_GUIDE_DISMISSED_KEY = "guide_dismissed_settings";
@@ -195,8 +195,13 @@ export default function SettingsScreen() {
   const [expandedSegment, setExpandedSegment] = useState<Segment | null>(null);
   const [newCategoryText, setNewCategoryText] = useState("");
   const [addingToSegment, setAddingToSegment] = useState<Segment | null>(null);
-  const [showGuide, setShowGuide] = useState(false);
-  const [dontShowGuideAgain, setDontShowGuideAgain] = useState(false);
+  const {
+    showGuide,
+    setShowGuide,
+    dontShowGuideAgain,
+    setDontShowGuideAgain,
+    closeGuide,
+  } = useGuidePreference(SETTINGS_GUIDE_DISMISSED_KEY);
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -207,31 +212,6 @@ export default function SettingsScreen() {
     else Alert.alert("Error", message);
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    const loadGuidePreference = async () => {
-      const dismissed = await AsyncStorage.getItem(SETTINGS_GUIDE_DISMISSED_KEY);
-      if (!mounted) return;
-      const isDismissed = dismissed === "true";
-      setDontShowGuideAgain(isDismissed);
-      setShowGuide(!isDismissed);
-    };
-
-    loadGuidePreference();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const closeGuide = useCallback(async () => {
-    if (dontShowGuideAgain) {
-      await AsyncStorage.setItem(SETTINGS_GUIDE_DISMISSED_KEY, "true");
-    } else {
-      await AsyncStorage.removeItem(SETTINGS_GUIDE_DISMISSED_KEY);
-    }
-    setShowGuide(false);
-  }, [dontShowGuideAgain]);
 
   const handleAddCategory = useCallback(
     async (segment: Segment) => {

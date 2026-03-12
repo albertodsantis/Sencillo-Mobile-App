@@ -20,14 +20,8 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useApp } from "@/lib/context/AppContext";
+import { useNotificationPreferences } from "@/lib/hooks/useNotificationPreferences";
 import { MIN_PASSWORD_LENGTH, validatePasswordLength } from "@/lib/auth/passwordPolicy";
-import {
-  getNotificationPreferences,
-  saveNotificationPreferences,
-  applyNotificationPreferences,
-  DEFAULT_NOTIFICATION_PREFERENCES,
-  type NotificationPreferences,
-} from "@/lib/notifications";
 
 const PHONE_PREFIXES = [
   "+58", "+1", "+34", "+57", "+52", "+56", "+51", "+55", "+44", "+33",
@@ -65,10 +59,11 @@ export default function ProfileScreen() {
   const [workspaceName, setWorkspaceName] = useState('');
 
   const [hasChanges, setHasChanges] = useState(false);
-  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(
-    DEFAULT_NOTIFICATION_PREFERENCES
-  );
-  const [notificationLoading, setNotificationLoading] = useState(true);
+  const {
+    notificationPrefs,
+    notificationLoading,
+    updateNotificationPrefs,
+  } = useNotificationPreferences();
 
   const webTopInset = Platform.OS === "web" ? 67 : 0;
   const topPadding = insets.top + webTopInset + 16;
@@ -89,39 +84,21 @@ export default function ProfileScreen() {
     setHasChanges(changed);
   }, [firstName, lastName, phonePrefix, phoneNumber, profile]);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      const prefs = await getNotificationPreferences();
-      setNotificationPrefs(prefs);
-      setNotificationLoading(false);
-    };
-
-    loadSettings();
-  }, []);
-
-  const handleToggleNotifications = useCallback(async (nextPrefs: NotificationPreferences) => {
-    setNotificationLoading(true);
-    try {
-      const success = await applyNotificationPreferences(nextPrefs);
-      if (!success) {
-        const msg = "No se pudieron activar las notificaciones. Verifica los permisos en Ajustes.";
-        if (Platform.OS === "web") alert(msg);
-        else Alert.alert("Permiso denegado", msg);
-        setNotificationLoading(false);
-        return;
-      }
-
-      await saveNotificationPreferences(nextPrefs);
-      setNotificationPrefs(nextPrefs);
+  const handleToggleNotifications = useCallback(async (nextPrefs: typeof notificationPrefs) => {
+    const result = await updateNotificationPrefs(nextPrefs);
+    if (result.success) {
       Haptics.selectionAsync();
-    } catch {
-      const msg = "Ocurrio un error con las notificaciones";
-      if (Platform.OS === "web") alert(msg);
-      else Alert.alert("Error", msg);
-    } finally {
-      setNotificationLoading(false);
+      return;
     }
-  }, []);
+
+    const msg = result.message || "Ocurrio un error con las notificaciones";
+    if (Platform.OS === "web") {
+      alert(msg);
+      return;
+    }
+
+    Alert.alert(result.reason === "permission" ? "Permiso denegado" : "Error", msg);
+  }, [updateNotificationPrefs]);
 
   const handleSaveProfile = useCallback(async () => {
     try {
@@ -206,7 +183,7 @@ export default function ProfileScreen() {
       }
     };
 
-    const confirmMessage = `Se eliminará el espacio "${workspaceName}" y toda su información. Esta acción no se puede deshacer.`;
+    const confirmMessage = `Se eliminara el espacio "${workspaceName}" y toda su informacion. Esta accion no se puede deshacer.`;
 
     if (Platform.OS === 'web') {
       if (confirm(confirmMessage)) await doDelete();
@@ -316,12 +293,22 @@ export default function ProfileScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+            style={styles.backBtn}
+          >
             <Ionicons name="arrow-back" size={22} color={Colors.text.secondary} />
           </Pressable>
           <Text style={styles.title}>Perfil</Text>
           {hasChanges ? (
-            <Pressable onPress={handleSaveProfile} style={styles.saveHeaderBtn}>
+            <Pressable
+              onPress={handleSaveProfile}
+              accessibilityRole="button"
+              accessibilityLabel="Guardar perfil"
+              style={styles.saveHeaderBtn}
+            >
               <Ionicons name="checkmark" size={22} color="#fff" />
             </Pressable>
           ) : (

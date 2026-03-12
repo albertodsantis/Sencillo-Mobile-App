@@ -27,7 +27,9 @@ import {
 } from '../repositories';
 import { ACTIVE_WORKSPACE_STORAGE_KEY } from '../repositories/workspaceScope';
 import { fetchRates, computeDashboard, computeBudget, getLocalDateString } from '../domain/finance';
-import { renameCategoryReferences } from '../domain/categoryTransforms';
+import { deleteCategoryReferences, renameCategoryReferences } from '../domain/categoryTransforms';
+import { buildInitialIncomeTransaction } from '../domain/onboarding';
+import { fromDisplayValueToUSD } from '../domain/displayCurrency';
 import {
   clearStoredPreviousBudgets,
   getStoredPreviousBudgets,
@@ -346,26 +348,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteCategoryAndRelatedData = useCallback(
     async (segment: Transaction['segment'], category: string) => {
-      const updatedPnl = {
-        ...pnlStructure,
-        [segment]: pnlStructure[segment].filter((item) => item !== category),
-      };
-
-      const filteredTransactions = transactions.filter(
-        (tx) => !(tx.segment === segment && tx.category === category),
-      );
-
-      let nextBudgets = budgets;
-      if (segment === 'gastos_variables' && category in budgets) {
-        nextBudgets = { ...budgets };
-        delete nextBudgets[category];
-      }
-
-      let nextSavingsGoals = savingsGoals;
-      if (segment === 'ahorro' && category in savingsGoals) {
-        nextSavingsGoals = { ...savingsGoals };
-        delete nextSavingsGoals[category];
-      }
+      const {
+        updatedPnl,
+        filteredTransactions,
+        nextBudgets,
+        nextSavingsGoals,
+      } = deleteCategoryReferences({
+        budgets,
+        category,
+        pnlStructure,
+        savingsGoals,
+        segment,
+        transactions,
+      });
 
       await Promise.all([
         PnlRepository.save(updatedPnl),
@@ -428,37 +423,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (budgetCategory && budgetLimit && budgetLimit > 0) {
-        const normalizedBudget =
-          displayCurrency === 'EUR' && rates.eurCross > 0
-            ? budgetLimit * rates.eurCross
-            : budgetLimit;
-
         await updateBudgets({
           ...budgets,
-          [budgetCategory]: normalizedBudget,
+          [budgetCategory]: fromDisplayValueToUSD(
+            budgetLimit,
+            displayCurrency,
+            rates.eurCross,
+          ),
         });
       }
 
       if (monthlyIncome && monthlyIncome > 0) {
         const txDate = new Date(`${getLocalDateString()}T12:00:00`).toISOString();
         const incomeCategory = nextPnl.ingresos[0] ?? DEFAULT_PNL.ingresos[0];
-        const normalizedIncomeUSD =
-          displayCurrency === 'EUR' && rates.eurCross > 0
-            ? monthlyIncome * rates.eurCross
-            : monthlyIncome;
-
-        await addTx({
-          type: 'income',
-          segment: 'ingresos',
-          amount: monthlyIncome,
-          currency: displayCurrency,
-          originalRate: displayCurrency === 'EUR' ? (rates.eurCross > 0 ? rates.eurCross : 1) : 1,
-          amountUSD: normalizedIncomeUSD,
-          category: incomeCategory,
-          description: 'Configuración inicial',
-          date: txDate,
-          profileId: '',
-        });
+        await addTx(
+          buildInitialIncomeTransaction({
+            date: txDate,
+            displayCurrency,
+            eurCross: rates.eurCross,
+            incomeCategory,
+            monthlyIncome,
+          }),
+        );
       }
 
       const nextProfile = {
