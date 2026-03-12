@@ -5,11 +5,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar, View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Sentry from "@sentry/react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider, useApp } from "@/lib/context/AppContext";
 import { AuthProvider, useAuth } from "@/lib/context/AuthContext";
-import { captureErrorBoundaryException } from "@/lib/monitoring/sentry";
 import "@/lib/notifications";
 import LoginScreen from "@/components/LoginScreen";
 import Colors from "@/constants/colors";
@@ -116,52 +114,6 @@ function RootLayoutNav() {
   );
 }
 
-function RootMonitoringSync() {
-  const pathname = usePathname();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (!user) {
-      Sentry.setUser(null);
-      Sentry.setContext("auth", null);
-      return;
-    }
-
-    Sentry.setUser({
-      id: user.id,
-      email: user.email,
-      username: user.name,
-    });
-    Sentry.setContext("auth", { provider: user.provider });
-  }, [user]);
-
-  useEffect(() => {
-    if (!pathname) return;
-
-    Sentry.setTag("route", pathname);
-    Sentry.addBreadcrumb({
-      category: "navigation",
-      message: `Route changed to ${pathname}`,
-      level: "info",
-    });
-  }, [pathname]);
-
-  return null;
-}
-
-function WorkspaceMonitoringSync() {
-  const { activeWorkspaceId } = useApp();
-
-  useEffect(() => {
-    Sentry.setContext(
-      "workspace",
-      activeWorkspaceId ? { id: activeWorkspaceId } : null,
-    );
-  }, [activeWorkspaceId]);
-
-  return null;
-}
-
 function AppNavigatorGate() {
   const { isLoading, needsOnboarding, bootstrapError } = useApp();
   const pathname = usePathname();
@@ -211,7 +163,6 @@ function AuthGate() {
 
   return (
     <AppProvider>
-      <WorkspaceMonitoringSync />
       <AppNavigatorGate />
     </AppProvider>
   );
@@ -236,12 +187,11 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <ErrorBoundary onError={captureErrorBoundaryException}>
+    <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
           <StatusBar barStyle="light-content" backgroundColor="#020617" />
           <AuthProvider>
-            <RootMonitoringSync />
             <AuthGate />
           </AuthProvider>
         </KeyboardProvider>

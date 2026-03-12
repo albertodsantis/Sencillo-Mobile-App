@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { SupportedStorage } from '@supabase/auth-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { toSecureStoreKey } from './secureStoreKey';
 
 export const AUTH_USER_CACHE_KEY = '@sencillo/auth_user';
 export const SUPABASE_AUTH_STORAGE_KEY = '@sencillo/supabase.auth.token';
@@ -25,7 +26,7 @@ async function readStorageValue(key: string): Promise<string | null> {
     return await AsyncStorage.getItem(key);
   }
 
-  return await SecureStore.getItemAsync(key);
+  return await SecureStore.getItemAsync(toSecureStoreKey(key));
 }
 
 async function writeStorageValue(key: string, value: string): Promise<void> {
@@ -34,7 +35,7 @@ async function writeStorageValue(key: string, value: string): Promise<void> {
     return;
   }
 
-  await SecureStore.setItemAsync(key, value, {
+  await SecureStore.setItemAsync(toSecureStoreKey(key), value, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
 }
@@ -45,7 +46,7 @@ async function removeStorageValue(key: string): Promise<void> {
     return;
   }
 
-  await SecureStore.deleteItemAsync(key);
+  await SecureStore.deleteItemAsync(toSecureStoreKey(key));
 }
 
 async function migrateLegacyValueIfNeeded(key: string): Promise<string | null> {

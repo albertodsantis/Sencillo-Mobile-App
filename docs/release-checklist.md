@@ -35,9 +35,6 @@
 - Confirmar redirects OAuth de produccion para Supabase.
 - Confirmar politicas RLS en la base productiva.
 - Verificar `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` de release.
-- Configurar `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_SENTRY_ENVIRONMENT` y `EXPO_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`.
-- Configurar `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` y `SENTRY_PROJECT` para sourcemaps de release.
-- Confirmar que crash reporting esta activo y verificar un evento real siguiendo `docs/crash-reporting.md`.
 - Verificar permisos de notificaciones y recordatorio diario en Android e iOS.
 
 ## Stores
