@@ -138,10 +138,18 @@ function CategoryRow({
           returnKeyType="done"
           selectTextOnFocus
         />
-        <Pressable onPress={handleSaveEdit}>
+        <Pressable
+          onPress={handleSaveEdit}
+          accessibilityRole="button"
+          accessibilityLabel={`Guardar categoria ${cat}`}
+        >
           <Ionicons name="checkmark" size={18} color={segColor} />
         </Pressable>
-        <Pressable onPress={() => { setEditing(false); setEditText(cat); }}>
+        <Pressable
+          onPress={() => { setEditing(false); setEditText(cat); }}
+          accessibilityRole="button"
+          accessibilityLabel={`Cancelar edicion de ${cat}`}
+        >
           <Ionicons name="close" size={18} color={Colors.text.muted} />
         </Pressable>
       </View>
@@ -153,14 +161,27 @@ function CategoryRow({
       <Pressable
         style={styles.categoryNameArea}
         onPress={() => setEditing(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Editar categoria ${cat}`}
       >
         <Text style={styles.categoryName}>{cat}</Text>
       </Pressable>
       <View style={styles.categoryActions}>
-        <Pressable onPress={() => setEditing(true)} hitSlop={8}>
+        <Pressable
+          onPress={() => setEditing(true)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Renombrar categoria ${cat}`}
+        >
           <Ionicons name="pencil-outline" size={18} color={Colors.text.disabled} />
         </Pressable>
-        <Pressable onPress={handleDelete} hitSlop={8}>
+        <Pressable
+          onPress={handleDelete}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Eliminar categoria ${cat}`}
+          accessibilityHint="Elimina la categoria y sus datos asociados"
+        >
           <Ionicons name="trash-outline" size={18} color={Colors.text.disabled} />
         </Pressable>
       </View>

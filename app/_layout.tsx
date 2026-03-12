@@ -104,14 +104,6 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
-        name="categories"
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          animation: "slide_from_bottom",
-        }}
-      />
-      <Stack.Screen
         name="profile"
         options={{
           headerShown: false,

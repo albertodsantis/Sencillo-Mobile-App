@@ -27,6 +27,7 @@ import {
 } from '../repositories';
 import { ACTIVE_WORKSPACE_STORAGE_KEY } from '../repositories/workspaceScope';
 import { fetchRates, computeDashboard, computeBudget, getLocalDateString } from '../domain/finance';
+import { renameCategoryReferences } from '../domain/categoryTransforms';
 import {
   clearStoredPreviousBudgets,
   getStoredPreviousBudgets,
@@ -309,42 +310,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentCategory: string,
       nextCategory: string,
     ) => {
-      const trimmedNextCategory = nextCategory.trim();
-      if (!trimmedNextCategory || trimmedNextCategory === currentCategory) {
+      if (!nextCategory.trim() || nextCategory.trim() === currentCategory) {
         return;
       }
 
-      if (pnlStructure[segment].includes(trimmedNextCategory)) {
-        throw new Error('Esta categoria ya existe');
-      }
-
-      const updatedPnl = {
-        ...pnlStructure,
-        [segment]: pnlStructure[segment].map((item) =>
-          item === currentCategory ? trimmedNextCategory : item,
-        ),
-      };
-
-      const renamedTransactions = transactions.map((tx) =>
-        tx.segment === segment && tx.category === currentCategory
-          ? { ...tx, category: trimmedNextCategory }
-          : tx,
-      );
-
-      let nextBudgets = budgets;
-      if (segment === 'gastos_variables' && currentCategory in budgets) {
-        nextBudgets = { ...budgets, [trimmedNextCategory]: budgets[currentCategory] };
-        delete nextBudgets[currentCategory];
-      }
-
-      let nextSavingsGoals = savingsGoals;
-      if (segment === 'ahorro' && currentCategory in savingsGoals) {
-        nextSavingsGoals = {
-          ...savingsGoals,
-          [trimmedNextCategory]: savingsGoals[currentCategory],
-        };
-        delete nextSavingsGoals[currentCategory];
-      }
+      const {
+        updatedPnl,
+        renamedTransactions,
+        nextBudgets,
+        nextSavingsGoals,
+      } = renameCategoryReferences({
+        budgets,
+        currentCategory,
+        nextCategory,
+        pnlStructure,
+        savingsGoals,
+        segment,
+        transactions,
+      });
 
       await Promise.all([
         PnlRepository.save(updatedPnl),

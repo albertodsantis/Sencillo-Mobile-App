@@ -550,6 +550,8 @@ export default function ProfileScreen() {
 
           <Pressable
             onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar sesion"
             style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.7 }]}
           >
             <View style={styles.rowLeft}>
@@ -563,6 +565,9 @@ export default function ProfileScreen() {
 
           <Pressable
             onPress={handleResetTransactions}
+            accessibilityRole="button"
+            accessibilityLabel="Resetear movimientos"
+            accessibilityHint="Elimina todas las transacciones registradas"
             style={({ pressed }) => [styles.rowItem, pressed && { opacity: 0.7 }]}
           >
             <View style={styles.rowLeft}>
@@ -579,6 +584,9 @@ export default function ProfileScreen() {
 
           <Pressable
             onPress={handleDeleteAccount}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar cuenta"
+            accessibilityHint="Borra la cuenta y toda la informacion asociada"
             style={({ pressed }) => [styles.rowItem, { borderBottomWidth: 0 }, pressed && { opacity: 0.7 }]}
           >
             <View style={styles.rowLeft}>

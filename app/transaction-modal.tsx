@@ -38,6 +38,12 @@ import {
   convertUSDToDisplayCurrency,
   getDisplayCurrencySymbol,
 } from "@/lib/domain/finance";
+import {
+  convertUsingOriginalRate,
+  resolveInitialCustomRate,
+  resolveInitialRateType,
+  shouldPreserveHistoricalRate,
+} from "@/lib/domain/transactionEditing";
 
 const CURRENCIES: { id: Currency; label: string; symbol: string; fullLabel: string }[] = [
   { id: "VES", label: "Bs", symbol: "Bs", fullLabel: "BOLIVARES (VES)" },
@@ -83,42 +89,6 @@ function parseDateString(dateStr: string): { day: number; month: number; year: n
 
 function daysInMonth(month: number, year: number): number {
   return new Date(year, month, 0).getDate();
-}
-
-function areRatesEquivalent(left: number, right: number): boolean {
-  return Math.abs(left - right) < 0.0001;
-}
-
-function resolveInitialRateType(
-  editingTx: Transaction | null,
-  rates: Rates,
-): RateType {
-  if (!editingTx || editingTx.currency !== "VES") return "bcv";
-  if (areRatesEquivalent(editingTx.originalRate, rates.bcv)) return "bcv";
-  if (areRatesEquivalent(editingTx.originalRate, rates.parallel)) return "parallel";
-  return "manual";
-}
-
-function resolveInitialCustomRate(
-  editingTx: Transaction | null,
-  initialRateType: RateType,
-): string {
-  if (!editingTx || editingTx.currency !== "VES" || initialRateType !== "manual") {
-    return "";
-  }
-
-  return editingTx.originalRate > 0 ? editingTx.originalRate.toString() : "";
-}
-
-function convertUsingOriginalRate(
-  amount: number,
-  currency: Currency,
-  originalRate: number,
-): number {
-  if (currency === "USD") return amount;
-  if (currency === "EUR") return amount * originalRate;
-  if (!originalRate || originalRate <= 0) return 0;
-  return amount / originalRate;
 }
 
 function BottomSheetPicker({
@@ -423,6 +393,7 @@ export default function TransactionModal() {
   const segColor = SEGMENT_CONFIG[segment].color;
   const categories = pnlStructure[segment] || [];
   const currencyInfo = CURRENCIES.find((c) => c.id === currency) || CURRENCIES[0];
+  const parsedAmount = parseFloat(amount) || 0;
 
   const currentRate = useMemo(() => {
     return getFinalRate(
@@ -434,20 +405,15 @@ export default function TransactionModal() {
   }, [currency, rates, rateType, customRate]);
 
   const preservesHistoricalRate = useMemo(() => {
-    if (!editingTx || currency !== editingTx.currency) return false;
-    if (currency === "EUR") return true;
-    if (currency !== "VES") return false;
-    if (rateType !== initialRateType) return false;
-    if (rateType !== "manual") return true;
-
-    const parsedCustomRate = parseFloat(customRate);
-    const parsedInitialCustomRate = parseFloat(initialCustomRate);
-    if (!Number.isFinite(parsedCustomRate) || !Number.isFinite(parsedInitialCustomRate)) {
-      return false;
-    }
-
-    return areRatesEquivalent(parsedCustomRate, parsedInitialCustomRate);
-  }, [currency, customRate, editingTx, initialCustomRate, initialRateType, rateType]);
+    return shouldPreserveHistoricalRate({
+      amount: parsedAmount,
+      currency,
+      customRate,
+      editingTx,
+      rateType,
+      rates,
+    });
+  }, [currency, customRate, editingTx, parsedAmount, rateType, rates]);
 
   const resolvedOriginalRate = useMemo(() => {
     if (!editingTx || currency !== editingTx.currency) return currentRate;
@@ -457,19 +423,18 @@ export default function TransactionModal() {
   }, [currency, currentRate, editingTx, preservesHistoricalRate]);
 
   const amountUSD = useMemo(() => {
-    const amt = parseFloat(amount) || 0;
     if (editingTx && currency === editingTx.currency && preservesHistoricalRate) {
-      return convertUsingOriginalRate(amt, currency, editingTx.originalRate);
+      return convertUsingOriginalRate(parsedAmount, currency, editingTx.originalRate);
     }
 
     return convertToUSD(
-      amt,
+      parsedAmount,
       currency,
       rates,
       rateType,
       customRate ? parseFloat(customRate) : undefined
     );
-  }, [amount, currency, customRate, editingTx, preservesHistoricalRate, rateType, rates]);
+  }, [currency, customRate, editingTx, parsedAmount, preservesHistoricalRate, rateType, rates]);
 
   const displayAmount = useMemo(
     () => convertUSDToDisplayCurrency(amountUSD, displayCurrency, rates),
@@ -873,6 +838,8 @@ export default function TransactionModal() {
 
         <Pressable
           onPress={handleSave}
+          accessibilityRole="button"
+          accessibilityLabel={editingTx ? "Guardar cambios del movimiento" : "Guardar movimiento"}
           style={({ pressed }) => [
             styles.saveButton,
             pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
@@ -886,6 +853,9 @@ export default function TransactionModal() {
         {editingTx && (
           <Pressable
             onPress={handleDelete}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar movimiento"
+            accessibilityHint="Borra este movimiento de forma permanente"
             style={({ pressed }) => [
               styles.deleteButton,
               pressed && { opacity: 0.8 },

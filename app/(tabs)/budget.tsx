@@ -19,6 +19,11 @@ import Colors from "@/constants/colors";
 import AmbientGlow from "@/components/AmbientGlow";
 import { useApp } from "@/lib/context/AppContext";
 import { formatCurrency, convertUSDToDisplayCurrency, getDisplayCurrencySymbol } from "@/lib/domain/finance";
+import {
+  formatEditableDisplayValue,
+  fromDisplayValueToUSD,
+  toEditableDisplayValue,
+} from "@/lib/domain/displayCurrency";
 import dayjs from "dayjs";
 
 const BUDGET_GUIDE_DISMISSED_KEY = "guide_dismissed_budget";
@@ -153,25 +158,18 @@ export default function BudgetScreen() {
   const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 24;
   const currencySymbol = getDisplayCurrencySymbol(displayCurrency);
   const toDisplay = useCallback((value: number) => convertUSDToDisplayCurrency(value, displayCurrency, rates), [displayCurrency, rates]);
-  const toEditableDisplay = useCallback((value: number) => {
-    if (displayCurrency !== "EUR" || rates.eurCross <= 0) return value;
-    return value / rates.eurCross;
-  }, [displayCurrency, rates.eurCross]);
-  const fromDisplayToUSD = useCallback((value: number) => {
-    if (displayCurrency !== "EUR") return value;
-    if (rates.eurCross <= 0) {
-      throw new Error("No hay una tasa EUR/USD disponible para guardar este valor.");
-    }
-    return value * rates.eurCross;
-  }, [displayCurrency, rates.eurCross]);
-  const formatEditableValue = useCallback((value: number) => {
-    const normalizedValue = toEditableDisplay(value);
-    if (!Number.isFinite(normalizedValue)) return "";
-    return normalizedValue
-      .toFixed(2)
-      .replace(/\.00$/, "")
-      .replace(/(\.\d*[1-9])0+$/, "$1");
-  }, [toEditableDisplay]);
+  const toEditableDisplay = useCallback(
+    (value: number) => toEditableDisplayValue(value, displayCurrency, rates.eurCross),
+    [displayCurrency, rates.eurCross],
+  );
+  const fromDisplayToUSD = useCallback(
+    (value: number) => fromDisplayValueToUSD(value, displayCurrency, rates.eurCross),
+    [displayCurrency, rates.eurCross],
+  );
+  const formatEditableValue = useCallback(
+    (value: number) => formatEditableDisplayValue(value, displayCurrency, rates.eurCross),
+    [displayCurrency, rates.eurCross],
+  );
   const showError = useCallback((message: string) => {
     if (Platform.OS === "web") alert(message);
     else Alert.alert("Error", message);
