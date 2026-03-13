@@ -4,22 +4,22 @@ import { fromDisplayValueToUSD } from "./displayCurrency";
 export const TOTAL_ONBOARDING_STEPS = 4;
 
 export const FIXED_EXPENSE_OPTIONS = [
-  { id: "Alquiler/Hipoteca", emoji: "Casa" },
-  { id: "Luz", emoji: "Luz" },
-  { id: "Agua", emoji: "Agua" },
-  { id: "Internet", emoji: "Web" },
-  { id: "Telefono", emoji: "Movil" },
-  { id: "Gimnasio", emoji: "Gym" },
-  { id: "Suscripciones", emoji: "Play" },
+  { id: "Alquiler/Hipoteca", iconName: "home-outline" },
+  { id: "Luz", iconName: "flash-outline" },
+  { id: "Agua", iconName: "water-outline" },
+  { id: "Internet", iconName: "wifi-outline" },
+  { id: "Telefono", iconName: "phone-portrait-outline" },
+  { id: "Gimnasio", iconName: "barbell-outline" },
+  { id: "Suscripciones", iconName: "play-circle-outline" },
 ] as const;
 
 export const VARIABLE_EXPENSE_OPTIONS = [
-  { id: "Supermercado", emoji: "Shop" },
-  { id: "Cafeterias", emoji: "Cafe" },
-  { id: "Restaurantes", emoji: "Food" },
-  { id: "Transporte", emoji: "Auto" },
-  { id: "Ropa", emoji: "Moda" },
-  { id: "Farmacia", emoji: "Salud" },
+  { id: "Supermercado", iconName: "cart-outline" },
+  { id: "Cafeterias", iconName: "cafe-outline" },
+  { id: "Restaurantes", iconName: "restaurant-outline" },
+  { id: "Transporte", iconName: "car-outline" },
+  { id: "Ropa", iconName: "shirt-outline" },
+  { id: "Farmacia", iconName: "medical-outline" },
 ] as const;
 
 export function getOnboardingStepTitle(step: number, budgetCategory: string | null): string {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -42,14 +42,14 @@ function parsePositiveNumber(value: string): number | null {
 
 function SelectionChip({
   label,
-  emoji,
+  iconName,
   active,
   accentColor,
   width,
   onPress,
 }: {
   label: string;
-  emoji: string;
+  iconName: ComponentProps<typeof Ionicons>["name"];
   active: boolean;
   accentColor: string;
   width: number;
@@ -81,7 +81,11 @@ function SelectionChip({
             },
           ]}
         >
-          <Text style={styles.chipEmoji}>{emoji}</Text>
+          <Ionicons
+            name={iconName}
+            size={20}
+            color={active ? accentColor : Colors.text.secondary}
+          />
         </View>
         <Text
           style={[
@@ -315,7 +319,7 @@ export default function OnboardingScreen() {
                   <SelectionChip
                     key={option.id}
                     label={option.id}
-                    emoji={option.emoji}
+                    iconName={option.iconName}
                     active={fixedCategories.includes(option.id)}
                     accentColor={Colors.segments.gastos_fijos.color}
                     width={chipWidth}
@@ -331,7 +335,7 @@ export default function OnboardingScreen() {
                   <SelectionChip
                     key={option.id}
                     label={option.id}
-                    emoji={option.emoji}
+                    iconName={option.iconName}
                     active={variableCategories.includes(option.id)}
                     accentColor={Colors.segments.gastos_variables.color}
                     width={chipWidth}
@@ -353,7 +357,7 @@ export default function OnboardingScreen() {
                           <SelectionChip
                             key={category}
                             label={category}
-                            emoji={chipConfig?.emoji ?? "Extra"}
+                            iconName={chipConfig?.iconName ?? "ellipsis-horizontal"}
                             active={budgetCategory === category}
                             accentColor={Colors.segments.gastos_variables.color}
                             width={chipWidth}
@@ -591,9 +595,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.04)",
-  },
-  chipEmoji: {
-    fontSize: 20,
   },
   chipText: {
     fontFamily: "Outfit_600SemiBold",
